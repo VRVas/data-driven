@@ -1,0 +1,80 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import type { Agent } from "@/lib/types";
+import { Badge } from "@/components/Badge";
+import { AgentEditor } from "@/components/AgentEditor";
+import { STATUS_TOKEN, PRIORITY_TOKEN } from "@/lib/scoring";
+import type { BrandStatus, Priority } from "@/lib/types";
+
+export function AgentTable({ agents }: { agents: Agent[] }) {
+  const [q, setQ] = useState("");
+  const [editing, setEditing] = useState<Agent | null | undefined>(undefined);
+
+  const rows = useMemo(() => {
+    const query = q.toLowerCase();
+    return agents.filter((a) =>
+      `${a.name} ${a.poc ?? ""} ${a.owner ?? ""} ${a.notes ?? ""}`.toLowerCase().includes(query),
+    );
+  }, [agents, q]);
+
+  return (
+    <div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search agent, POC, owner…"
+          className="h-9 w-64 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-brand)]"
+        />
+        <button
+          onClick={() => setEditing(null)}
+          className="ml-auto rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+        >
+          + New agent
+        </button>
+        <span className="text-sm text-[var(--color-ink-muted)]">{rows.length} of {agents.length}</span>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
+        <table className="w-full text-sm">
+          <thead className="bg-[var(--color-surface)]">
+            <tr>
+              {["Agent / Agency", "Status", "Priority", "Owner", "POC", "Last contact", ""].map((h, i) => (
+                <th key={i} className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((a) => (
+              <tr key={a.id} className="border-t border-[var(--color-border)] transition-colors hover:bg-[var(--color-surface)]/60">
+                <td className="px-3 py-2 font-medium">{a.name}</td>
+                <td className="px-3 py-2">
+                  {a.status && <Badge color={STATUS_TOKEN[a.status as BrandStatus] ?? "var(--color-ink-faint)"}>{a.status}</Badge>}
+                </td>
+                <td className="px-3 py-2">
+                  {a.priority && <Badge color={PRIORITY_TOKEN[a.priority as Priority]}>{a.priority.replace(" Lead", "")}</Badge>}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{a.owner ?? "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{a.poc ?? "—"}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{a.lastContact ?? "—"}</td>
+                <td className="px-3 py-2 text-right">
+                  <button
+                    onClick={() => setEditing(a)}
+                    className="rounded-md border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-brand)] hover:text-[var(--color-ink)]"
+                  >
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {editing !== undefined && (
+        <AgentEditor agent={editing} onClose={() => setEditing(undefined)} />
+      )}
+    </div>
+  );
+}

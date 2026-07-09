@@ -1,0 +1,97 @@
+import "server-only";
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import datasetJson from "@/data/dataset.json";
+import type { Agent, Dataset } from "@/lib/types";
+import { getCosmosDb, isCosmosConfigured } from "./cosmos";
+
+const SEED = (datasetJson as unknown as Dataset).agents;
+
+export interface AgentStore {
+  list(): Promise<Agent[]>;
+  get(id: string): Promise<Agent | null>;
+  save(agent: Agent): Promise<Agent>;
+  remove(id: string): Promise<void>;
+}
+
+// --------------------------------------------------------------------------
+// Local file store (development) — .data/agents.json, seeded from the ETL
+// --------------------------------------------------------------------------
+const DATA_DIR = path.join(process.cwd(), ".data");
+const AGENTS_FILE = path.join(DATA_DIR, "agents.json");
+
+class LocalAgentStore implements AgentStore {
+  private async readAll(): Promise<Agent[]> {
+    try {
+      return JSON.parse(await fs.readFile(AGENTS_FILE, "utf8")) as Agent[];
+    } catch {
+      await this.writeAll(SEED);
+      return SEED;
+    }
+  }
+  private async writeAll(agents: Agent[]): Promise<void> {
+    await fs.mkdir(DATA_DIR, { recursive: true });
+    await fs.writeFile(AGENTS_FILE, JSON.stringify(agents, null, 2), "utf8");
+  }
+  async list(): Promise<Agent[]> {
+    return this.readAll();
+  }
+  async get(id: string): Promise<Agent | null> {
+    return (await this.readAll()).find((a) => a.id === id) ?? null;
+  }
+  async save(agent: Agent): Promise<Agent> {
+    const all = await this.readAll();
+    const i = all.findIndex((a) => a.id === agent.id);
+    if (i >= 0) all[i] = agent;
+    else all.push(agent);
+    await this.writeAll(all);
+    return agent;
+  }
+  async remove(id: string): Promise<void> {
+    await this.writeAll((await this.readAll()).filter((a) => a.id !== id));
+  }
+}
+
+// --------------------------------------------------------------------------
+// Cosmos DB store (production) — container "agents", partition key /id
+// --------------------------------------------------------------------------
+class CosmosAgentStore implements AgentStore {
+  private container() {
+    const db = getCosmosDb();
+    if (!db) throw new Error("Cosmos DB is not configured");
+    return db.container("agents");
+  }
+  async list(): Promise<Agent[]> {
+    const { resources } = await this.container().items.readAll<Agent>().fetchAll();
+    return resources;
+  }
+  async get(id: string): Promise<Agent | null> {
+    try {
+      const { resource } = await this.container().item(id, id).read<Agent>();
+      return resource ?? null;
+    } catch {
+      return null;
+    }
+  }
+  async save(agent: Agent): Promise<Agent> {
+    const { resource } = await this.container().items.upsert<Agent>(agent);
+    return (resource as Agent) ?? agent;
+  }
+  async remove(id: string): Promise<void> {
+    await this.container().item(id, id).delete();
+  }
+}
+
+let store: AgentStore | undefined;
+
+export function getAgentStore(): AgentStore {
+  if (store) return store;
+  if (isCosmosConfigured()) {
+    store = new CosmosAgentStore();
+  } else if (process.env.NODE_ENV === "production") {
+    throw new Error("COSMOS_ENDPOINT is required in production for the agent store.");
+  } else {
+    store = new LocalAgentStore();
+  }
+  return store;
+}
