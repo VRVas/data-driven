@@ -62,6 +62,7 @@ check "GET /dashboard"          "$(curl -s -b "$JAR" -o /dev/null -w '%{http_cod
 check "GET /dashboard/pipeline" "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/pipeline)" "200"
 check "GET /dashboard/agents"   "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/agents)" "200"
 check "GET /dashboard/scoring"  "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/scoring)" "200"
+check "GET /dashboard/whitespace" "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/whitespace)" "200"
 
 echo "→ stores seeded from the ETL snapshot"
 check "brand store rows"  "$(node -e "console.log(require('./.data/brands.json').length)")" "64"
