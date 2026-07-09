@@ -1,0 +1,134 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ */
+/*  Design tokens  (Tailwind v4 `@theme` -> utility classes + vars)   */
+/* ------------------------------------------------------------------ */
+@theme {
+  /* type */
+  --font-display: var(--font-notch), "Segoe UI", system-ui, sans-serif;
+  --font-sans: var(--font-text), "Segoe UI", system-ui, sans-serif;
+
+  /* base surfaces */
+  --color-bg: #07070c;
+  --color-bg-elevated: #0d0d16;
+  --color-surface: #12121d;
+  --color-surface-2: #181826;
+  --color-border: #23233a;
+  --color-border-strong: #34344f;
+
+  /* ink */
+  --color-ink: #f5f5fb;
+  --color-ink-muted: #9d9db4;
+  --color-ink-faint: #63637a;
+
+  /* brand */
+  --color-brand: #7c5cff;
+  --color-brand-bright: #9d84ff;
+  --color-cyan: #22d3ee;
+  --color-mint: #34e0a1;
+  --color-amber: #f5b544;
+  --color-rose: #ff5d73;
+
+  /* pipeline status */
+  --color-status-closed: #34e0a1;
+  --color-status-advanced: #22d3ee;
+  --color-status-followup: #f5b544;
+  --color-status-early: #7c5cff;
+  --color-status-attack: #ff8a3d;
+  --color-status-lost: #ff5d73;
+  --color-status-open: #63637a;
+  --color-status-recurring: #9d84ff;
+
+  /* valuation heat */
+  --color-heat-high: #34e0a1;
+  --color-heat-medium: #f5b544;
+  --color-heat-low: #ff5d73;
+
+  /* radii + shadow */
+  --radius-card: 18px;
+  --shadow-glow: 0 0 0 1px rgb(124 92 255 / 0.15), 0 20px 60px -20px rgb(124 92 255 / 0.35);
+}
+
+/* ------------------------------------------------------------------ */
+/*  Base                                                              */
+/* ------------------------------------------------------------------ */
+* {
+  border-color: var(--color-border);
+}
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, .font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+  font-weight: 600;
+}
+
+/* ambient background field */
+.bg-field {
+  background:
+    radial-gradient(60rem 40rem at 80% -10%, rgb(124 92 255 / 0.16), transparent 60%),
+    radial-gradient(50rem 40rem at -10% 20%, rgb(34 211 238 / 0.10), transparent 55%),
+    var(--color-bg);
+}
+
+.glass {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.01));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  backdrop-filter: blur(12px);
+}
+
+.hairline {
+  background-image: linear-gradient(90deg, transparent, var(--color-border-strong), transparent);
+}
+
+/* auth inputs */
+.auth-input {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.9rem;
+  color: var(--color-ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.auth-input::placeholder {
+  color: var(--color-ink-faint);
+}
+.auth-input:focus {
+  border-color: var(--color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 20%, transparent);
+}
+
+/* gradient text */
+.text-gradient {
+  background: linear-gradient(120deg, var(--color-ink) 0%, var(--color-brand-bright) 55%, var(--color-cyan) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* thin premium scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 999px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
