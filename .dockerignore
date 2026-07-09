@@ -1,0 +1,16 @@
+Dockerfile
+.dockerignore
+node_modules
+.next
+.git
+.github
+.azure
+infra
+docs
+npm-debug.log
+README.md
+**/*.md
+scripts/__pycache__
+Stack_Sans_Notch
+Stack_Sans_Text
+Business Development - Client Segmentation.xlsx

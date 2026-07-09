@@ -1,0 +1,40 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+/dist
+
+# misc
+.DS_Store
+*.pem
+*.tsbuildinfo
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# env
+.env
+.env*.local
+
+# local dev data (file-based user store)
+.data/
+
+# azure / iac
+.azure/
+__pycache__/
+*.pyc
+
+# editor
+.vscode/*
+!.vscode/extensions.json
+!.vscode/mcp.json
