@@ -1,0 +1,89 @@
+{
+  "issues": [
+    {
+      "entity": "ANIMA SGR",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "BANCA ALETTI",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "BANCA SELLA/BANCA PATRIMONI",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "Barilla",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "CREDEM",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "Fincantieri",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "Herbert Smith",
+      "key": "POC",
+      "issue": "numeric POC 20100.0",
+      "fix": "set null"
+    },
+    {
+      "entity": "Pagani",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "Tom Shieh",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "YPO.ORG",
+      "key": "initialContact",
+      "issue": "non-date text 'N/A' in date field",
+      "fix": "set null"
+    },
+    {
+      "entity": "Luxottica",
+      "key": "dates",
+      "issue": "lastContact 2026-04-15 < initialContact 2026-05-01",
+      "fix": "kept raw, flagged"
+    },
+    {
+      "entity": "MK2",
+      "key": "dates",
+      "issue": "lastContact 2025-11-14 < initialContact 2026-10-25",
+      "fix": "kept raw, flagged"
+    },
+    {
+      "entity": "MK2",
+      "key": "initialContact",
+      "issue": "future date 2026-10-25",
+      "fix": "kept raw, flagged"
+    },
+    {
+      "entity": "Moncler",
+      "key": "dates",
+      "issue": "lastContact 2026-04-17 < initialContact 2026-05-20",
+      "fix": "kept raw, flagged"
+    }
+  ],
+  "count": 14
+}
