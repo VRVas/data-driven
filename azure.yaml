@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+# Azure Developer CLI (azd) project definition.
+# `azd up` provisions the infra (infra/main.bicep) and deploys this service.
+name: data-driven-platform
+metadata:
+  template: oovie-bd-intelligence@0.1.0
+
+services:
+  web:
+    project: .
+    language: ts
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: .
+
+# Optional lifecycle hooks (uncomment to seed Cosmos after provisioning):
+# hooks:
+#   postprovision:
+#     shell: sh
+#     run: node scripts/seed-cosmos.mjs
