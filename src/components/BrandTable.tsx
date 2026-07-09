@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { clsx } from "clsx";
 import type { Brand } from "@/lib/types";
 import { Badge } from "@/components/Badge";
@@ -105,7 +106,9 @@ export function BrandTable({ brands }: { brands: Brand[] }) {
             {rows.map((b) => (
               <tr key={b.id} id={b.id} className="border-t border-[var(--color-border)] transition-colors hover:bg-[var(--color-surface)]/60">
                 <td className="px-3 py-2 font-medium">
-                  {b.name}
+                  <Link href={`/dashboard/pipeline/${b.id}`} className="hover:text-[var(--color-brand-bright)] hover:underline">
+                    {b.name}
+                  </Link>
                   {!b.scored && <span className="ml-2 text-xs text-[var(--color-ink-faint)]">unscored</span>}
                 </td>
                 <td className="px-3 py-2">

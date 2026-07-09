@@ -63,6 +63,8 @@ check "GET /dashboard/pipeline" "$(curl -s -b "$JAR" -o /dev/null -w '%{http_cod
 check "GET /dashboard/agents"   "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/agents)" "200"
 check "GET /dashboard/scoring"  "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/scoring)" "200"
 check "GET /dashboard/whitespace" "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/whitespace)" "200"
+check "GET lead detail (alibaba)" "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/pipeline/alibaba)" "200"
+check "GET unknown lead -> 404" "$(curl -s -b "$JAR" -o /dev/null -w '%{http_code}' $BASE/dashboard/pipeline/nope-xyz)" "404"
 
 echo "→ stores seeded from the ETL snapshot"
 check "brand store rows"  "$(node -e "console.log(require('./.data/brands.json').length)")" "64"
