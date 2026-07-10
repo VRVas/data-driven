@@ -3,8 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { runCopilotAction } from "@/app/actions/copilot";
+import { listConversations, loadConversation } from "@/app/actions/conversations";
 import { BlockRenderer } from "@/components/copilot/BlockRenderer";
+import { relativeTime } from "@/lib/time";
 import type { Block, ActionSpec } from "@/lib/copilot/blocks";
+import type { ConversationHeader } from "@/lib/copilot/threads";
 
 interface Msg {
   role: "user" | "assistant";
@@ -42,8 +45,36 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
   const [pending, setPending] = useState(false);
   const [deep, setDeep] = useState(false);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [history, setHistory] = useState<ConversationHeader[]>([]);
+  const [showHistory, setShowHistory] = useState(false);
   const router = useRouter();
   const endRef = useRef<HTMLDivElement>(null);
+
+  const refreshHistory = () => listConversations().then(setHistory).catch(() => {});
+  useEffect(() => {
+    refreshHistory();
+  }, []);
+
+  function newChat() {
+    setMessages([]);
+    setConversationId(null);
+    setShowHistory(false);
+  }
+
+  async function resume(id: string) {
+    setShowHistory(false);
+    const conv = await loadConversation(id);
+    if (!conv) return;
+    setConversationId(conv.id);
+    setMessages(
+      conv.messages.map((mm) =>
+        mm.role === "user"
+          ? { role: "user", text: mm.text ?? "" }
+          : { role: "assistant", blocks: (mm.blocks ?? []) as Block[] },
+      ),
+    );
+  }
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -72,7 +103,7 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
       const res = await fetch("/api/copilot/stream", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ message: q, reasoning: deep }),
+        body: JSON.stringify({ message: q, reasoning: deep, conversationId }),
       });
       if (!res.body) throw new Error("no stream");
       const reader = res.body.getReader();
@@ -94,6 +125,10 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
           } else if (ev.event === "error") {
             const em = String((ev.data as { message?: string })?.message ?? "Error");
             patchLast((msg) => ({ ...msg, blocks: [...(msg.blocks ?? []), { type: "callout", tone: "danger", title: null, text: em }] }));
+          } else if (ev.event === "done") {
+            const cid = (ev.data as { conversationId?: string })?.conversationId;
+            if (cid) setConversationId(cid);
+            refreshHistory();
           }
         }
       }
@@ -124,6 +159,46 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
 
   return (
     <div className="glass flex h-[calc(100vh-13rem)] flex-col overflow-hidden">
+      <div className="relative flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2">
+        <button
+          onClick={newChat}
+          className="rounded-full border border-[var(--color-border-strong)] px-3 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)]"
+        >
+          + New chat
+        </button>
+        <button
+          onClick={() => {
+            setShowHistory((v) => !v);
+            refreshHistory();
+          }}
+          className="rounded-full border border-[var(--color-border-strong)] px-3 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)]"
+        >
+          History ▾
+        </button>
+        {showHistory && (
+          <div className="absolute right-4 top-11 z-20 w-72 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl">
+            {history.length === 0 ? (
+              <div className="px-4 py-3 text-xs text-[var(--color-ink-faint)]">No past conversations yet.</div>
+            ) : (
+              <ul className="max-h-72 overflow-y-auto py-1">
+                {history.map((h) => (
+                  <li key={h.id}>
+                    <button
+                      onClick={() => resume(h.id)}
+                      className="block w-full px-4 py-2 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--color-frosted-canvas)_5%,transparent)]"
+                    >
+                      <div className="truncate text-sm text-[var(--color-ink)]">{h.title}</div>
+                      <div className="text-[10px] text-[var(--color-ink-faint)]">
+                        {relativeTime(h.updatedAt)} · {h.messageCount} msgs
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
       {!foundryEnabled && (
         <div className="border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-amber)_8%,transparent)] px-5 py-2 text-xs text-[var(--color-ink-muted)]">
           <span className="font-mono uppercase tracking-[0.14em] text-[var(--color-amber)]">Local preview</span> — grounded, composed cards from live tools. Connect Foundry for full conversational AI.
