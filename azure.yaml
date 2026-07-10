@@ -1,9 +1,9 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 # Azure Developer CLI (azd) project definition.
 # `azd up` provisions the infra (infra/main.bicep) and deploys this service.
-name: data-driven-platform
+name: data-driven
 metadata:
-  template: oovie-bd-intelligence@0.1.0
+  template: data-driven@0.1.0
 
 services:
   web:
@@ -14,8 +14,13 @@ services:
       path: ./Dockerfile
       context: .
 
-# Optional lifecycle hooks (uncomment to seed Cosmos after provisioning):
-# hooks:
-#   postprovision:
-#     shell: sh
-#     run: node scripts/seed-cosmos.mjs
+# Create the Foundry prompt agent (data-plane, keyless) after infra is provisioned.
+# azd exposes the infra outputs (AZURE_AI_PROJECT_ENDPOINT, AZURE_AI_AGENT_NAME,
+# AZURE_OPENAI_DEPLOYMENT) as environment variables to the hook.
+hooks:
+  postprovision:
+    shell: sh
+    run: ./scripts/create-agent.sh
+    interactive: false
+    continueOnError: true
+
