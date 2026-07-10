@@ -38,3 +38,6 @@ __pycache__/
 .vscode/*
 !.vscode/extensions.json
 !.vscode/mcp.json
+
+# reference-only (never commit) — attached for design analysis
+portfolio-aiapps-main/
