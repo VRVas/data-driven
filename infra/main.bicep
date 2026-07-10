@@ -13,8 +13,8 @@ metadata description = 'OOVIE BD Intelligence — one-command Azure deployment.'
 param environmentName string
 
 @minLength(1)
-@description('Primary Azure region for all resources.')
-param location string
+@description('Primary Azure region for all resources. Sweden Central is the default.')
+param location string = 'swedencentral'
 
 @description('Deploy Azure Communication Services email (one-click outreach).')
 param deployEmail bool = false
@@ -24,7 +24,10 @@ param deployEmail bool = false
 param authSecret string
 
 @description('Chat model to deploy in Azure AI Foundry.')
-param chatModelName string = 'gpt-4o'
+param chatModelName string = 'gpt-5.4-mini'
+
+@description('Name of the Foundry prompt agent created at deploy time.')
+param agentName string = 'oovie-bd-copilot'
 
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = {
@@ -47,6 +50,7 @@ module resources 'resources.bicep' = {
     tags: tags
     deployEmail: deployEmail
     chatModelName: chatModelName
+    agentName: agentName
     authSecret: authSecret
   }
 }
@@ -63,5 +67,6 @@ output AZURE_OPENAI_ENDPOINT string = resources.outputs.AZURE_OPENAI_ENDPOINT
 output AZURE_OPENAI_DEPLOYMENT string = resources.outputs.AZURE_OPENAI_DEPLOYMENT
 output AZURE_AI_PROJECT_ENDPOINT string = resources.outputs.AZURE_AI_PROJECT_ENDPOINT
 output AZURE_AI_PROJECT_NAME string = resources.outputs.AZURE_AI_PROJECT_NAME
+output AZURE_AI_AGENT_NAME string = resources.outputs.AZURE_AI_AGENT_NAME
 output KEY_VAULT_NAME string = resources.outputs.KEY_VAULT_NAME
 output MANAGED_IDENTITY_CLIENT_ID string = resources.outputs.MANAGED_IDENTITY_CLIENT_ID

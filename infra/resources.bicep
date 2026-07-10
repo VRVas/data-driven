@@ -17,16 +17,22 @@ param tags object
 param webImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
 @description('Chat model to deploy in Azure AI Foundry.')
-param chatModelName string = 'gpt-4o'
+param chatModelName string = 'gpt-5.4-mini'
 
 @description('Chat model version.')
-param chatModelVersion string = '2024-11-20'
+param chatModelVersion string = '2026-03-17'
 
 @description('Deployment SKU capacity (thousands of tokens/min) for the chat model.')
 param chatModelCapacity int = 30
 
 @description('Foundry project name (new Foundry project, child of the account).')
 param aiProjectName string = 'oovie-bd'
+
+@description('Name of the Foundry prompt agent created at deploy time (visible in the Foundry portal).')
+param agentName string = 'oovie-bd-copilot'
+
+@description('System instructions that define the prompt agent behavior.')
+param agentInstructions string = 'You are the OOVIE Studios business-development copilot. You help the team reason over the client pipeline, lead scores, industry strategy and whitespace. Be concise, cite the data you use, and never invent numbers.'
 
 @description('Auth.js session secret (openssl rand -base64 32). Injected as a Container Apps secret.')
 @secure()
@@ -55,6 +61,7 @@ var roleAcrPull = '7f951dda-4ed3-4680-a7ca-43fe172d538d' // AcrPull
 var roleKvSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
 var roleOpenAIUser = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User (inference)
 var roleCogSvcUser = 'a97b65f3-24c7-4388-baec-2e87135dc908' // Cognitive Services User (read account/deployments)
+var roleFoundryUser = '53ca6127-db72-4b80-b1b0-d745d6d5456d' // Foundry User (create/edit + consume agents, data plane)
 var roleCosmosDataContributor = '00000000-0000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor
 
 // =====================================================================
@@ -233,7 +240,7 @@ resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = 
   }
 }
 
-// gpt-4o model deployment on the Foundry account
+// gpt-5.4-mini model deployment on the Foundry account
 resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
   parent: ai
   name: chatModelName
@@ -263,6 +270,60 @@ resource cogSvcUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
     principalType: 'ServicePrincipal'
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleCogSvcUser)
   }
+}
+
+// app identity -> create/edit + consume Foundry agents (data plane)
+resource foundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(ai.id, uami.id, roleFoundryUser)
+  scope: ai
+  properties: {
+    principalId: uami.properties.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleFoundryUser)
+  }
+}
+
+// -------------------------------------------------------------------
+//  Foundry PROMPT AGENT (data-plane, created at deploy time)
+//  Prompt agents are NOT ARM resources — per MS Learn they are created
+//  via the Foundry Projects API (POST {projectEndpoint}/agents). This
+//  deploymentScript runs that call with the app's managed identity so the
+//  agent is provisioned by `azd up` and visible in the Foundry portal.
+//  Docs: https://learn.microsoft.com/azure/foundry/agents/quickstarts/prompt-agent
+// -------------------------------------------------------------------
+resource agentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
+  name: '${prefix}-agent-${resourceToken}'
+  location: location
+  kind: 'AzureCLI'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: { '${uami.id}': {} }
+  }
+  properties: {
+    azCliVersion: '2.64.0'
+    retentionInterval: 'PT1H'
+    timeout: 'PT30M'
+    cleanupPreference: 'OnSuccess'
+    environmentVariables: [
+      { name: 'PROJECT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/api/projects/${aiProjectName}' }
+      { name: 'AGENT_NAME', value: agentName }
+      { name: 'MODEL', value: chatModelName }
+      { name: 'INSTRUCTIONS', value: agentInstructions }
+    ]
+    scriptContent: '''
+set -euo pipefail
+BODY=$(python3 -c "import json,os;print(json.dumps({'name':os.environ['AGENT_NAME'],'definition':{'kind':'prompt','model':os.environ['MODEL'],'instructions':os.environ['INSTRUCTIONS']}}))")
+echo "creating prompt agent $AGENT_NAME on $PROJECT_ENDPOINT"
+for i in $(seq 1 12); do
+  if az rest --method post --url "$PROJECT_ENDPOINT/agents?api-version=v1" --resource "https://ai.azure.com" --headers "Content-Type=application/json" --body "$BODY" -o json > "$AZ_SCRIPTS_OUTPUT_PATH" 2>/tmp/err; then
+    echo "prompt agent ready"; exit 0
+  fi
+  echo "attempt $i failed (waiting for RBAC / model readiness)"; sleep 20
+done
+echo "agent creation failed:"; cat /tmp/err; exit 1
+'''
+  }
+  dependsOn: [ foundryUser, aiProject, chatDeployment ]
 }
 
 // =====================================================================
@@ -337,6 +398,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AZURE_OPENAI_DEPLOYMENT', value: chatModelName }
             { name: 'AZURE_AI_PROJECT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/api/projects/${aiProjectName}' }
             { name: 'AZURE_AI_PROJECT_NAME', value: aiProjectName }
+            { name: 'AZURE_AI_AGENT_NAME', value: agentName }
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }
           ]
         }
@@ -359,5 +421,6 @@ output AZURE_OPENAI_DEPLOYMENT string = chatModelName
 output AZURE_AI_FOUNDRY_NAME string = ai.name
 output AZURE_AI_PROJECT_NAME string = aiProject.name
 output AZURE_AI_PROJECT_ENDPOINT string = 'https://${aiName}.services.ai.azure.com/api/projects/${aiProjectName}'
+output AZURE_AI_AGENT_NAME string = agentName
 output KEY_VAULT_NAME string = kv.name
 output MANAGED_IDENTITY_CLIENT_ID string = uami.properties.clientId
