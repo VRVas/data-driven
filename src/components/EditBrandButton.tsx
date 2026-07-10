@@ -5,7 +5,7 @@ import { BrandEditor } from "@/components/BrandEditor";
 import type { Brand } from "@/lib/types";
 
 /** Opens the shared brand editor as a slide-over from the detail page. */
-export function EditBrandButton({ brand }: { brand: Brand }) {
+export function EditBrandButton({ brand, canDelete = false }: { brand: Brand; canDelete?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -15,7 +15,7 @@ export function EditBrandButton({ brand }: { brand: Brand }) {
       >
         Edit lead
       </button>
-      {open && <BrandEditor brand={brand} onClose={() => setOpen(false)} />}
+      {open && <BrandEditor brand={brand} onClose={() => setOpen(false)} canDelete={canDelete} />}
     </>
   );
 }

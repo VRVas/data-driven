@@ -11,7 +11,7 @@ import type { BrandStatus, Priority } from "@/lib/types";
 
 type SortKey = "name" | "status" | "owner" | "industry" | "budget" | "lastContact";
 
-export function BrandTable({ brands }: { brands: Brand[] }) {
+export function BrandTable({ brands, canDelete = false }: { brands: Brand[]; canDelete?: boolean }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("All");
   const [owner, setOwner] = useState<string>("All");
@@ -138,7 +138,7 @@ export function BrandTable({ brands }: { brands: Brand[] }) {
       </div>
 
       {editing !== undefined && (
-        <BrandEditor brand={editing} onClose={() => setEditing(undefined)} />
+        <BrandEditor brand={editing} onClose={() => setEditing(undefined)} canDelete={canDelete} />
       )}
     </div>
   );

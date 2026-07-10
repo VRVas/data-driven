@@ -4,6 +4,7 @@ import { Reveal } from "@/components/Reveal";
 import { Badge } from "@/components/Badge";
 import { EditBrandButton } from "@/components/EditBrandButton";
 import { getBrand } from "@/lib/data";
+import { getSessionUser } from "@/lib/auth/guards";
 import {
   STATUS_TOKEN,
   PRIORITY_TOKEN,
@@ -37,6 +38,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const brand = await getBrand(id);
   if (!brand) notFound();
+  const me = await getSessionUser();
+  const isAdmin = me?.role === "admin";
 
   const s = brand.scores;
   const score = leadScore(brand);
@@ -60,7 +63,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               {!brand.scored && <span className="text-xs text-[var(--color-ink-faint)]">unscored</span>}
             </div>
           </div>
-          <EditBrandButton brand={brand} />
+          <EditBrandButton brand={brand} canDelete={isAdmin} />
         </div>
       </Reveal>
 

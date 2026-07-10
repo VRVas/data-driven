@@ -6,7 +6,7 @@ import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import type { Brand } from "@/lib/types";
 
 /** Mounted only while open — remounting gives each session fresh action state. */
-export function BrandEditor({ brand, onClose }: { brand: Brand | null; onClose: () => void }) {
+export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Brand | null; onClose: () => void; canDelete?: boolean }) {
   const isNew = brand === null;
   const [state, action, pending] = useActionState<BrandActionState, FormData>(saveBrand, undefined);
 
@@ -93,7 +93,7 @@ export function BrandEditor({ brand, onClose }: { brand: Brand | null; onClose: 
           </button>
         </form>
 
-        {!isNew && (
+        {!isNew && canDelete && (
           <footer className="border-t border-[var(--color-border)] px-6 py-4">
             <DeleteControl id={brand!.id} onDeleted={onClose} />
           </footer>

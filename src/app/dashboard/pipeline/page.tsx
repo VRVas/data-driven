@@ -1,11 +1,14 @@
 import { Reveal } from "@/components/Reveal";
 import { BrandTable } from "@/components/BrandTable";
 import { getBrands } from "@/lib/data";
+import { getSessionUser } from "@/lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
 export default async function PipelinePage() {
   const brands = await getBrands();
+  const me = await getSessionUser();
+  const isAdmin = me?.role === "admin";
   return (
     <div className="space-y-6">
       <Reveal>
@@ -18,7 +21,7 @@ export default async function PipelinePage() {
       </Reveal>
       <Reveal>
         <div className="glass p-6">
-          <BrandTable brands={brands} />
+          <BrandTable brands={brands} canDelete={isAdmin} />
         </div>
       </Reveal>
     </div>

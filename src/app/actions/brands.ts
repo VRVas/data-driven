@@ -2,8 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { requireUser, requireAdmin } from "@/lib/auth/guards";
 import { getBrandStore } from "@/lib/store/brands";
+import { logAudit } from "@/lib/store/audit";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import type { Brand } from "@/lib/types";
 
@@ -44,13 +45,8 @@ function slug(name: string): string {
   );
 }
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
-}
-
 export async function saveBrand(_prev: BrandActionState, formData: FormData): Promise<BrandActionState> {
-  await requireUser();
+  const user = await requireUser();
 
   const parsed = brandInputSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -60,6 +56,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   const store = getBrandStore();
 
   let brand: Brand;
+  const isNew = !input.id;
   if (input.id) {
     const existing = await store.get(input.id);
     if (!existing) return { error: "That lead no longer exists." };
@@ -100,6 +97,14 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   brand.notes = input.notes ?? null;
 
   await store.save(brand);
+  await logAudit({
+    actorId: user.id,
+    actorName: user.name,
+    action: isNew ? "brand.create" : "brand.update",
+    entity: "brand",
+    entityId: brand.id,
+    summary: `${isNew ? "Created" : "Updated"} lead ${brand.name}`,
+  });
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/pipeline");
@@ -108,11 +113,20 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
 }
 
 export async function deleteBrand(_prev: BrandActionState, formData: FormData): Promise<BrandActionState> {
-  await requireUser();
+  const user = await requireAdmin();
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
+  const existing = await getBrandStore().get(id);
   await getBrandStore().remove(id);
+  await logAudit({
+    actorId: user.id,
+    actorName: user.name,
+    action: "brand.delete",
+    entity: "brand",
+    entityId: id,
+    summary: `Deleted lead ${existing?.name ?? id}`,
+  });
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/pipeline");
