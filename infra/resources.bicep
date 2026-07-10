@@ -56,6 +56,8 @@ var caeName = '${prefix}-cae-${resourceToken}'
 var appName = '${prefix}-web-${resourceToken}'
 var aiName = '${prefix}-ai-${resourceToken}'
 var acsName = '${prefix}-acs-${resourceToken}'
+var vnetName = '${prefix}-vnet-${resourceToken}'
+var cosmosPeName = '${prefix}-pe-cosmos-${resourceToken}'
 
 var cosmosDatabase = 'bd'
 
@@ -151,7 +153,37 @@ resource kvSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 
 // =====================================================================
-//  Cosmos DB (NoSQL, serverless)
+//  Virtual network (private networking for Cosmos DB)
+// =====================================================================
+resource vnet 'Microsoft.Network/virtualNetworks@2023-11-01' = {
+  name: vnetName
+  location: location
+  tags: tags
+  properties: {
+    addressSpace: { addressPrefixes: [ '10.20.0.0/22' ] }
+    subnets: [
+      {
+        name: 'aca'
+        properties: {
+          addressPrefix: '10.20.0.0/27'
+          delegations: [
+            { name: 'aca', properties: { serviceName: 'Microsoft.App/environments' } }
+          ]
+        }
+      }
+      {
+        name: 'pe'
+        properties: {
+          addressPrefix: '10.20.1.0/24'
+          privateEndpointNetworkPolicies: 'Disabled'
+        }
+      }
+    ]
+  }
+}
+
+// =====================================================================
+//  Cosmos DB (NoSQL, serverless) — PRIVATE (no public access)
 // =====================================================================
 resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2024-11-15' = {
   name: cosmosName
@@ -164,6 +196,7 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2024-11-15' = {
     capabilities: [ { name: 'EnableServerless' } ]
     consistencyPolicy: { defaultConsistencyLevel: 'Session' }
     disableLocalAuth: true
+    publicNetworkAccess: 'Disabled'
     locations: [ { locationName: location, failoverPriority: 0 } ]
   }
 }
@@ -204,6 +237,51 @@ resource cosmosDataRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignment
     principalId: uami.properties.principalId
     roleDefinitionId: '${cosmos.id}/sqlRoleDefinitions/${roleCosmosDataContributor}'
     scope: cosmos.id
+  }
+}
+
+// private endpoint + private DNS for Cosmos (reachable only from the VNet)
+resource cosmosPe 'Microsoft.Network/privateEndpoints@2023-11-01' = {
+  name: cosmosPeName
+  location: location
+  tags: tags
+  properties: {
+    subnet: { id: '${vnet.id}/subnets/pe' }
+    privateLinkServiceConnections: [
+      {
+        name: 'cosmos'
+        properties: {
+          privateLinkServiceId: cosmos.id
+          groupIds: [ 'Sql' ]
+        }
+      }
+    ]
+  }
+}
+
+resource cosmosDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.documents.azure.com'
+  location: 'global'
+  tags: tags
+}
+
+resource cosmosDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: cosmosDnsZone
+  name: '${vnetName}-link'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: { id: vnet.id }
+  }
+}
+
+resource cosmosPeDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
+  parent: cosmosPe
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [
+      { name: 'documents', properties: { privateDnsZoneId: cosmosDnsZone.id } }
+    ]
   }
 }
 
@@ -330,6 +408,14 @@ resource cae 'Microsoft.App/managedEnvironments@2024-03-01' = {
     appLogsConfiguration: {
       destination: 'azure-monitor'
     }
+    // VNet-integrated so the app can reach the private Cosmos endpoint.
+    vnetConfiguration: {
+      infrastructureSubnetId: '${vnet.id}/subnets/aca'
+      internal: false
+    }
+    workloadProfiles: [
+      { name: 'Consumption', workloadProfileType: 'Consumption' }
+    ]
   }
 }
 
@@ -354,6 +440,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
   }
   properties: {
     managedEnvironmentId: cae.id
+    workloadProfileName: 'Consumption'
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: {
