@@ -11,12 +11,12 @@ interface Props {
 
 export function KpiCard({ label, value, format, hint, accent = "var(--color-brand)" }: Props) {
   return (
-    <div className="glass relative overflow-hidden p-5">
+    <div className="beam-card glass relative overflow-hidden p-5">
       <div
         className="absolute inset-x-0 top-0 h-px"
         style={{ background: `linear-gradient(90deg, transparent, ${accent}, transparent)` }}
       />
-      <div className="text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">
+      <div className="eyebrow">
         {label}
       </div>
       <div className="mt-2 font-display text-3xl font-semibold tracking-tight">
