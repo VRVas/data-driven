@@ -32,6 +32,18 @@ export async function TopBar() {
           <div className="flex items-center gap-3">
             {user.role === "admin" && (
               <Link
+                href="/dashboard/activity"
+                title="Activity — audit trail"
+                aria-label="Activity — audit trail"
+                className="hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                </svg>
+              </Link>
+            )}
+            {user.role === "admin" && (
+              <Link
                 href="/dashboard/team"
                 title="Team & roles"
                 aria-label="Team & roles"
