@@ -24,14 +24,16 @@ azd up      # provisions infra/main.bicep, builds the image, deploys the Contain
 | AI Foundry account | `Microsoft.CognitiveServices/accounts@2025-06-01` (`kind: AIServices`, `allowProjectManagement: true`) | **New Foundry (V2)** account |
 | AI Foundry project | `Microsoft.CognitiveServices/accounts/projects@2025-06-01` | Foundry project (agents / data isolation) |
 | Model deployment | `Microsoft.CognitiveServices/accounts/deployments@2025-06-01` (`gpt-5.4-mini` 2026-03-17, GlobalStandard) | Chat model for the copilot |
-| Prompt agent | `Microsoft.Resources/deploymentScripts@2023-08-01` → Projects API | Foundry **prompt agent** (data-plane), visible in the portal |
-| App data store | `Microsoft.DocumentDB/databaseAccounts@2024-11-15` (NoSQL, **serverless**, `disableLocalAuth: true`) | Brands / agents / industries / users |
-| Web app | `Microsoft.App/containerApps@2024-03-01` | Next.js SSR + API (scale-to-zero) |
-| Environment | `Microsoft.App/managedEnvironments@2024-03-01` | Container Apps env (Log Analytics) |
-| Registry | `Microsoft.ContainerRegistry/registries@2023-07-01` (Basic, admin disabled) | Image storage |
+| Prompt agent | Projects API via **azd postprovision hook** (keyless) | Foundry **prompt agent** (data-plane), visible in the portal |
+| App data store | `Microsoft.DocumentDB/databaseAccounts@2024-11-15` (NoSQL, **serverless**, `disableLocalAuth: true`, **`publicNetworkAccess: Disabled`**) | Brands / agents / industries / users |
+| Virtual network | `Microsoft.Network/virtualNetworks@2023-11-01` (`aca` /27 + `pe` /24 subnets) | Private networking |
+| Cosmos private endpoint + DNS | `privateEndpoints@2023-11-01` (groupId `Sql`) + `privatelink.documents.azure.com` | Private Cosmos access |
+| Web app | `Microsoft.App/containerApps@2024-03-01` (Consumption workload profile) | Next.js SSR + API (scale-to-zero) |
+| Environment | `Microsoft.App/managedEnvironments@2024-03-01` (VNet-integrated, logs → Azure Monitor) | Container Apps env |
+| Registry | `Microsoft.ContainerRegistry/registries@2023-07-01` (Basic, admin disabled) | Image storage (MI pull) |
 | Identity | `Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31` | App identity (Entra-only auth) |
 | Key Vault | `Microsoft.KeyVault/vaults@2023-07-01` (RBAC) | Secrets |
-| Monitoring | Log Analytics + Application Insights | Observability |
+| Monitoring | Log Analytics + Application Insights (`DisableLocalAuth: true`) | Observability |
 | Email (optional) | `Microsoft.Communication/communicationServices` | One-click outreach (`deployEmail=true`) |
 
 ## Azure AI Foundry — new Foundry (V2)
@@ -42,15 +44,16 @@ This uses the **new Foundry resource model**, not the legacy Hub/Project
 resource, which turns it into a Foundry account and enables `accounts/projects`
 children.
 
-### Prompt agent (data-plane, created at deploy time)
+### Prompt agent (data-plane, keyless)
 
 A Foundry **prompt agent** is a *declaratively defined* agent (model + instructions +
 tools). Per MS Learn it is created through the **Projects API**, not as an ARM
-resource — so it cannot be a native Bicep resource. To keep it "in the Bicep script"
-and visible in the Foundry portal, a `Microsoft.Resources/deploymentScripts` runs the
-documented REST call (`POST {projectEndpoint}/agents?api-version=v1` with
-`"definition": { "kind": "prompt", ... }`) using the app's managed identity
-(**Foundry User** role) after the project and model deployment exist. Tune it with the
+resource. A Bicep `deploymentScripts` would need **storage-account keys**, which the
+no-key policy forbids — so the agent is created by an **azd `postprovision` hook**
+([scripts/create-agent.sh](../scripts/create-agent.sh)) that runs the documented REST
+call (`POST {projectEndpoint}/agents?api-version=v1`, `"kind": "prompt"`) with the
+deployer's Entra token. The deployer is granted **Foundry Project Manager** in Bicep so
+it can create the agent, which is then visible in the Foundry portal. Tune it with the
 `agentName` / `agentInstructions` parameters.
 
 - Prompt agent quickstart: <https://learn.microsoft.com/azure/foundry/agents/quickstarts/prompt-agent>
@@ -91,6 +94,8 @@ identity — no keys. Grounded role IDs:
 | AcrPull | `7f951dda-4ed3-4680-a7ca-43fe172d538d` | ACR | image pull |
 | Key Vault Secrets User | `4633458b-17de-408a-b874-0445c86b69e6` | Key Vault | read secrets |
 | Cosmos DB Built-in Data Contributor | `00000000-0000-0000-0000-000000000002` | Cosmos (data plane) | read/write data |
+| Foundry User | `53ca6127-db72-4b80-b1b0-d745d6d5456d` | Foundry account | app creates/consumes agents |
+| Foundry Project Manager | `eadc314b-1a2d-4efa-be10-5d325db5065e` | Foundry account | deployer creates the prompt agent |
 
 - Built-in role IDs: <https://learn.microsoft.com/azure/role-based-access-control/built-in-roles#ai-+-machine-learning>
 - Container Apps image pull with managed identity (Bicep): <https://learn.microsoft.com/azure/container-apps/managed-identity-image-pull>
@@ -100,6 +105,30 @@ identity — no keys. Grounded role IDs:
 > identity the **Foundry User** role at project scope (per hosted-agent-permissions
 > docs) — added in the agent phase, since some agent-identity assignments can only be
 > created after the agent exists.
+
+## Compliance: no key-based auth, private Cosmos
+
+Per the target subscription policy (MCAPS): **no key-based auth anywhere** and **no
+public access to Cosmos DB**.
+
+- **All auth is Microsoft Entra ID / managed identity** — no account keys, shared keys or
+  connection-string keys:
+  - Cosmos DB & Foundry account: `disableLocalAuth: true`.
+  - ACR: admin user disabled (managed-identity pull).
+  - Key Vault: RBAC only.
+  - Application Insights: `DisableLocalAuth: true`.
+  - Container Apps logs: `destination: azure-monitor` + a diagnostic setting — **no Log
+    Analytics shared key**.
+  - **No `deploymentScripts`** (they require storage keys); the agent uses the keyless hook.
+- **Cosmos DB is private:** `publicNetworkAccess: Disabled` + a **private endpoint**
+  (`groupId: Sql`) in the VNet, resolved via the private DNS zone
+  `privatelink.documents.azure.com`. The Container Apps environment is **VNet-integrated**
+  (`infrastructureSubnetId`, `/27` subnet delegated to `Microsoft.App/environments`) so the
+  app reaches Cosmos over the private endpoint.
+
+- Cosmos private endpoint: <https://learn.microsoft.com/azure/cosmos-db/how-to-configure-private-endpoints>
+- Container Apps VNet integration: <https://learn.microsoft.com/azure/container-apps/custom-virtual-networks>
+- Container Apps logs to Azure Monitor: <https://learn.microsoft.com/azure/container-apps/log-options>
 
 ## Production hardening notes
 
