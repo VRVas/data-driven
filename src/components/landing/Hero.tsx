@@ -36,7 +36,7 @@ export function Hero({ leadCount }: Props) {
       const chars = new SplitText(headline.current, { type: "chars", charsClass: "hero-char" });
       const words = new SplitText(sub.current, { type: "words", wordsClass: "hero-word" });
 
-      gsap.set([headline.current, sub.current], { autoAlpha: 1 });
+      gsap.set([headline.current, sub.current, ".hero-rest"], { autoAlpha: 1 });
 
       const tl = gsap.timeline();
       tl.from(chars.chars, {
