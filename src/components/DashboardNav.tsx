@@ -12,6 +12,7 @@ const NAV = [
   { href: "/dashboard/industries", label: "Industries" },
   { href: "/dashboard/whitespace", label: "Whitespace" },
   { href: "/dashboard/quality", label: "Data Quality" },
+  { href: "/dashboard/copilot", label: "Copilot" },
 ];
 
 /** Overview matches only its exact route; every other section also matches its
