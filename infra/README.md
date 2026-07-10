@@ -106,6 +106,27 @@ identity — no keys. Grounded role IDs:
 > docs) — added in the agent phase, since some agent-identity assignments can only be
 > created after the agent exists.
 
+## Copilot (P6a) — enabling the Foundry-backed chat
+
+The in-app **Copilot** runs a grounded **local preview** with no cloud (deterministic
+tool routing). It upgrades to the Foundry model automatically when configured — no code
+change, same pattern as ACS email. Set these on the Container App via `azd env set`:
+
+| Variable | Purpose |
+| --- | --- |
+| `COPILOT_CHAT_ENDPOINT` | OpenAI-compatible chat-completions URL of the deployed model (function-calling loop). Unset → local preview. |
+| `COPILOT_MODEL` | Model deployment name (e.g. `gpt-5.4-mini`). |
+| `APP_URL` | Public app URL — used as the `servers` entry in the OpenAPI doc. |
+| `COPILOT_API_KEY` | *Optional.* Only if you register the OpenAPI tool with `x-api-key` auth. **Reads only** — write tools require an in-app user session. Prefer managed identity. |
+
+- The app identity already holds **Cognitive Services OpenAI User**, so model calls are
+  **keyless** (managed identity) — no key needed for the chat path.
+- Tool surface for a Foundry agent: register `GET {APP_URL}/api/copilot/openapi`
+  (OpenAPI 3.0) as an **OpenAPI tool**. Write tools (`advance_lead_stage`, `draft_outreach`)
+  are rejected on the key channel and only run under a signed-in user; `draft_outreach`
+  never sends — it queues for admin approval.
+
+
 ## Compliance: no key-based auth, private Cosmos
 
 Per the target subscription policy (MCAPS): **no key-based auth anywhere** and **no

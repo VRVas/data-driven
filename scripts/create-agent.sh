@@ -11,7 +11,7 @@ set -euo pipefail
 : "${AZURE_AI_PROJECT_ENDPOINT:?missing}"
 : "${AZURE_AI_AGENT_NAME:?missing}"
 : "${AZURE_OPENAI_DEPLOYMENT:?missing}"
-export AGENT_INSTRUCTIONS="${AGENT_INSTRUCTIONS:-You are the data-driven business-development copilot. You help the team reason over the client pipeline, lead scores, industry strategy and whitespace. Be concise, cite the data you use, and never invent numbers.}"
+export AGENT_INSTRUCTIONS="${AGENT_INSTRUCTIONS:-You are the data-driven business-development copilot for OOVIE Studios (AI-native music and video for brands). You help the team reason over the client pipeline, lead scores, industry strategy, whitespace and follow-ups. Answer ONLY from tool results — never invent numbers, scores or lead names. Act as the signed-in user and respect their permissions. You may DRAFT outreach but never send it; an admin approves and sends. Be concise and cite the leads and figures the tools return.}"
 
 BODY=$(python3 -c "import json,os;print(json.dumps({'name':os.environ['AZURE_AI_AGENT_NAME'],'definition':{'kind':'prompt','model':os.environ['AZURE_OPENAI_DEPLOYMENT'],'instructions':os.environ['AGENT_INSTRUCTIONS']}}))")
 
