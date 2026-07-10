@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import type { Brand } from "@/lib/types";
@@ -8,10 +8,22 @@ import { Badge } from "@/components/Badge";
 import { BrandEditor } from "@/components/BrandEditor";
 import { STATUS_TOKEN, PRIORITY_TOKEN, eur } from "@/lib/scoring";
 import type { BrandStatus, Priority } from "@/lib/types";
+import type { SavedView } from "@/lib/store/views";
+import { createView, deleteView, type ViewActionState } from "@/app/actions/views";
+import { useActionState } from "react";
 
 type SortKey = "name" | "status" | "owner" | "industry" | "budget" | "lastContact";
+const SORT_KEYS: SortKey[] = ["name", "status", "owner", "industry", "budget", "lastContact"];
 
-export function BrandTable({ brands, canDelete = false }: { brands: Brand[]; canDelete?: boolean }) {
+export function BrandTable({
+  brands,
+  canDelete = false,
+  views = [],
+}: {
+  brands: Brand[];
+  canDelete?: boolean;
+  views?: SavedView[];
+}) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("All");
   const [owner, setOwner] = useState<string>("All");
@@ -54,6 +66,14 @@ export function BrandTable({ brands, canDelete = false }: { brands: Brand[]; can
   const toggleSort = (key: SortKey) =>
     setSort((s) => ({ key, dir: s.key === key && s.dir === 1 ? -1 : 1 }));
 
+  const applyView = (v: SavedView) => {
+    setQ(v.q ?? "");
+    setStatus(v.status ?? "All");
+    setOwner(v.owner ?? "All");
+    const key = SORT_KEYS.includes(v.sortKey as SortKey) ? (v.sortKey as SortKey) : "name";
+    setSort({ key, dir: v.sortDir === -1 ? -1 : 1 });
+  };
+
   const th = (key: SortKey, label: string, extra?: string) => (
     <th
       onClick={() => toggleSort(key)}
@@ -69,6 +89,24 @@ export function BrandTable({ brands, canDelete = false }: { brands: Brand[]; can
 
   return (
     <div>
+      {/* saved views */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Views</span>
+        {views.length === 0 && <span className="text-xs text-[var(--color-ink-faint)]">none saved</span>}
+        {views.map((v) => (
+          <span
+            key={v.id}
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border-strong)] py-0.5 pl-3 pr-1 text-xs"
+          >
+            <button onClick={() => applyView(v)} className="text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]">
+              {v.name}
+            </button>
+            <DeleteViewButton id={v.id} />
+          </span>
+        ))}
+        <SaveViewForm q={q} status={status} owner={owner} sortKey={sort.key} sortDir={sort.dir} />
+      </div>
+
       {/* controls */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <input
@@ -158,5 +196,78 @@ function Select({ label, value, onChange, options }: { label: string; value: str
         ))}
       </select>
     </label>
+  );
+}
+
+function SaveViewForm({
+  q,
+  status,
+  owner,
+  sortKey,
+  sortDir,
+}: {
+  q: string;
+  status: string;
+  owner: string;
+  sortKey: string;
+  sortDir: 1 | -1;
+}) {
+  const [open, setOpen] = useState(false);
+  const [state, action, pending] = useActionState<ViewActionState, FormData>(createView, undefined);
+  useEffect(() => {
+    if (state?.ok) setOpen(false);
+  }, [state]);
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="rounded-full border border-dashed border-[var(--color-border-strong)] px-3 py-0.5 text-xs text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-ink)]"
+      >
+        + Save view
+      </button>
+    );
+  }
+  return (
+    <form action={action} className="inline-flex items-center gap-1">
+      <input type="hidden" name="q" value={q} />
+      <input type="hidden" name="status" value={status} />
+      <input type="hidden" name="owner" value={owner} />
+      <input type="hidden" name="sortKey" value={sortKey} />
+      <input type="hidden" name="sortDir" value={sortDir} />
+      <input
+        name="name"
+        autoFocus
+        placeholder="View name"
+        className="h-7 w-28 rounded-full border border-[var(--color-border-strong)] bg-transparent px-3 text-xs outline-none focus:border-[var(--color-brand)]"
+      />
+      <button
+        type="submit"
+        disabled={pending}
+        className="rounded-full bg-[var(--color-brand)] px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+      >
+        {pending ? "…" : "Save"}
+      </button>
+      <button type="button" onClick={() => setOpen(false)} className="px-1 text-xs text-[var(--color-ink-faint)]">
+        ✕
+      </button>
+    </form>
+  );
+}
+
+function DeleteViewButton({ id }: { id: string }) {
+  const [, action, pending] = useActionState<ViewActionState, FormData>(deleteView, undefined);
+  return (
+    <form action={action} className="inline-flex">
+      <input type="hidden" name="id" value={id} />
+      <button
+        type="submit"
+        disabled={pending}
+        aria-label="Delete view"
+        className="grid h-4 w-4 place-items-center rounded-full text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-rose)]"
+      >
+        ✕
+      </button>
+    </form>
   );
 }

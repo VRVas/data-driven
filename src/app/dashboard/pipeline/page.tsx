@@ -2,6 +2,7 @@ import { Reveal } from "@/components/Reveal";
 import { BrandTable } from "@/components/BrandTable";
 import { getBrands } from "@/lib/data";
 import { getSessionUser } from "@/lib/auth/guards";
+import { getViewStore } from "@/lib/store/views";
 
 export const dynamic = "force-dynamic";
 
@@ -9,6 +10,7 @@ export default async function PipelinePage() {
   const brands = await getBrands();
   const me = await getSessionUser();
   const isAdmin = me?.role === "admin";
+  const views = me ? await getViewStore().listForUser(me.id) : [];
   return (
     <div className="space-y-6">
       <Reveal>
@@ -21,7 +23,7 @@ export default async function PipelinePage() {
       </Reveal>
       <Reveal>
         <div className="glass p-6">
-          <BrandTable brands={brands} canDelete={isAdmin} />
+          <BrandTable brands={brands} canDelete={isAdmin} views={views} />
         </div>
       </Reveal>
     </div>
