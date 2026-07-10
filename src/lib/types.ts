@@ -52,6 +52,7 @@ export interface Brand {
   priority: Priority | null;
   owner: string | null;
   poc: string | null;
+  email: string | null;
   industry: Industry | null;
   industryRaw: string | null;
   initialContact: string | null;

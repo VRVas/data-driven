@@ -55,9 +55,14 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
             </FormField>
           </div>
 
-          <FormField label="Point of contact">
-            <input name="poc" defaultValue={brand?.poc ?? ""} className="auth-input" />
-          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Point of contact">
+              <input name="poc" defaultValue={brand?.poc ?? ""} className="auth-input" />
+            </FormField>
+            <FormField label="Contact email">
+              <input type="email" name="email" defaultValue={brand?.email ?? ""} className="auth-input" placeholder="name@brand.com" />
+            </FormField>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Initial contact">

@@ -28,6 +28,7 @@ const brandInputSchema = z.object({
   industry: optionalEnum(INDUSTRIES as unknown as [string, ...string[]]),
   owner: optionalStr,
   poc: optionalStr,
+  email: z.preprocess(emptyToUndef, z.string().trim().email("Enter a valid email").optional()),
   initialContact: optionalDate,
   lastContact: optionalDate,
   followUp: optionalDate,
@@ -74,6 +75,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
       priority: null,
       owner: null,
       poc: null,
+      email: null,
       industry: null,
       industryRaw: null,
       initialContact: null,
@@ -91,6 +93,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   brand.industryRaw = (input.industry as string) ?? brand.industryRaw ?? null;
   brand.owner = input.owner ?? null;
   brand.poc = input.poc ?? null;
+  brand.email = input.email ?? null;
   brand.initialContact = input.initialContact ?? null;
   brand.lastContact = input.lastContact ?? null;
   brand.followUp = input.followUp ?? null;
