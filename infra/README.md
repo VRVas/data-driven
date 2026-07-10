@@ -10,6 +10,8 @@
 One-command deploy:
 
 ```bash
+# Region defaults to Sweden Central; override with: azd env set AZURE_LOCATION <region>
+azd env set AZURE_LOCATION swedencentral
 # AUTH_SECRET is required (Auth.js session secret) and injected as a Container Apps secret.
 azd env set AUTH_SECRET "$(openssl rand -base64 32)"
 azd up      # provisions infra/main.bicep, builds the image, deploys the Container App
@@ -21,7 +23,8 @@ azd up      # provisions infra/main.bicep, builds the image, deploys the Contain
 | --- | --- | --- |
 | AI Foundry account | `Microsoft.CognitiveServices/accounts@2025-06-01` (`kind: AIServices`, `allowProjectManagement: true`) | **New Foundry (V2)** account |
 | AI Foundry project | `Microsoft.CognitiveServices/accounts/projects@2025-06-01` | Foundry project (agents / data isolation) |
-| Model deployment | `Microsoft.CognitiveServices/accounts/deployments@2025-06-01` (`gpt-4o`, GlobalStandard) | Chat model for the copilot |
+| Model deployment | `Microsoft.CognitiveServices/accounts/deployments@2025-06-01` (`gpt-5.4-mini` 2026-03-17, GlobalStandard) | Chat model for the copilot |
+| Prompt agent | `Microsoft.Resources/deploymentScripts@2023-08-01` → Projects API | Foundry **prompt agent** (data-plane), visible in the portal |
 | App data store | `Microsoft.DocumentDB/databaseAccounts@2024-11-15` (NoSQL, **serverless**, `disableLocalAuth: true`) | Brands / agents / industries / users |
 | Web app | `Microsoft.App/containerApps@2024-03-01` | Next.js SSR + API (scale-to-zero) |
 | Environment | `Microsoft.App/managedEnvironments@2024-03-01` | Container Apps env (Log Analytics) |
@@ -38,6 +41,19 @@ This uses the **new Foundry resource model**, not the legacy Hub/Project
 `allowProjectManagement: true` flag on the `Microsoft.CognitiveServices/accounts`
 resource, which turns it into a Foundry account and enables `accounts/projects`
 children.
+
+### Prompt agent (data-plane, created at deploy time)
+
+A Foundry **prompt agent** is a *declaratively defined* agent (model + instructions +
+tools). Per MS Learn it is created through the **Projects API**, not as an ARM
+resource — so it cannot be a native Bicep resource. To keep it "in the Bicep script"
+and visible in the Foundry portal, a `Microsoft.Resources/deploymentScripts` runs the
+documented REST call (`POST {projectEndpoint}/agents?api-version=v1` with
+`"definition": { "kind": "prompt", ... }`) using the app's managed identity
+(**Foundry User** role) after the project and model deployment exist. Tune it with the
+`agentName` / `agentInstructions` parameters.
+
+- Prompt agent quickstart: <https://learn.microsoft.com/azure/foundry/agents/quickstarts/prompt-agent>
 
 - Account + project Bicep sample (exact pattern we follow):
   <https://learn.microsoft.com/azure/templates/microsoft.cognitiveservices/accounts/projects>
@@ -92,5 +108,5 @@ identity — no keys. Grounded role IDs:
 - Cosmos DB `disableLocalAuth: true` — Entra-only; data-plane RBAC via managed identity.
 - `AUTH_SECRET` is stored as a Container Apps **secret** (`auth-secret`) and surfaced to the
   app via `secretRef`; `AUTH_TRUST_HOST=true` is set for the HTTPS ingress proxy.
-- `gpt-4o` deployment `capacity` (`chatModelCapacity`, default 30) is subject to
+- `gpt-5.4-mini` deployment `capacity` (`chatModelCapacity`, default 30) is subject to
   regional quota; lower it if a deploy fails on quota.
