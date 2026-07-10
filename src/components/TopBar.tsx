@@ -3,17 +3,26 @@ import { auth, signOut } from "@/auth";
 import { DashboardNav } from "./DashboardNav";
 import { getBrands } from "@/lib/data";
 import { remindersFrom, countDue } from "@/lib/reminders";
+import { getOutreachStore } from "@/lib/store/outreach";
 
 export async function TopBar() {
   const session = await auth();
   const user = session?.user;
 
   let dueCount = 0;
+  let pendingOutreach = 0;
   if (user) {
     try {
       dueCount = countDue(remindersFrom(await getBrands()));
     } catch {
       dueCount = 0;
+    }
+    if (user.role === "admin") {
+      try {
+        pendingOutreach = (await getOutreachStore().list(300)).filter((o) => o.status === "pending_approval").length;
+      } catch {
+        pendingOutreach = 0;
+      }
     }
   }
 
@@ -57,6 +66,25 @@ export async function TopBar() {
                   style={{ background: "var(--color-rose)" }}
                 >
                   {dueCount > 9 ? "9+" : dueCount}
+                </span>
+              )}
+            </Link>
+            <Link
+              href="/dashboard/outbox"
+              title="Outbox"
+              aria-label={`Outbox${pendingOutreach > 0 ? ` (${pendingOutreach} awaiting approval)` : ""}`}
+              className="relative hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <rect x="2" y="4" width="20" height="16" rx="2" />
+                <path d="m22 6-10 7L2 6" />
+              </svg>
+              {pendingOutreach > 0 && (
+                <span
+                  className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-semibold text-[var(--color-absolute-zero)]"
+                  style={{ background: "var(--color-amber)" }}
+                >
+                  {pendingOutreach > 9 ? "9+" : pendingOutreach}
                 </span>
               )}
             </Link>

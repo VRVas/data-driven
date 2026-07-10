@@ -4,8 +4,11 @@ import { Reveal } from "@/components/Reveal";
 import { Badge } from "@/components/Badge";
 import { EditBrandButton } from "@/components/EditBrandButton";
 import { QuickStatus } from "@/components/QuickStatus";
+import { OutreachComposer } from "@/components/OutreachComposer";
+import { OutreachItem } from "@/components/OutreachItem";
 import { getBrand } from "@/lib/data";
 import { getSessionUser } from "@/lib/auth/guards";
+import { getOutreachStore } from "@/lib/store/outreach";
 import { allowedTransitions } from "@/lib/workflow";
 import {
   STATUS_TOKEN,
@@ -42,6 +45,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   if (!brand) notFound();
   const me = await getSessionUser();
   const isAdmin = me?.role === "admin";
+  const outreach = await getOutreachStore().listForBrand(brand.id);
 
   const s = brand.scores;
   const score = leadScore(brand);
@@ -65,7 +69,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               {!brand.scored && <span className="text-xs text-[var(--color-ink-faint)]">unscored</span>}
             </div>
           </div>
-          <EditBrandButton brand={brand} canDelete={isAdmin} />
+          <div className="flex items-center gap-2">
+            <OutreachComposer brand={brand} senderName={me?.name ?? "there"} isAdmin={isAdmin} />
+            <EditBrandButton brand={brand} canDelete={isAdmin} />
+          </div>
         </div>
       </Reveal>
 
@@ -139,6 +146,24 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <section className="glass p-6">
             <h2 className="mb-3 font-display text-lg font-semibold">Notes</h2>
             <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-ink-muted)]">{brand.notes}</p>
+          </section>
+        </Reveal>
+      )}
+
+      {outreach.length > 0 && (
+        <Reveal>
+          <section className="glass p-6">
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="font-display text-lg font-semibold">Outreach</h2>
+              <span className="text-xs text-[var(--color-ink-faint)]">
+                {outreach.length} message{outreach.length === 1 ? "" : "s"}
+              </span>
+            </div>
+            <div>
+              {outreach.map((o) => (
+                <OutreachItem key={o.id} o={o} isAdmin={isAdmin} meId={me?.id ?? ""} />
+              ))}
+            </div>
           </section>
         </Reveal>
       )}
