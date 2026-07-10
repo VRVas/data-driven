@@ -65,3 +65,25 @@ test.describe("outreach", () => {
     await shot(page, "21-outreach-sent");
   });
 });
+
+test.describe("copilot", () => {
+  test("answers a grounded pipeline question from live tools", async ({ page }) => {
+    await page.goto("/dashboard/copilot");
+    await expect(page.getByRole("heading", { level: 1, name: "Copilot" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Summarise the pipeline" }).click();
+
+    // The grounded reply cites the seeded lead count and shows the tool it ran.
+    await expect(page.getByText(/64/).first()).toBeVisible();
+    await expect(page.getByText("pipeline_summary")).toBeVisible();
+    await shot(page, "22-copilot");
+  });
+
+  test("explains a lead's score on request", async ({ page }) => {
+    await page.goto("/dashboard/copilot");
+    await page.getByPlaceholder("Ask about the pipeline…").fill("Why is Alibaba scored that way?");
+    await page.getByRole("button", { name: "Ask" }).click();
+    await expect(page.getByText(/Alibaba/).first()).toBeVisible();
+    await expect(page.getByText("explain_score")).toBeVisible();
+  });
+});
