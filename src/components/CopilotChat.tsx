@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { askCopilot } from "@/app/actions/copilot";
+import { useRouter } from "next/navigation";
+import { askCopilot, runCopilotAction } from "@/app/actions/copilot";
+import { BlockRenderer } from "@/components/copilot/BlockRenderer";
+import type { Block, ActionSpec } from "@/lib/copilot/blocks";
 
 interface Msg {
   role: "user" | "assistant";
-  text: string;
+  text?: string;
+  blocks?: Block[];
   tools?: { tool: string; ok: boolean }[];
 }
 
@@ -16,39 +20,13 @@ const SUGGESTIONS = [
   "Where's our biggest untapped market?",
 ];
 
-/** Render a subset of markdown: **bold**, and `- ` bullet lines. */
-function Rich({ text }: { text: string }) {
-  const lines = text.split("\n");
-  const bold = (s: string) =>
-    s.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-      part.startsWith("**") && part.endsWith("**") ? (
-        <strong key={i} className="text-[var(--color-ink)]">{part.slice(2, -2)}</strong>
-      ) : (
-        <span key={i}>{part}</span>
-      ),
-    );
-  return (
-    <div className="space-y-1">
-      {lines.map((ln, i) =>
-        ln.startsWith("- ") ? (
-          <div key={i} className="flex gap-2">
-            <span className="text-[var(--color-brand)]">•</span>
-            <span>{bold(ln.slice(2))}</span>
-          </div>
-        ) : ln.trim() === "" ? (
-          <div key={i} className="h-1" />
-        ) : (
-          <p key={i}>{bold(ln)}</p>
-        ),
-      )}
-    </div>
-  );
-}
-
 export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
+  const [deep, setDeep] = useState(false);
+  const [pendingAction, setPendingAction] = useState<string | null>(null);
+  const router = useRouter();
   const endRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -62,12 +40,33 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
     setMessages((m) => [...m, { role: "user", text: q }]);
     setPending(true);
     try {
-      const res = await askCopilot(q);
-      setMessages((m) => [...m, { role: "assistant", text: res.reply, tools: res.tools }]);
+      const res = await askCopilot(q, { reasoning: deep });
+      setMessages((m) => [...m, { role: "assistant", blocks: res.blocks, tools: res.tools }]);
     } catch {
-      setMessages((m) => [...m, { role: "assistant", text: "Something went wrong. Please try again." }]);
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", blocks: [{ type: "callout", tone: "danger", title: null, text: "Something went wrong. Please try again." }] },
+      ]);
     } finally {
       setPending(false);
+    }
+  }
+
+  async function onAction(a: ActionSpec) {
+    const args = (a.args ?? {}) as Record<string, unknown>;
+    // Client-side navigation pseudo-tools.
+    if (a.tool === "open_lead" && args.id) return router.push(`/dashboard/pipeline/${args.id}`);
+    if (a.tool === "open_outbox") return router.push("/dashboard/outbox");
+    if (a.tool === "ask" && args.message) return send(String(args.message));
+
+    // Real, role-gated tools.
+    const key = `${a.tool}:${JSON.stringify(a.args ?? {})}`;
+    setPendingAction(key);
+    try {
+      const res = await runCopilotAction(a.tool, args);
+      setMessages((m) => [...m, { role: "assistant", blocks: res.blocks }]);
+    } finally {
+      setPendingAction(null);
     }
   }
 
@@ -75,17 +74,17 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
     <div className="glass flex h-[calc(100vh-13rem)] flex-col overflow-hidden">
       {!foundryEnabled && (
         <div className="border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-amber)_8%,transparent)] px-5 py-2 text-xs text-[var(--color-ink-muted)]">
-          <span className="font-mono uppercase tracking-[0.14em] text-[var(--color-amber)]">Local preview</span> — grounded answers from live tools. Connect Foundry for full conversational AI.
+          <span className="font-mono uppercase tracking-[0.14em] text-[var(--color-amber)]">Local preview</span> — grounded, composed cards from live tools. Connect Foundry for full conversational AI.
         </div>
       )}
 
-      <div className="flex-1 space-y-4 overflow-y-auto px-5 py-6">
+      <div className="flex-1 space-y-5 overflow-y-auto px-5 py-6">
         {messages.length === 0 && (
-          <div className="mx-auto max-w-md pt-8 text-center">
+          <div className="mx-auto max-w-md pt-6 text-center">
             <div className="eyebrow mb-2">BD Copilot</div>
             <p className="text-sm text-[var(--color-ink-muted)]">
-              Ask about leads, scores, the pipeline, whitespace or reminders. I answer from live data and can draft
-              outreach (an admin sends it).
+              Ask about leads, scores, the pipeline, whitespace or reminders. Answers come back as live charts, tables and
+              cards — and I can draft outreach (an admin sends it).
             </p>
             <div className="mt-5 flex flex-col gap-2">
               {SUGGESTIONS.map((s) => (
@@ -101,30 +100,26 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
           </div>
         )}
 
-        {messages.map((m, i) => (
-          <div key={i} className={m.role === "user" ? "flex justify-end" : "flex justify-start"}>
-            <div
-              className={
-                m.role === "user"
-                  ? "max-w-[80%] rounded-2xl rounded-br-sm bg-[color-mix(in_srgb,var(--color-brand)_18%,transparent)] px-4 py-2.5 text-sm text-[var(--color-ink)]"
-                  : "max-w-[85%] rounded-2xl rounded-bl-sm border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-frosted-canvas)_3%,transparent)] px-4 py-3 text-sm text-[var(--color-ink-muted)]"
-              }
-            >
-              {m.role === "assistant" ? <Rich text={m.text} /> : m.text}
-              {m.tools && m.tools.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {m.tools.map((t, j) => (
-                    <span
-                      key={j}
-                      className="rounded-full border border-[var(--color-border-strong)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]"
-                      title={t.ok ? "tool ran" : "tool error"}
-                    >
-                      {t.tool}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+        {messages.map((msg, i) => (
+          <div key={i} className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}>
+            {msg.role === "user" ? (
+              <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-[color-mix(in_srgb,var(--color-brand)_18%,transparent)] px-4 py-2.5 text-sm text-[var(--color-ink)]">
+                {msg.text}
+              </div>
+            ) : (
+              <div className="w-full max-w-[92%] rounded-2xl rounded-bl-sm border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-frosted-canvas)_3%,transparent)] px-4 py-4">
+                {msg.blocks && <BlockRenderer blocks={msg.blocks} onAction={onAction} pendingAction={pendingAction} />}
+                {msg.tools && msg.tools.length > 0 && (
+                  <div className="mt-3 flex flex-wrap gap-1 border-t border-[var(--color-border)] pt-2">
+                    {msg.tools.map((t, j) => (
+                      <span key={j} className="rounded-full border border-[var(--color-border-strong)] px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)]">
+                        {t.tool}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         ))}
 
@@ -149,6 +144,20 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
         }}
         className="flex items-center gap-2 border-t border-[var(--color-border)] px-4 py-3"
       >
+        <button
+          type="button"
+          onClick={() => setDeep((v) => !v)}
+          title="Think deeply — route to the reasoning model"
+          aria-pressed={deep}
+          className={
+            "shrink-0 rounded-full border px-3 py-2 text-xs font-medium transition-colors " +
+            (deep
+              ? "border-[var(--color-brand)] bg-[color-mix(in_srgb,var(--color-brand)_16%,transparent)] text-[var(--color-ink)]"
+              : "border-[var(--color-border-strong)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]")
+          }
+        >
+          ✦ Think deeply
+        </button>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
