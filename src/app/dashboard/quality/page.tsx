@@ -18,6 +18,7 @@ export default function QualityPage() {
   return (
     <div className="space-y-8">
       <Reveal>
+        <div className="eyebrow mb-2">Data audit</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Data quality</h1>
         <p className="mt-1 text-[var(--color-ink-muted)]">
           {count} issues detected and resolved during migration — full audit trail.
@@ -27,7 +28,7 @@ export default function QualityPage() {
       <Reveal stagger className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {Object.entries(groups).map(([g, list]) => (
           <div key={g} className="glass p-5">
-            <div className="text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">{g}</div>
+            <div className="eyebrow">{g}</div>
             <div className="mt-1 font-display text-3xl font-semibold">{list.length}</div>
           </div>
         ))}

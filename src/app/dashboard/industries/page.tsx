@@ -15,6 +15,7 @@ export default function IndustriesPage() {
   return (
     <div className="space-y-8">
       <Reveal>
+        <div className="eyebrow mb-2">Segments</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Industries</h1>
         <p className="mt-1 text-[var(--color-ink-muted)]">
           Segment scorecard fused with the sales playbook for each vertical.

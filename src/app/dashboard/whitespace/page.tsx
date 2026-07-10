@@ -32,6 +32,7 @@ export default function WhitespacePage() {
   return (
     <div className="space-y-8">
       <Reveal>
+        <div className="eyebrow mb-2">Market</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Whitespace &amp; TAM</h1>
         <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
           Approached vs addressable market across the EU. The room to grow is the space

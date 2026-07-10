@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/Reveal";
 import { KpiCard } from "@/components/KpiCard";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { StatusFunnel, type FunnelRow } from "@/components/viz/StatusFunnel";
 import { IndustryHeatmap } from "@/components/viz/IndustryHeatmap";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
@@ -21,10 +22,11 @@ const STATUS_ORDER: BrandStatus[] = [
   "Did not work out",
 ];
 
-function Panel({ title, subtitle, children, className }: { title: string; subtitle?: string; children: React.ReactNode; className?: string }) {
+function Panel({ eyebrow, title, subtitle, children, className }: { eyebrow?: string; title: string; subtitle?: string; children: React.ReactNode; className?: string }) {
   return (
     <section className={`glass p-6 ${className ?? ""}`}>
       <div className="mb-5">
+        {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
         <h2 className="font-display text-lg font-semibold">{title}</h2>
         {subtitle && <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{subtitle}</p>}
       </div>
@@ -66,13 +68,15 @@ export default async function DashboardOverview() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="flex items-end justify-between">
+        <div className="flex items-end justify-between gap-4">
           <div>
+            <div className="eyebrow mb-2">Command center</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Overview</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
               {brands.length} leads · {scored.length} scored · snapshot {ds.meta.snapshotDate}
             </p>
           </div>
+          <StatusPill label="Live data" />
         </div>
       </Reveal>
 
@@ -85,20 +89,20 @@ export default async function DashboardOverview() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Reveal>
-          <Panel title="Pipeline by stage" subtitle="Lead count across the sales funnel">
+          <Panel eyebrow="Funnel" title="Pipeline by stage" subtitle="Lead count across the sales funnel">
             <StatusFunnel rows={funnel} />
           </Panel>
         </Reveal>
 
         <Reveal>
-          <Panel title="Priority quadrant" subtitle="Economical efficiency × ease of access · bubble = budget">
+          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Economical efficiency × ease of access · bubble = budget">
             <PriorityQuadrant points={points} />
           </Panel>
         </Reveal>
       </div>
 
       <Reveal>
-        <Panel title="Industry scorecard" subtitle="Segment-level model, recomputed from the raw data">
+        <Panel eyebrow="Segments" title="Industry scorecard" subtitle="Segment-level model, recomputed from the raw data">
           <IndustryHeatmap industries={industries} />
         </Panel>
       </Reveal>
