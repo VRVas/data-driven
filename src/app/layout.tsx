@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
+import { GeistMono } from "geist/font/mono";
 import { stackNotch, stackText } from "./fonts";
+import { AppParticles } from "@/components/fx/AppParticles";
+import { GrainOverlay } from "@/components/fx/GrainOverlay";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -11,8 +14,15 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${stackNotch.variable} ${stackText.variable}`}>
-      <body className="bg-field min-h-screen antialiased">{children}</body>
+    <html
+      lang="en"
+      className={`${stackNotch.variable} ${stackText.variable} ${GeistMono.variable}`}
+    >
+      <body className="bg-field min-h-screen antialiased">
+        <AppParticles />
+        {children}
+        <GrainOverlay />
+      </body>
     </html>
   );
 }

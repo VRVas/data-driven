@@ -17,14 +17,20 @@ export async function TopBar({ active }: { active?: string }) {
   const user = session?.user;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-bg)_78%,transparent)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-absolute-zero)_72%,transparent)] backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--color-brand)] font-display text-sm font-bold text-white shadow-[var(--shadow-glow)]">
+        <Link href="/" className="group flex items-center gap-2.5">
+          <span
+            className="grid h-8 w-8 place-items-center rounded-lg font-display text-sm font-bold text-[var(--color-absolute-zero)] transition-transform duration-300 ease-[var(--ease-brand-snap)] group-hover:-rotate-6"
+            style={{ background: "linear-gradient(114.41deg, #9d95ff 20.74%, #00bae2 65.5%)" }}
+          >
             O
           </span>
-          <span className="font-display text-[15px] font-semibold tracking-tight">
-            OOVIE <span className="text-[var(--color-ink-muted)]">BD Intelligence</span>
+          <span className="flex flex-col leading-none">
+            <span className="font-display text-[15px] font-semibold tracking-tight">OOVIE</span>
+            <span className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
+              BD Intelligence
+            </span>
           </span>
         </Link>
 
@@ -35,9 +41,9 @@ export async function TopBar({ active }: { active?: string }) {
                 key={n.href}
                 href={n.href}
                 className={clsx(
-                  "rounded-full px-3.5 py-1.5 text-sm transition-colors",
+                  "rounded-full px-3.5 py-1.5 text-sm transition-colors duration-300 ease-[var(--ease-brand-snap)]",
                   active === n.label
-                    ? "bg-[var(--color-surface-2)] text-[var(--color-ink)]"
+                    ? "bg-[color-mix(in_srgb,var(--color-frosted-canvas)_12%,transparent)] text-[var(--color-ink)]"
                     : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",
                 )}
               >
@@ -49,7 +55,7 @@ export async function TopBar({ active }: { active?: string }) {
 
         {user ? (
           <div className="flex items-center gap-3">
-            <span className="hidden text-sm text-[var(--color-ink-muted)] sm:inline">
+            <span className="hidden font-mono text-xs text-[var(--color-ink-muted)] sm:inline">
               {user.name ?? user.email}
             </span>
             <form
@@ -60,7 +66,7 @@ export async function TopBar({ active }: { active?: string }) {
             >
               <button
                 type="submit"
-                className="rounded-full border border-[var(--color-border-strong)] px-4 py-1.5 text-sm font-medium text-[var(--color-ink)] transition-colors hover:bg-[var(--color-surface)]"
+                className="rounded-full border border-[var(--color-border-strong)] px-4 py-1.5 text-sm font-medium text-[var(--color-ink)] transition-colors duration-300 ease-[var(--ease-brand-snap)] hover:border-[var(--color-frosted-canvas)] hover:bg-[var(--color-frosted-canvas)] hover:text-[var(--color-absolute-zero)]"
               >
                 Sign out
               </button>
@@ -69,7 +75,7 @@ export async function TopBar({ active }: { active?: string }) {
         ) : (
           <Link
             href="/login"
-            className="rounded-full bg-[var(--color-ink)] px-4 py-1.5 text-sm font-medium text-[var(--color-bg)] transition-transform hover:scale-[1.03]"
+            className="rounded-full bg-[var(--color-frosted-canvas)] px-4 py-1.5 text-sm font-medium text-[var(--color-absolute-zero)] transition-transform duration-300 ease-[var(--ease-brand-snap)] hover:scale-[1.04]"
           >
             Sign in
           </Link>
