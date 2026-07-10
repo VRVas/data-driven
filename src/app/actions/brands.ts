@@ -5,8 +5,9 @@ import { z } from "zod";
 import { requireUser, requireAdmin } from "@/lib/auth/guards";
 import { getBrandStore } from "@/lib/store/brands";
 import { logAudit } from "@/lib/store/audit";
+import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
-import type { Brand } from "@/lib/types";
+import type { Brand, BrandStatus } from "@/lib/types";
 
 export type BrandActionState = { ok?: boolean; error?: string } | undefined;
 
@@ -131,5 +132,49 @@ export async function deleteBrand(_prev: BrandActionState, formData: FormData): 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/pipeline");
   revalidatePath("/dashboard/scoring");
+  return { ok: true };
+}
+
+const statusChangeSchema = z.object({
+  id: z.string().min(1),
+  status: z.enum(BRAND_STATUSES as unknown as [string, ...string[]]),
+});
+
+/** Advance a lead through the pipeline, enforcing the allowed-transition graph. */
+export async function changeBrandStatus(
+  _prev: BrandActionState,
+  formData: FormData,
+): Promise<BrandActionState> {
+  const user = await requireUser();
+
+  const parsed = statusChangeSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "Invalid status." };
+  const { id } = parsed.data;
+  const to = parsed.data.status as BrandStatus;
+
+  const store = getBrandStore();
+  const brand = await store.get(id);
+  if (!brand) return { error: "That lead no longer exists." };
+
+  const from = brand.status;
+  if (from === to) return { ok: true };
+  if (!canTransition(from, to)) {
+    return { error: `Can't move from ${from ?? "unset"} to ${to}.` };
+  }
+
+  const patch = statusSideEffects(brand, to, todayYmd());
+  await store.save({ ...brand, status: to, ...patch });
+  await logAudit({
+    actorId: user.id,
+    actorName: user.name,
+    action: "status.change",
+    entity: "brand",
+    entityId: id,
+    summary: `Moved ${brand.name}: ${from ?? "unset"} \u2192 ${to}`,
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/pipeline");
+  revalidatePath(`/dashboard/pipeline/${id}`);
   return { ok: true };
 }

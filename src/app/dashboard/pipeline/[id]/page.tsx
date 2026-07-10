@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import { Reveal } from "@/components/Reveal";
 import { Badge } from "@/components/Badge";
 import { EditBrandButton } from "@/components/EditBrandButton";
+import { QuickStatus } from "@/components/QuickStatus";
 import { getBrand } from "@/lib/data";
 import { getSessionUser } from "@/lib/auth/guards";
+import { allowedTransitions } from "@/lib/workflow";
 import {
   STATUS_TOKEN,
   PRIORITY_TOKEN,
@@ -79,7 +81,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           accent="var(--color-mint)"
         />
       </Reveal>
-
+      <Reveal>
+        <section className="glass p-5">
+          <div className="eyebrow mb-2">Pipeline stage</div>
+          <QuickStatus brandId={brand.id} current={brand.status} allowed={allowedTransitions(brand.status)} />
+        </section>
+      </Reveal>
       <div className="grid gap-6 lg:grid-cols-2">
         {/* score breakdown */}
         <Reveal>
