@@ -5,7 +5,7 @@
 // =====================================================================
 targetScope = 'subscription'
 
-metadata description = 'OOVIE BD Intelligence — one-command Azure deployment.'
+metadata description = 'data-driven — one-command Azure deployment.'
 
 @minLength(1)
 @maxLength(64)
@@ -23,16 +23,19 @@ param deployEmail bool = false
 @secure()
 param authSecret string
 
+@description('Object id of the deploying user/service principal (azd sets AZURE_PRINCIPAL_ID).')
+param principalId string = ''
+
 @description('Chat model to deploy in Azure AI Foundry.')
 param chatModelName string = 'gpt-5.4-mini'
 
 @description('Name of the Foundry prompt agent created at deploy time.')
-param agentName string = 'oovie-bd-copilot'
+param agentName string = 'data-driven-copilot'
 
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = {
   'azd-env-name': environmentName
-  application: 'oovie-bd-intelligence'
+  application: 'data-driven'
 }
 
 resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
@@ -52,6 +55,7 @@ module resources 'resources.bicep' = {
     chatModelName: chatModelName
     agentName: agentName
     authSecret: authSecret
+    deployerPrincipalId: principalId
   }
 }
 
@@ -68,5 +72,6 @@ output AZURE_OPENAI_DEPLOYMENT string = resources.outputs.AZURE_OPENAI_DEPLOYMEN
 output AZURE_AI_PROJECT_ENDPOINT string = resources.outputs.AZURE_AI_PROJECT_ENDPOINT
 output AZURE_AI_PROJECT_NAME string = resources.outputs.AZURE_AI_PROJECT_NAME
 output AZURE_AI_AGENT_NAME string = resources.outputs.AZURE_AI_AGENT_NAME
+output AGENT_INSTRUCTIONS string = resources.outputs.AGENT_INSTRUCTIONS
 output KEY_VAULT_NAME string = resources.outputs.KEY_VAULT_NAME
 output MANAGED_IDENTITY_CLIENT_ID string = resources.outputs.MANAGED_IDENTITY_CLIENT_ID

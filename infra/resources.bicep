@@ -1,6 +1,6 @@
 // =====================================================================
 //  Resource module (resource-group scope)
-//  Provisions the full platform footprint for OOVIE BD Intelligence.
+//  Provisions the full platform footprint for data-driven.
 // =====================================================================
 metadata description = 'Core resources: Container Apps, Cosmos DB, ACR, Key Vault, AI Foundry, monitoring.'
 
@@ -26,23 +26,26 @@ param chatModelVersion string = '2026-03-17'
 param chatModelCapacity int = 30
 
 @description('Foundry project name (new Foundry project, child of the account).')
-param aiProjectName string = 'oovie-bd'
+param aiProjectName string = 'data-driven'
 
 @description('Name of the Foundry prompt agent created at deploy time (visible in the Foundry portal).')
-param agentName string = 'oovie-bd-copilot'
+param agentName string = 'data-driven-copilot'
 
 @description('System instructions that define the prompt agent behavior.')
-param agentInstructions string = 'You are the OOVIE Studios business-development copilot. You help the team reason over the client pipeline, lead scores, industry strategy and whitespace. Be concise, cite the data you use, and never invent numbers.'
+param agentInstructions string = 'You are the data-driven business-development copilot. You help the team reason over the client pipeline, lead scores, industry strategy and whitespace. Be concise, cite the data you use, and never invent numbers.'
 
 @description('Auth.js session secret (openssl rand -base64 32). Injected as a Container Apps secret.')
 @secure()
 param authSecret string
 
+@description('Object id of the deploying principal (azd AZURE_PRINCIPAL_ID); granted rights to create the agent.')
+param deployerPrincipalId string = ''
+
 @description('Deploy Azure Communication Services email (one-click outreach). Off by default.')
 param deployEmail bool = false
 
 // ---- naming ---------------------------------------------------------
-var prefix = 'oovie'
+var prefix = 'datadriven'
 var law = '${prefix}-log-${resourceToken}'
 var appiName = '${prefix}-appi-${resourceToken}'
 var acrName = replace('${prefix}acr${resourceToken}', '-', '')
@@ -62,6 +65,7 @@ var roleKvSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secr
 var roleOpenAIUser = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User (inference)
 var roleCogSvcUser = 'a97b65f3-24c7-4388-baec-2e87135dc908' // Cognitive Services User (read account/deployments)
 var roleFoundryUser = '53ca6127-db72-4b80-b1b0-d745d6d5456d' // Foundry User (create/edit + consume agents, data plane)
+var roleFoundryProjectManager = 'eadc314b-1a2d-4efa-be10-5d325db5065e' // Foundry Project Manager (deployer creates agent)
 var roleCosmosDataContributor = '00000000-0000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor
 
 // =====================================================================
@@ -94,6 +98,7 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
   properties: {
     Application_Type: 'web'
     WorkspaceResourceId: logs.id
+    DisableLocalAuth: true
   }
 }
 
@@ -235,7 +240,7 @@ resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = 
   location: location
   identity: { type: 'SystemAssigned' }
   properties: {
-    displayName: 'OOVIE BD Intelligence'
+    displayName: 'data-driven'
     description: 'Business-development copilot: chat-with-your-data and reasoning over the pipeline.'
   }
 }
@@ -284,46 +289,21 @@ resource foundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
 }
 
 // -------------------------------------------------------------------
-//  Foundry PROMPT AGENT (data-plane, created at deploy time)
-//  Prompt agents are NOT ARM resources — per MS Learn they are created
-//  via the Foundry Projects API (POST {projectEndpoint}/agents). This
-//  deploymentScript runs that call with the app's managed identity so the
-//  agent is provisioned by `azd up` and visible in the Foundry portal.
+//  Foundry PROMPT AGENT (data-plane, keyless)
+//  Prompt agents are created via the Foundry Projects API, not ARM. A Bicep
+//  `deploymentScripts` would require storage-account KEYS, which the no-key
+//  policy forbids — so the agent is created by the keyless azd `postprovision`
+//  hook (scripts/create-agent.sh) with the deployer's Entra token. The deployer
+//  is granted Foundry Project Manager here so it can create the agent.
 //  Docs: https://learn.microsoft.com/azure/foundry/agents/quickstarts/prompt-agent
 // -------------------------------------------------------------------
-resource agentScript 'Microsoft.Resources/deploymentScripts@2023-08-01' = {
-  name: '${prefix}-agent-${resourceToken}'
-  location: location
-  kind: 'AzureCLI'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: { '${uami.id}': {} }
-  }
+resource deployerAgentCreator 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(deployerPrincipalId)) {
+  name: guid(ai.id, deployerPrincipalId, roleFoundryProjectManager)
+  scope: ai
   properties: {
-    azCliVersion: '2.64.0'
-    retentionInterval: 'PT1H'
-    timeout: 'PT30M'
-    cleanupPreference: 'OnSuccess'
-    environmentVariables: [
-      { name: 'PROJECT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/api/projects/${aiProjectName}' }
-      { name: 'AGENT_NAME', value: agentName }
-      { name: 'MODEL', value: chatModelName }
-      { name: 'INSTRUCTIONS', value: agentInstructions }
-    ]
-    scriptContent: '''
-set -euo pipefail
-BODY=$(python3 -c "import json,os;print(json.dumps({'name':os.environ['AGENT_NAME'],'definition':{'kind':'prompt','model':os.environ['MODEL'],'instructions':os.environ['INSTRUCTIONS']}}))")
-echo "creating prompt agent $AGENT_NAME on $PROJECT_ENDPOINT"
-for i in $(seq 1 12); do
-  if az rest --method post --url "$PROJECT_ENDPOINT/agents?api-version=v1" --resource "https://ai.azure.com" --headers "Content-Type=application/json" --body "$BODY" -o json > "$AZ_SCRIPTS_OUTPUT_PATH" 2>/tmp/err; then
-    echo "prompt agent ready"; exit 0
-  fi
-  echo "attempt $i failed (waiting for RBAC / model readiness)"; sleep 20
-done
-echo "agent creation failed:"; cat /tmp/err; exit 1
-'''
+    principalId: deployerPrincipalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleFoundryProjectManager)
   }
-  dependsOn: [ foundryUser, aiProject, chatDeployment ]
 }
 
 // =====================================================================
@@ -346,13 +326,20 @@ resource cae 'Microsoft.App/managedEnvironments@2024-03-01' = {
   location: location
   tags: tags
   properties: {
+    // Keyless logging: route to Azure Monitor, then a diagnostic setting to Log Analytics.
     appLogsConfiguration: {
-      destination: 'log-analytics'
-      logAnalyticsConfiguration: {
-        customerId: logs.properties.customerId
-        sharedKey: logs.listKeys().primarySharedKey
-      }
+      destination: 'azure-monitor'
     }
+  }
+}
+
+// Container Apps env logs -> Log Analytics via diagnostic settings (Entra, no shared key)
+resource caeDiag 'Microsoft.Insights/diagnosticSettings@2021-05-01-preview' = {
+  scope: cae
+  name: 'to-law'
+  properties: {
+    workspaceId: logs.id
+    logs: [ { categoryGroup: 'allLogs', enabled: true } ]
   }
 }
 
@@ -422,5 +409,6 @@ output AZURE_AI_FOUNDRY_NAME string = ai.name
 output AZURE_AI_PROJECT_NAME string = aiProject.name
 output AZURE_AI_PROJECT_ENDPOINT string = 'https://${aiName}.services.ai.azure.com/api/projects/${aiProjectName}'
 output AZURE_AI_AGENT_NAME string = agentName
+output AGENT_INSTRUCTIONS string = agentInstructions
 output KEY_VAULT_NAME string = kv.name
 output MANAGED_IDENTITY_CLIENT_ID string = uami.properties.clientId
