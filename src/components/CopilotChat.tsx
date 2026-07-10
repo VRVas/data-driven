@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { askCopilot, runCopilotAction } from "@/app/actions/copilot";
+import { runCopilotAction } from "@/app/actions/copilot";
 import { BlockRenderer } from "@/components/copilot/BlockRenderer";
 import type { Block, ActionSpec } from "@/lib/copilot/blocks";
 
@@ -19,6 +19,22 @@ const SUGGESTIONS = [
   "Why is Alibaba scored that way?",
   "Where's our biggest untapped market?",
 ];
+
+/** Parse one SSE record ("event: x\ndata: {...}"). */
+function parseSSE(chunk: string): { event: string; data: unknown } | null {
+  let event = "message";
+  let data = "";
+  for (const line of chunk.split("\n")) {
+    if (line.startsWith("event:")) event = line.slice(6).trim();
+    else if (line.startsWith("data:")) data += line.slice(5).trim();
+  }
+  if (!data) return null;
+  try {
+    return { event, data: JSON.parse(data) };
+  } catch {
+    return { event, data: null };
+  }
+}
 
 export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -37,16 +53,52 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
     const q = text.trim();
     if (!q || pending) return;
     setInput("");
-    setMessages((m) => [...m, { role: "user", text: q }]);
+    setMessages((m) => [...m, { role: "user", text: q }, { role: "assistant", blocks: [] }]);
     setPending(true);
+
+    const patchLast = (fn: (msg: Msg) => Msg) =>
+      setMessages((m) => {
+        const copy = [...m];
+        for (let i = copy.length - 1; i >= 0; i--) {
+          if (copy[i].role === "assistant") {
+            copy[i] = fn(copy[i]);
+            break;
+          }
+        }
+        return copy;
+      });
+
     try {
-      const res = await askCopilot(q, { reasoning: deep });
-      setMessages((m) => [...m, { role: "assistant", blocks: res.blocks, tools: res.tools }]);
+      const res = await fetch("/api/copilot/stream", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ message: q, reasoning: deep }),
+      });
+      if (!res.body) throw new Error("no stream");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = "";
+      for (;;) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const parts = buf.split("\n\n");
+        buf = parts.pop() ?? "";
+        for (const part of parts) {
+          const ev = parseSSE(part);
+          if (!ev) continue;
+          if (ev.event === "block" && ev.data) {
+            patchLast((msg) => ({ ...msg, blocks: [...(msg.blocks ?? []), ev.data as Block] }));
+          } else if (ev.event === "tools") {
+            patchLast((msg) => ({ ...msg, tools: ev.data as Msg["tools"] }));
+          } else if (ev.event === "error") {
+            const em = String((ev.data as { message?: string })?.message ?? "Error");
+            patchLast((msg) => ({ ...msg, blocks: [...(msg.blocks ?? []), { type: "callout", tone: "danger", title: null, text: em }] }));
+          }
+        }
+      }
     } catch {
-      setMessages((m) => [
-        ...m,
-        { role: "assistant", blocks: [{ type: "callout", tone: "danger", title: null, text: "Something went wrong. Please try again." }] },
-      ]);
+      patchLast((msg) => ({ ...msg, blocks: [{ type: "callout", tone: "danger", title: null, text: "Something went wrong. Please try again." }] }));
     } finally {
       setPending(false);
     }
@@ -106,9 +158,9 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
               <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-[color-mix(in_srgb,var(--color-brand)_18%,transparent)] px-4 py-2.5 text-sm text-[var(--color-ink)]">
                 {msg.text}
               </div>
-            ) : (
+            ) : msg.blocks && msg.blocks.length > 0 ? (
               <div className="w-full max-w-[92%] rounded-2xl rounded-bl-sm border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-frosted-canvas)_3%,transparent)] px-4 py-4">
-                {msg.blocks && <BlockRenderer blocks={msg.blocks} onAction={onAction} pendingAction={pendingAction} />}
+                <BlockRenderer blocks={msg.blocks} onAction={onAction} pendingAction={pendingAction} />
                 {msg.tools && msg.tools.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1 border-t border-[var(--color-border)] pt-2">
                     {msg.tools.map((t, j) => (
@@ -119,7 +171,7 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
           </div>
         ))}
 

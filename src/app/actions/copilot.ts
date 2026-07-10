@@ -3,6 +3,7 @@
 import { requireUser } from "@/lib/auth/guards";
 import { getCopilotProvider, type AskOptions } from "@/lib/copilot/provider";
 import { runTool } from "@/lib/copilot/dispatch";
+import { wantsReasoning } from "@/lib/copilot/stream";
 import { logAudit } from "@/lib/store/audit";
 import { b, type Block } from "@/lib/copilot/blocks";
 
@@ -11,11 +12,6 @@ export interface CopilotReply {
   provider: string;
   tools: { tool: string; ok: boolean }[];
   error?: string;
-}
-
-/** Auto-route heavy asks to reasoning: why / compare / analyse / recommend / strategy. */
-function wantsReasoning(text: string): boolean {
-  return /\b(why|compare|versus|vs\.?|analy[sz]e|recommend|strateg|deep|reason|explain in detail|trade[- ]?off|prioriti[sz]e)\b/i.test(text);
 }
 
 /** Ask the copilot. Acts as the signed-in user; every turn is audited. */
