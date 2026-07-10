@@ -86,4 +86,16 @@ test.describe("copilot", () => {
     await expect(page.getByText(/Alibaba/).first()).toBeVisible();
     await expect(page.getByText("explain_score")).toBeVisible();
   });
+
+  test("persists a conversation and resumes it from history", async ({ page }) => {
+    await page.goto("/dashboard/copilot");
+    await page.getByRole("button", { name: "Summarise the pipeline" }).click();
+    await expect(page.getByText(/64/).first()).toBeVisible();
+
+    // New chat clears the thread; History resumes the saved one.
+    await page.getByRole("button", { name: /new chat/i }).click();
+    await page.getByRole("button", { name: /history/i }).click();
+    await page.locator("li button").filter({ hasText: "Summarise the pipeline" }).first().click();
+    await expect(page.getByText(/64/).first()).toBeVisible();
+  });
 });
