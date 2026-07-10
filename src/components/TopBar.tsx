@@ -1,10 +1,21 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { DashboardNav } from "./DashboardNav";
+import { getBrands } from "@/lib/data";
+import { remindersFrom, countDue } from "@/lib/reminders";
 
 export async function TopBar() {
   const session = await auth();
   const user = session?.user;
+
+  let dueCount = 0;
+  if (user) {
+    try {
+      dueCount = countDue(remindersFrom(await getBrands()));
+    } catch {
+      dueCount = 0;
+    }
+  }
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-absolute-zero)_72%,transparent)] backdrop-blur-xl">
@@ -30,6 +41,25 @@ export async function TopBar() {
 
         {user ? (
           <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/reminders"
+              title="Reminders"
+              aria-label={`Reminders${dueCount > 0 ? ` (${dueCount} due)` : ""}`}
+              className="relative hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              {dueCount > 0 && (
+                <span
+                  className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-semibold text-[var(--color-absolute-zero)]"
+                  style={{ background: "var(--color-rose)" }}
+                >
+                  {dueCount > 9 ? "9+" : dueCount}
+                </span>
+              )}
+            </Link>
             {user.role === "admin" && (
               <Link
                 href="/dashboard/activity"
