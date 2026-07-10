@@ -114,11 +114,21 @@ change, same pattern as ACS email. Set these on the Container App via `azd env s
 
 | Variable | Purpose |
 | --- | --- |
-| `COPILOT_CHAT_ENDPOINT` | OpenAI-compatible chat-completions URL of the deployed model (function-calling loop). Unset → local preview. |
+| `COPILOT_CHAT_ENDPOINT` | OpenAI-compatible chat-completions URL of the deployed model (function-calling + structured-output loop). Unset → local preview. |
 | `COPILOT_MODEL` | Model deployment name (e.g. `gpt-5.4-mini`). |
+| `COPILOT_REASONING_MODEL` | *Optional.* Deployment used for "Think deeply" / auto-routed heavy asks (a reasoning model). Falls back to `COPILOT_MODEL`. |
+| `FOUNDRY_MEMORY_STORE_ID` | *Optional.* Foundry Agent Service **Memory Store** (preview) id for long-term memory. Unset → no long-term memory (threads still persist). |
 | `APP_URL` | Public app URL — used as the `servers` entry in the OpenAPI doc. |
 | `COPILOT_API_KEY` | *Optional.* Only if you register the OpenAPI tool with `x-api-key` auth. **Reads only** — write tools require an in-app user session. Prefer managed identity. |
 
+- The copilot composes answers as **generative-UI blocks** (charts, tables, lead cards,
+  callouts, actions) rendered natively — no HTML/Plotly/iframes. The Foundry path emits
+  them via **structured outputs** (`response_format: json_schema`); `parseBlocks` (zod) is
+  the authoritative validator.
+- **Streaming** is Server-Sent Events (`POST /api/copilot/stream`, events `block`/`tools`/`done`).
+- **Memory**: short-term context = Cosmos `conversations` (threads, per-user); long-term =
+  the Foundry **Memory Store** seam (`FOUNDRY_MEMORY_STORE_ID`, preview — inject static
+  user-profile at conversation start, distil chat-summaries per turn).
 - The app identity already holds **Cognitive Services OpenAI User**, so model calls are
   **keyless** (managed identity) — no key needed for the chat path.
 - Tool surface for a Foundry agent: register `GET {APP_URL}/api/copilot/openapi`
