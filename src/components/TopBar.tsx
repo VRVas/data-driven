@@ -1,18 +1,8 @@
 import Link from "next/link";
-import { clsx } from "clsx";
 import { auth, signOut } from "@/auth";
+import { DashboardNav } from "./DashboardNav";
 
-const NAV = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/dashboard/pipeline", label: "Pipeline" },
-  { href: "/dashboard/agents", label: "Agents" },
-  { href: "/dashboard/scoring", label: "Scoring" },
-  { href: "/dashboard/industries", label: "Industries" },
-  { href: "/dashboard/whitespace", label: "Whitespace" },
-  { href: "/dashboard/quality", label: "Data Quality" },
-];
-
-export async function TopBar({ active }: { active?: string }) {
+export async function TopBar() {
   const session = await auth();
   const user = session?.user;
 
@@ -35,22 +25,7 @@ export async function TopBar({ active }: { active?: string }) {
         </Link>
 
         {user && (
-          <nav className="hidden items-center gap-1 md:flex">
-            {NAV.map((n) => (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={clsx(
-                  "rounded-full px-3.5 py-1.5 text-sm transition-colors duration-300 ease-[var(--ease-brand-snap)]",
-                  active === n.label
-                    ? "bg-[color-mix(in_srgb,var(--color-frosted-canvas)_12%,transparent)] text-[var(--color-ink)]"
-                    : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",
-                )}
-              >
-                {n.label}
-              </Link>
-            ))}
-          </nav>
+          <DashboardNav />
         )}
 
         {user ? (

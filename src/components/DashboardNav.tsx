@@ -1,0 +1,49 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { clsx } from "clsx";
+
+const NAV = [
+  { href: "/dashboard", label: "Overview" },
+  { href: "/dashboard/pipeline", label: "Pipeline" },
+  { href: "/dashboard/agents", label: "Agents" },
+  { href: "/dashboard/scoring", label: "Scoring" },
+  { href: "/dashboard/industries", label: "Industries" },
+  { href: "/dashboard/whitespace", label: "Whitespace" },
+  { href: "/dashboard/quality", label: "Data Quality" },
+];
+
+/** Overview matches only its exact route; every other section also matches its
+ *  nested pages (e.g. a lead detail keeps "Pipeline" lit). */
+function isActive(pathname: string, href: string): boolean {
+  if (href === "/dashboard") return pathname === "/dashboard";
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
+export function DashboardNav() {
+  const pathname = usePathname();
+
+  return (
+    <nav className="hidden items-center gap-1 md:flex">
+      {NAV.map((n) => {
+        const current = isActive(pathname, n.href);
+        return (
+          <Link
+            key={n.href}
+            href={n.href}
+            aria-current={current ? "page" : undefined}
+            className={clsx(
+              "rounded-full px-3.5 py-1.5 text-sm transition-colors duration-300 ease-[var(--ease-brand-snap)]",
+              current
+                ? "bg-[color-mix(in_srgb,var(--color-frosted-canvas)_12%,transparent)] text-[var(--color-ink)]"
+                : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",
+            )}
+          >
+            {n.label}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
