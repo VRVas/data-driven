@@ -20,8 +20,7 @@ export function QuickStatus({
 
   return (
     <div>
-      <form action={action} className="flex flex-wrap items-center gap-2">
-        <input type="hidden" name="id" value={brandId} />
+      <div className="flex flex-wrap items-center gap-2">
         {current ? (
           <Badge color={STATUS_TOKEN[current]}>{current}</Badge>
         ) : (
@@ -33,17 +32,19 @@ export function QuickStatus({
           </span>
         )}
         {allowed.map((s) => (
-          <button
-            key={s}
-            name="status"
-            value={s}
-            disabled={pending}
-            className="rounded-full border border-[var(--color-border-strong)] px-2.5 py-1 text-xs text-[var(--color-ink-muted)] transition-colors duration-200 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] disabled:opacity-50"
-          >
-            → {s}
-          </button>
+          <form key={s} action={action} className="contents">
+            <input type="hidden" name="id" value={brandId} />
+            <input type="hidden" name="status" value={s} />
+            <button
+              type="submit"
+              disabled={pending}
+              className="rounded-full border border-[var(--color-border-strong)] px-2.5 py-1 text-xs text-[var(--color-ink-muted)] transition-colors duration-200 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] disabled:opacity-50"
+            >
+              → {s}
+            </button>
+          </form>
         ))}
-      </form>
+      </div>
       {state?.error && <p className="mt-2 text-xs text-[var(--color-rose)]">{state.error}</p>}
     </div>
   );

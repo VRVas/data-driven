@@ -41,20 +41,21 @@ export function ReminderRow({ r }: { r: Reminder }) {
         </div>
       </div>
       <div className="flex items-center gap-1.5">
-        <form action={snooze} className="flex gap-1">
-          <input type="hidden" name="id" value={r.brand.id} />
+        <div className="flex gap-1">
           {[3, 7].map((d) => (
-            <button
-              key={d}
-              name="days"
-              value={d}
-              disabled={snoozing}
-              className="rounded-full border border-[var(--color-border-strong)] px-2.5 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] disabled:opacity-50"
-            >
-              +{d}d
-            </button>
+            <form key={d} action={snooze} className="contents">
+              <input type="hidden" name="id" value={r.brand.id} />
+              <input type="hidden" name="days" value={d} />
+              <button
+                type="submit"
+                disabled={snoozing}
+                className="rounded-full border border-[var(--color-border-strong)] px-2.5 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] disabled:opacity-50"
+              >
+                +{d}d
+              </button>
+            </form>
           ))}
-        </form>
+        </div>
         <form action={done}>
           <input type="hidden" name="id" value={r.brand.id} />
           <button
