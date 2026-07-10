@@ -1,71 +1,107 @@
 @import "tailwindcss";
 
-/* ------------------------------------------------------------------ */
-/*  Design tokens  (Tailwind v4 `@theme` -> utility classes + vars)   */
-/* ------------------------------------------------------------------ */
+/* ====================================================================
+ *  DESIGN TOKENS — "Midnight kinetic canvas"
+ *  A warm-cream (#fffce1) type system on a green-black stage (#0e100f)
+ *  with a vivid accent palette, oversized display type, and a GSAP motion
+ *  vocabulary. Our original semantic aliases (--color-bg/ink/brand/…) are
+ *  remapped onto this palette so every existing component reskins for free.
+ * ==================================================================== */
 @theme {
-  /* type */
-  --font-display: var(--font-notch), "Segoe UI", system-ui, sans-serif;
-  --font-sans: var(--font-text), "Segoe UI", system-ui, sans-serif;
+  /* ---- Brand palette ---- */
+  --color-absolute-zero: #0e100f;
+  --color-frosted-canvas: #fffce1;
+  --color-faded-steel: #7c7c6f;
+  --color-deep-graphite: #42433d;
+  --color-neon-pink: #fec5fb;
+  --color-fiery-orange: #ff8709;
+  --color-shocking-green: #0ae448;
+  --color-digital-violet: #9d95ff;
+  --color-aqua-glow: #00bae2;
+  --color-mint-burst: #abff84;
+  --color-crimson-pulse: #ff3d57;
+  --color-electric-blue: #2966ff;
 
-  /* base surfaces */
-  --color-bg: #07070c;
-  --color-bg-elevated: #0d0d16;
-  --color-surface: #12121d;
-  --color-surface-2: #181826;
-  --color-border: #23233a;
-  --color-border-strong: #34344f;
+  /* ---- Type ---- */
+  --font-display: var(--font-notch), "Stack Sans Notch", system-ui, sans-serif;
+  --font-sans: var(--font-text), "Stack Sans Text", system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "Cascadia Code", "Fira Code", monospace;
 
-  /* ink */
-  --color-ink: #f5f5fb;
-  --color-ink-muted: #9d9db4;
-  --color-ink-faint: #63637a;
+  --text-caption: 14px;
+  --text-body-sm: 16px;
+  --text-body: 18px;
+  --text-subheading: 24px;
+  --text-heading-sm: 32px;
+  --text-heading: 44px;
+  --text-heading-lg: 66px;
+  --text-display: 224px;
 
-  /* brand */
-  --color-brand: #7c5cff;
-  --color-brand-bright: #9d84ff;
-  --color-cyan: #22d3ee;
-  --color-mint: #34e0a1;
-  --color-amber: #f5b544;
-  --color-rose: #ff5d73;
+  /* ---- Motion (brand eases + durations) ---- */
+  --ease-brand-snap: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-brand-settle: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-brand-reverse: cubic-bezier(0.68, -0.55, 0.27, 1.55);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --ease-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-instant: 0.15s;
+  --duration-fast: 0.3s;
+  --duration-medium: 0.6s;
+  --duration-slow: 1s;
+  --duration-cinematic: 1.6s;
 
-  /* pipeline status */
-  --color-status-closed: #34e0a1;
-  --color-status-advanced: #22d3ee;
-  --color-status-followup: #f5b544;
-  --color-status-early: #7c5cff;
-  --color-status-attack: #ff8a3d;
-  --color-status-lost: #ff5d73;
-  --color-status-open: #63637a;
-  --color-status-recurring: #9d84ff;
+  /* ---- Semantic aliases (remapped onto the Midnight palette) ---- */
+  --color-bg: #0e100f;
+  --color-bg-elevated: #141613;
+  --color-surface: #171915;
+  --color-surface-2: #1e201b;
+  --color-border: #2b2c27;
+  --color-border-strong: #42433d;
+
+  --color-ink: #fffce1;
+  --color-ink-muted: #9a9a8b;
+  --color-ink-faint: #6c6c60;
+
+  --color-brand: #9d95ff;
+  --color-brand-bright: #b8b2ff;
+  --color-cyan: #00bae2;
+  --color-mint: #abff84;
+  --color-amber: #ff8709;
+  --color-rose: #ff3d57;
+
+  /* pipeline status → accents */
+  --color-status-closed: #abff84;
+  --color-status-advanced: #00bae2;
+  --color-status-followup: #fec5fb;
+  --color-status-early: #9d95ff;
+  --color-status-attack: #ff8709;
+  --color-status-lost: #ff3d57;
+  --color-status-open: #7c7c6f;
+  --color-status-recurring: #0ae448;
 
   /* valuation heat */
-  --color-heat-high: #34e0a1;
-  --color-heat-medium: #f5b544;
-  --color-heat-low: #ff5d73;
+  --color-heat-high: #abff84;
+  --color-heat-medium: #ff8709;
+  --color-heat-low: #ff3d57;
 
-  /* radii + shadow */
-  --radius-card: 18px;
-  --shadow-glow: 0 0 0 1px rgb(124 92 255 / 0.15), 0 20px 60px -20px rgb(124 92 255 / 0.35);
+  /* radii + glow */
+  --radius-card: 8px;
+  --radius-pill: 100px;
+  --shadow-glow: 0 0 0 1px rgb(157 149 255 / 0.16), 0 24px 60px -28px rgb(157 149 255 / 0.4);
 }
 
-/* ------------------------------------------------------------------ */
-/*  Base                                                              */
-/* ------------------------------------------------------------------ */
-* {
-  border-color: var(--color-border);
-}
+/* ====================================================================
+ *  BASE
+ * ==================================================================== */
+* { border-color: var(--color-border); }
 
-html {
-  color-scheme: dark;
-  scroll-behavior: smooth;
-}
+html { color-scheme: dark; }
 
 body {
-  background: var(--color-bg);
-  color: var(--color-ink);
+  background: var(--color-absolute-zero);
+  color: var(--color-frosted-canvas);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
@@ -76,59 +112,139 @@ h1, h2, h3, .font-display {
   font-weight: 600;
 }
 
-/* ambient background field */
-.bg-field {
-  background:
-    radial-gradient(60rem 40rem at 80% -10%, rgb(124 92 255 / 0.16), transparent 60%),
-    radial-gradient(50rem 40rem at -10% 20%, rgb(34 211 238 / 0.10), transparent 55%),
-    var(--color-bg);
+/* Mono eyebrow / kicker / label */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--text-caption);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-faded-steel);
+}
+.eyebrow strong, .eyebrow b { color: var(--color-frosted-canvas); font-weight: 600; }
+
+::selection {
+  background-color: var(--color-digital-violet);
+  color: var(--color-absolute-zero);
 }
 
+/* ====================================================================
+ *  SURFACES & HELPERS
+ * ==================================================================== */
+/* Ambient stage — faint accent auroras over the green-black canvas. */
+.bg-field {
+  background:
+    radial-gradient(60rem 40rem at 82% -12%, color-mix(in srgb, var(--color-digital-violet) 16%, transparent), transparent 60%),
+    radial-gradient(52rem 42rem at -12% 18%, color-mix(in srgb, var(--color-aqua-glow) 12%, transparent), transparent 58%),
+    radial-gradient(48rem 40rem at 50% 120%, color-mix(in srgb, var(--color-mint-burst) 8%, transparent), transparent 60%),
+    var(--color-absolute-zero);
+}
+
+/* Card — flat Absolute-Zero-tinted fill, graphite hairline, crisp 8px. */
 .glass {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(255 255 255 / 0.01));
+  background: color-mix(in srgb, var(--color-frosted-canvas) 3%, var(--color-absolute-zero));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(6px);
 }
 
 .hairline {
   background-image: linear-gradient(90deg, transparent, var(--color-border-strong), transparent);
 }
 
-/* auth inputs */
+/* Ghost pill utility (quick pills without the JS component). */
+.pill {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-frosted-canvas);
+  padding: 13px 22px;
+  font-size: var(--text-body-sm);
+  font-weight: 600;
+  letter-spacing: -0.16px;
+  line-height: 1;
+  color: var(--color-frosted-canvas);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-brand-snap),
+    background-color var(--duration-fast) var(--ease-brand-snap),
+    color var(--duration-fast) var(--ease-brand-snap);
+}
+.pill:hover { background: var(--color-frosted-canvas); color: var(--color-absolute-zero); }
+
+/* Inputs */
 .auth-input {
   width: 100%;
-  border-radius: 12px;
-  border: 1px solid var(--color-border);
-  background: var(--color-surface);
-  padding: 0.625rem 0.875rem;
-  font-size: 0.9rem;
-  color: var(--color-ink);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--color-border-strong);
+  background: color-mix(in srgb, var(--color-frosted-canvas) 4%, transparent);
+  padding: 0.7rem 0.9rem;
+  font-size: 0.95rem;
+  color: var(--color-frosted-canvas);
   outline: none;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color var(--duration-fast) var(--ease-brand-snap),
+    box-shadow var(--duration-fast) var(--ease-brand-snap);
 }
-.auth-input::placeholder {
-  color: var(--color-ink-faint);
-}
+.auth-input::placeholder { color: var(--color-ink-faint); }
 .auth-input:focus {
-  border-color: var(--color-brand);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 20%, transparent);
+  border-color: var(--color-digital-violet);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-digital-violet) 22%, transparent);
 }
 
-/* gradient text */
+/* Gradient text (frosted → violet → aqua). */
 .text-gradient {
-  background: linear-gradient(120deg, var(--color-ink) 0%, var(--color-brand-bright) 55%, var(--color-cyan) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  background: linear-gradient(120deg, var(--color-frosted-canvas) 0%, var(--color-digital-violet) 52%, var(--color-aqua-glow) 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
-/* thin premium scrollbar */
-::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-thumb { background: var(--color-border-strong); border-radius: 999px; }
-::-webkit-scrollbar-track { background: transparent; }
+/* Grain overlay — fixed SVG noise, very subtle, over everything. */
+.grain {
+  position: fixed; inset: 0; z-index: 60; pointer-events: none;
+  opacity: 0.045; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Border beam — a light travels a card's rounded border on hover (pure CSS). */
+@property --beam-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+@keyframes beam-spin { to { --beam-angle: 360deg; } }
+.beam-card { position: relative; isolation: isolate; }
+.beam-card::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 55%,
+    var(--color-digital-violet) 78%,
+    var(--color-aqua-glow) 90%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  opacity: 0; transition: opacity var(--duration-fast) var(--ease-brand-snap);
+  pointer-events: none;
+}
+.beam-card:hover::before { opacity: 1; animation: beam-spin 3s linear infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .beam-card:hover::before { animation: none; opacity: 0.6; }
+}
+
+/* ====================================================================
+ *  SCROLLBARS — violet → aqua gradient pill
+ * ==================================================================== */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: var(--color-absolute-zero); }
+::-webkit-scrollbar-thumb {
+  background-image: linear-gradient(180deg, var(--color-digital-violet), var(--color-aqua-glow));
+  border-radius: 999px;
+  border: 3px solid var(--color-absolute-zero);
+}
+::-webkit-scrollbar-thumb:hover { filter: brightness(1.18); }
+html { scrollbar-width: thin; scrollbar-color: var(--color-digital-violet) var(--color-absolute-zero); }
+
+/* ScrollSmoother scaffolding */
+#smooth-wrapper { min-height: 100%; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
 }
