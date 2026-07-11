@@ -15,6 +15,9 @@ RUN npm ci
 FROM base AS build
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Next.js has no required public/ dir here (assets live in src/); ensure it
+# exists so the standalone runtime COPY below always succeeds.
+RUN mkdir -p public
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
