@@ -330,7 +330,7 @@ class FoundryCopilotProvider implements CopilotProvider {
         tool_choice: "auto",
         response_format: { type: "json_schema", json_schema: blocksResponseSchema() },
       };
-      if (opts.reasoning) body.reasoning_effort = "medium";
+      if (opts.reasoning && process.env.COPILOT_REASONING_MODEL) body.reasoning_effort = "medium";
 
       const res = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
       if (!res.ok) throw new Error(`Foundry model call failed: ${res.status}`);

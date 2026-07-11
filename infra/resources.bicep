@@ -474,6 +474,8 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'COSMOS_DATABASE', value: cosmosDatabase }
             { name: 'AZURE_OPENAI_ENDPOINT', value: ai.properties.endpoint }
             { name: 'AZURE_OPENAI_DEPLOYMENT', value: chatModelName }
+            { name: 'COPILOT_CHAT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/openai/v1/chat/completions?api-version=preview' }
+            { name: 'COPILOT_MODEL', value: chatModelName }
             { name: 'AZURE_AI_PROJECT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/api/projects/${aiProjectName}' }
             { name: 'AZURE_AI_PROJECT_NAME', value: aiProjectName }
             { name: 'AZURE_AI_AGENT_NAME', value: agentName }
