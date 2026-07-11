@@ -99,3 +99,25 @@ test.describe("copilot", () => {
     await expect(page.getByText(/64/).first()).toBeVisible();
   });
 });
+
+test.describe("export + copy", () => {
+  test.use({ permissions: ["clipboard-read", "clipboard-write"] });
+
+  test("downloads the pipeline as CSV", async ({ page }) => {
+    await page.goto("/dashboard/pipeline");
+    await page.getByRole("button", { name: "Export" }).click();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("menuitem", { name: /Download CSV/ }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^pipeline-\d{4}-\d{2}-\d{2}\.csv$/);
+  });
+
+  test("copies a copilot answer and toasts", async ({ page }) => {
+    await page.goto("/dashboard/copilot");
+    await page.getByRole("button", { name: "Summarise the pipeline" }).click();
+    await expect(page.getByText(/64/).first()).toBeVisible();
+    await page.getByRole("button", { name: "Copy", exact: true }).first().click();
+    await expect(page.getByText("Copied", { exact: true })).toBeVisible();
+  });
+});
