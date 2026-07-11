@@ -6,6 +6,10 @@ import { runCopilotAction } from "@/app/actions/copilot";
 import { listConversations, loadConversation } from "@/app/actions/conversations";
 import { BlockRenderer } from "@/components/copilot/BlockRenderer";
 import { relativeTime } from "@/lib/time";
+import { blocksToMarkdown, conversationToMarkdown } from "@/lib/copilot/serialize";
+import { copyText, downloadFile, MIME } from "@/lib/download";
+import { toJson, stampName } from "@/lib/export";
+import { useToast } from "@/components/ui/Toast";
 import type { Block, ActionSpec } from "@/lib/copilot/blocks";
 import type { ConversationHeader } from "@/lib/copilot/threads";
 
@@ -48,6 +52,10 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [history, setHistory] = useState<ConversationHeader[]>([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [lastUser, setLastUser] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
+  const toast = useToast();
   const router = useRouter();
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -80,12 +88,10 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, pending]);
 
-  async function send(text: string) {
-    const q = text.trim();
-    if (!q || pending) return;
-    setInput("");
-    setMessages((m) => [...m, { role: "user", text: q }, { role: "assistant", blocks: [] }]);
+  async function runStream(q: string) {
     setPending(true);
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     const patchLast = (fn: (msg: Msg) => Msg) =>
       setMessages((m) => {
@@ -104,6 +110,7 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ message: q, reasoning: deep, conversationId }),
+        signal: controller.signal,
       });
       if (!res.body) throw new Error("no stream");
       const reader = res.body.getReader();
@@ -132,11 +139,52 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
           }
         }
       }
-    } catch {
-      patchLast((msg) => ({ ...msg, blocks: [{ type: "callout", tone: "danger", title: null, text: "Something went wrong. Please try again." }] }));
+    } catch (e) {
+      if ((e as Error)?.name !== "AbortError") {
+        patchLast((msg) => ({ ...msg, blocks: [...(msg.blocks ?? []), { type: "callout", tone: "danger", title: null, text: "Something went wrong. Please try again." }] }));
+      }
     } finally {
+      abortRef.current = null;
       setPending(false);
     }
+  }
+
+  async function send(text: string) {
+    const q = text.trim();
+    if (!q || pending) return;
+    setInput("");
+    setLastUser(q);
+    setMessages((m) => [...m, { role: "user", text: q }, { role: "assistant", blocks: [] }]);
+    await runStream(q);
+  }
+
+  async function regenerate() {
+    if (!lastUser || pending) return;
+    setMessages((m) => {
+      const copy = [...m];
+      while (copy.length && copy[copy.length - 1].role === "assistant") copy.pop();
+      copy.push({ role: "assistant", blocks: [] });
+      return copy;
+    });
+    await runStream(lastUser);
+  }
+
+  function stop() {
+    abortRef.current?.abort();
+  }
+
+  const copyMessage = async (msg: Msg) => {
+    const text = msg.role === "user" ? msg.text ?? "" : blocksToMarkdown(msg.blocks ?? []);
+    const ok = await copyText(text);
+    toast(ok ? "Copied" : "Copy failed", ok ? "success" : "error");
+  };
+
+  function exportConversation(fmt: "md" | "json") {
+    const serial = messages.map((m) => ({ role: m.role, text: m.text ?? null, blocks: m.blocks ?? null }));
+    if (fmt === "md") downloadFile(`${stampName("copilot")}.md`, conversationToMarkdown(serial), MIME.md);
+    else downloadFile(`${stampName("copilot")}.json`, toJson(serial), MIME.json);
+    toast("Conversation exported");
+    setShowExport(false);
   }
 
   async function onAction(a: ActionSpec) {
@@ -166,15 +214,36 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
         >
           + New chat
         </button>
-        <button
-          onClick={() => {
-            setShowHistory((v) => !v);
-            refreshHistory();
-          }}
-          className="rounded-full border border-[var(--color-border-strong)] px-3 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)]"
-        >
-          History ▾
-        </button>
+        <div className="flex items-center gap-2">
+          {messages.length > 0 && (
+            <div className="relative">
+              <button
+                onClick={() => setShowExport((v) => !v)}
+                className="rounded-full border border-[var(--color-border-strong)] px-3 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)]"
+              >
+                Export ▾
+              </button>
+              {showExport && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setShowExport(false)} aria-hidden />
+                  <div className="absolute right-0 z-20 mt-1 w-44 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] py-1 shadow-2xl">
+                    <button onClick={() => exportConversation("md")} className="block w-full px-4 py-2 text-left text-sm text-[var(--color-ink-muted)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-frosted-canvas)_5%,transparent)] hover:text-[var(--color-ink)]">Markdown</button>
+                    <button onClick={() => exportConversation("json")} className="block w-full px-4 py-2 text-left text-sm text-[var(--color-ink-muted)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-frosted-canvas)_5%,transparent)] hover:text-[var(--color-ink)]">JSON</button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+          <button
+            onClick={() => {
+              setShowHistory((v) => !v);
+              refreshHistory();
+            }}
+            className="rounded-full border border-[var(--color-border-strong)] px-3 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)]"
+          >
+            History ▾
+          </button>
+        </div>
         {showHistory && (
           <div className="absolute right-4 top-11 z-20 w-72 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl">
             {history.length === 0 ? (
@@ -228,10 +297,19 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} className={msg.role === "user" ? "flex justify-end" : "flex justify-start"}>
+          <div key={i} className={`group flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
             {msg.role === "user" ? (
-              <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-[color-mix(in_srgb,var(--color-brand)_18%,transparent)] px-4 py-2.5 text-sm text-[var(--color-ink)]">
-                {msg.text}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => copyMessage(msg)}
+                  aria-label="Copy message"
+                  className="text-[var(--color-ink-faint)] opacity-0 transition-opacity hover:text-[var(--color-ink)] group-hover:opacity-100"
+                >
+                  ⧉
+                </button>
+                <div className="max-w-[80%] rounded-2xl rounded-br-sm bg-[color-mix(in_srgb,var(--color-brand)_18%,transparent)] px-4 py-2.5 text-sm text-[var(--color-ink)]">
+                  {msg.text}
+                </div>
               </div>
             ) : msg.blocks && msg.blocks.length > 0 ? (
               <div className="w-full max-w-[92%] rounded-2xl rounded-bl-sm border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-frosted-canvas)_3%,transparent)] px-4 py-4">
@@ -245,6 +323,16 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
                     ))}
                   </div>
                 )}
+                <div className="mt-2 flex items-center gap-3 border-t border-[var(--color-border)] pt-2">
+                  <button onClick={() => copyMessage(msg)} className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]">
+                    Copy
+                  </button>
+                  {i === messages.length - 1 && !pending && (
+                    <button onClick={regenerate} className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]">
+                      Regenerate
+                    </button>
+                  )}
+                </div>
               </div>
             ) : null}
           </div>
@@ -292,13 +380,23 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
           disabled={pending}
           className="h-10 flex-1 rounded-full border border-[var(--color-border-strong)] bg-transparent px-4 text-sm outline-none focus:border-[var(--color-brand)] disabled:opacity-60"
         />
-        <button
-          type="submit"
-          disabled={pending || !input.trim()}
-          className="rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03] disabled:opacity-50"
-        >
-          Ask
-        </button>
+        {pending ? (
+          <button
+            type="button"
+            onClick={stop}
+            className="rounded-full border border-[color-mix(in_srgb,var(--color-rose)_50%,transparent)] px-5 py-2.5 text-sm font-medium text-[var(--color-rose)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-rose)_12%,transparent)]"
+          >
+            Stop
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            className="rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03] disabled:opacity-50"
+          >
+            Ask
+          </button>
+        )}
       </form>
     </div>
   );
