@@ -4,8 +4,11 @@
 // =====================================================================
 metadata description = 'Core resources: Container Apps, Cosmos DB, ACR, Key Vault, AI Foundry, monitoring.'
 
-@description('Primary location for all resources.')
+@description('Primary location for the app tier (Container Apps, Cosmos, ACR, Key Vault, monitoring).')
 param location string
+
+@description('Region for AI Foundry + model deployments (Sweden Central).')
+param aiLocation string = 'swedencentral'
 
 @description('Deterministic token to make resource names unique.')
 param resourceToken string
@@ -302,7 +305,7 @@ resource cosmosPeDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@20
 // =====================================================================
 resource ai 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
   name: aiName
-  location: location
+  location: aiLocation
   tags: tags
   kind: 'AIServices'
   sku: { name: 'S0' }
@@ -319,7 +322,7 @@ resource ai 'Microsoft.CognitiveServices/accounts@2025-06-01' = {
 resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = {
   parent: ai
   name: aiProjectName
-  location: location
+  location: aiLocation
   identity: { type: 'SystemAssigned' }
   properties: {
     displayName: 'data-driven'

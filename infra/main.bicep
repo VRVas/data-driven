@@ -13,8 +13,11 @@ metadata description = 'data-driven — one-command Azure deployment.'
 param environmentName string
 
 @minLength(1)
-@description('Primary Azure region for all resources. Sweden Central is the default.')
-param location string = 'swedencentral'
+@description('Primary region for the app tier: Container Apps, Cosmos, ACR, Key Vault, monitoring.')
+param location string = 'westeurope'
+
+@description('Region for AI Foundry + all AI/model deployments. Sweden Central is required for feature availability.')
+param aiLocation string = 'swedencentral'
 
 @description('Deploy Azure Communication Services email (one-click outreach).')
 param deployEmail bool = false
@@ -49,6 +52,7 @@ module resources 'resources.bicep' = {
   scope: rg
   params: {
     location: location
+    aiLocation: aiLocation
     resourceToken: resourceToken
     tags: tags
     deployEmail: deployEmail
