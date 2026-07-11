@@ -3,6 +3,9 @@
 import Link from "next/link";
 import type { Block, LeadCardData, ActionSpec } from "@/lib/copilot/blocks";
 import { toneVar } from "@/lib/copilot/blocks";
+import { tableBlockToCsv } from "@/lib/copilot/serialize";
+import { copyText } from "@/lib/download";
+import { useToast } from "@/components/ui/Toast";
 import { CopilotChart } from "./CopilotChart";
 
 /** Render a composed list of blocks. `onAction` handles interactive action blocks. */
@@ -182,14 +185,28 @@ function Metrics({ items }: { items: Extract<Block, { type: "metrics" }>["items"
 }
 
 function TableBlock({ block }: { block: Extract<Block, { type: "table" }> }) {
+  const toast = useToast();
   const fmtCell = (v: string | number | null, kind?: string | null) => {
     if (v == null) return "—";
     if (kind === "currency" && typeof v === "number") return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
     if (kind === "percent" && typeof v === "number") return `${Math.round(v)}%`;
     return String(v);
   };
+  const copyCsv = async () => {
+    const ok = await copyText(tableBlockToCsv(block));
+    toast(ok ? "Copied CSV" : "Copy failed", ok ? "success" : "error");
+  };
   return (
-    <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
+    <div>
+      <div className="mb-1 flex justify-end">
+        <button
+          onClick={copyCsv}
+          className="rounded-full border border-[var(--color-border-strong)] px-2.5 py-0.5 text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]"
+        >
+          Copy CSV
+        </button>
+      </div>
+      <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-[var(--color-border)]">
@@ -220,6 +237,7 @@ function TableBlock({ block }: { block: Extract<Block, { type: "table" }> }) {
         </tbody>
       </table>
       {block.caption && <div className="px-3 py-2 text-xs text-[var(--color-ink-faint)]">{block.caption}</div>}
+      </div>
     </div>
   );
 }
