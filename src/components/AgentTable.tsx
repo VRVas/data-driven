@@ -6,6 +6,32 @@ import { Badge } from "@/components/Badge";
 import { AgentEditor } from "@/components/AgentEditor";
 import { STATUS_TOKEN, PRIORITY_TOKEN } from "@/lib/scoring";
 import type { BrandStatus, Priority } from "@/lib/types";
+import { ExportMenu } from "@/components/ExportMenu";
+import type { Column } from "@/lib/export";
+
+const AGENT_COLS: Column[] = [
+  { key: "name", label: "Agent / Agency" },
+  { key: "status", label: "Status" },
+  { key: "priority", label: "Priority" },
+  { key: "owner", label: "Owner" },
+  { key: "poc", label: "POC" },
+  { key: "initialContact", label: "Initial contact" },
+  { key: "lastContact", label: "Last contact" },
+  { key: "followUp", label: "Follow up" },
+  { key: "notes", label: "Notes" },
+];
+const agentRows = (list: Agent[]): Record<string, unknown>[] =>
+  list.map((a) => ({
+    name: a.name,
+    status: a.status,
+    priority: a.priority,
+    owner: a.owner,
+    poc: a.poc,
+    initialContact: a.initialContact,
+    lastContact: a.lastContact,
+    followUp: a.followUp,
+    notes: a.notes,
+  }));
 
 export function AgentTable({ agents }: { agents: Agent[] }) {
   const [q, setQ] = useState("");
@@ -33,6 +59,7 @@ export function AgentTable({ agents }: { agents: Agent[] }) {
         >
           + New agent
         </button>
+        <ExportMenu filename="agents" columns={AGENT_COLS} rows={agentRows(rows)} allRows={agentRows(agents)} size="sm" />
         <span className="text-sm text-[var(--color-ink-muted)]">{rows.length} of {agents.length}</span>
       </div>
 

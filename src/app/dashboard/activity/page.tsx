@@ -3,6 +3,7 @@ import { Reveal } from "@/components/Reveal";
 import { getSessionUser } from "@/lib/auth/guards";
 import { getAuditStore } from "@/lib/store/audit";
 import { relativeTime } from "@/lib/time";
+import { ExportMenu } from "@/components/ExportMenu";
 
 export const dynamic = "force-dynamic";
 
@@ -25,11 +26,29 @@ export default async function ActivityPage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Audit trail</div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Activity</h1>
-        <p className="mt-1 text-[var(--color-ink-muted)]">
-          Every change, who made it and when — {entries.length} recent {entries.length === 1 ? "event" : "events"}.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-2">Audit trail</div>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Activity</h1>
+            <p className="mt-1 text-[var(--color-ink-muted)]">
+              Every change, who made it and when — {entries.length} recent {entries.length === 1 ? "event" : "events"}.
+            </p>
+          </div>
+          {entries.length > 0 && (
+            <ExportMenu
+              filename="activity"
+              columns={[
+                { key: "at", label: "When" },
+                { key: "actorName", label: "Actor" },
+                { key: "action", label: "Action" },
+                { key: "entity", label: "Entity" },
+                { key: "entityId", label: "Entity id" },
+                { key: "summary", label: "Summary" },
+              ]}
+              rows={entries as unknown as Record<string, unknown>[]}
+            />
+          )}
+        </div>
       </Reveal>
 
       <Reveal>

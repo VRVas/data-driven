@@ -10,10 +10,42 @@ import { STATUS_TOKEN, PRIORITY_TOKEN, eur } from "@/lib/scoring";
 import type { BrandStatus, Priority } from "@/lib/types";
 import type { SavedView } from "@/lib/store/views";
 import { createView, deleteView, type ViewActionState } from "@/app/actions/views";
+import { ExportMenu } from "@/components/ExportMenu";
+import type { Column } from "@/lib/export";
 import { useActionState } from "react";
 
 type SortKey = "name" | "status" | "owner" | "industry" | "budget" | "lastContact";
 const SORT_KEYS: SortKey[] = ["name", "status", "owner", "industry", "budget", "lastContact"];
+
+const PIPE_COLS: Column[] = [
+  { key: "name", label: "Brand" },
+  { key: "status", label: "Status" },
+  { key: "priority", label: "Priority" },
+  { key: "owner", label: "Owner" },
+  { key: "poc", label: "POC" },
+  { key: "email", label: "Email" },
+  { key: "industry", label: "Industry" },
+  { key: "budget", label: "Budget (EUR)" },
+  { key: "initialContact", label: "Initial contact" },
+  { key: "lastContact", label: "Last contact" },
+  { key: "followUp", label: "Follow up" },
+  { key: "notes", label: "Notes" },
+];
+const pipeRows = (list: Brand[]): Record<string, unknown>[] =>
+  list.map((b) => ({
+    name: b.name,
+    status: b.status,
+    priority: b.priority,
+    owner: b.owner,
+    poc: b.poc,
+    email: b.email,
+    industry: b.industry,
+    budget: b.scores?.budget ?? null,
+    initialContact: b.initialContact,
+    lastContact: b.lastContact,
+    followUp: b.followUp,
+    notes: b.notes,
+  }));
 
 export function BrandTable({
   brands,
@@ -123,6 +155,7 @@ export function BrandTable({
         >
           + New lead
         </button>
+        <ExportMenu filename="pipeline" columns={PIPE_COLS} rows={pipeRows(rows)} allRows={pipeRows(brands)} size="sm" />
         <span className="text-sm text-[var(--color-ink-muted)]">{rows.length} of {brands.length}</span>
       </div>
 

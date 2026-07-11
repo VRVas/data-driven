@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/Reveal";
 import { getDataQuality } from "@/lib/data";
+import { ExportMenu } from "@/components/ExportMenu";
 
 export default function QualityPage() {
   const { issues, count } = getDataQuality();
@@ -18,11 +19,25 @@ export default function QualityPage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Data audit</div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Data quality</h1>
-        <p className="mt-1 text-[var(--color-ink-muted)]">
-          {count} issues detected and resolved during migration — full audit trail.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-2">Data audit</div>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Data quality</h1>
+            <p className="mt-1 text-[var(--color-ink-muted)]">
+              {count} issues detected and resolved during migration — full audit trail.
+            </p>
+          </div>
+          <ExportMenu
+            filename="data-quality"
+            columns={[
+              { key: "entity", label: "Entity" },
+              { key: "key", label: "Field" },
+              { key: "issue", label: "Issue" },
+              { key: "fix", label: "Resolution" },
+            ]}
+            rows={issues as unknown as Record<string, unknown>[]}
+          />
+        </div>
       </Reveal>
 
       <Reveal stagger className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

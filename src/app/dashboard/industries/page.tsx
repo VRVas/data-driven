@@ -4,6 +4,7 @@ import { Badge } from "@/components/Badge";
 import { getDataset } from "@/lib/data";
 import { valuationToken } from "@/lib/scoring";
 import type { Industry } from "@/lib/types";
+import { ExportMenu } from "@/components/ExportMenu";
 
 export default function IndustriesPage() {
   const ds = getDataset();
@@ -15,11 +16,40 @@ export default function IndustriesPage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Segments</div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Industries</h1>
-        <p className="mt-1 text-[var(--color-ink-muted)]">
-          Segment scorecard fused with the sales playbook for each vertical.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-2">Segments</div>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Industries</h1>
+            <p className="mt-1 text-[var(--color-ink-muted)]">
+              Segment scorecard fused with the sales playbook for each vertical.
+            </p>
+          </div>
+          <ExportMenu
+            filename="industries"
+            columns={[
+              { key: "name", label: "Industry" },
+              { key: "economicalEfficiency", label: "Econ. efficiency" },
+              { key: "easeOfAccess", label: "Ease of access" },
+              { key: "valuation", label: "Valuation" },
+              { key: "companiesEU", label: "Companies (EU)" },
+              { key: "approachedMarket", label: "Approached market" },
+              { key: "opened", label: "Opened" },
+              { key: "avgBudget", label: "Avg budget" },
+              { key: "musicVideoFit", label: "Music+video fit" },
+            ]}
+            rows={industries.map((i) => ({
+              name: i.name,
+              economicalEfficiency: i.economicalEfficiency,
+              easeOfAccess: i.easeOfAccess,
+              valuation: i.valuation,
+              companiesEU: i.companiesEU,
+              approachedMarket: i.approachedMarket,
+              opened: i.opened,
+              avgBudget: i.avgBudget,
+              musicVideoFit: i.musicVideoFit,
+            }))}
+          />
+        </div>
       </Reveal>
 
       <Reveal>

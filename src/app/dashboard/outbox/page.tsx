@@ -3,6 +3,7 @@ import { Reveal } from "@/components/Reveal";
 import { OutreachItem } from "@/components/OutreachItem";
 import { getSessionUser } from "@/lib/auth/guards";
 import { getOutreachStore, type OutreachStatus } from "@/lib/store/outreach";
+import { ExportMenu } from "@/components/ExportMenu";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +25,38 @@ export default async function OutboxPage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Actions</div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Outbox</h1>
-        <p className="mt-1 text-[var(--color-ink-muted)]">
-          Templated outreach — {isAdmin ? "review, approve and send." : "draft and submit for an admin to send."}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-2">Actions</div>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Outbox</h1>
+            <p className="mt-1 text-[var(--color-ink-muted)]">
+              Templated outreach — {isAdmin ? "review, approve and send." : "draft and submit for an admin to send."}
+            </p>
+          </div>
+          {all.length > 0 && (
+            <ExportMenu
+              filename="outbox"
+              columns={[
+                { key: "brandName", label: "Lead" },
+                { key: "to", label: "To" },
+                { key: "subject", label: "Subject" },
+                { key: "status", label: "Status" },
+                { key: "provider", label: "Provider" },
+                { key: "createdByName", label: "Created by" },
+                { key: "createdAt", label: "Created" },
+              ]}
+              rows={all.map((o) => ({
+                brandName: o.brandName,
+                to: o.to,
+                subject: o.subject,
+                status: o.status,
+                provider: o.provider ?? null,
+                createdByName: o.createdByName,
+                createdAt: o.createdAt,
+              }))}
+            />
+          )}
+        </div>
       </Reveal>
 
       <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">

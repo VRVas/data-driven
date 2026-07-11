@@ -2,8 +2,25 @@ import { Reveal } from "@/components/Reveal";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
 import { getScoredBrands } from "@/lib/data";
 import { PRIORITY_TOKEN, leadScore, quadrant, eur } from "@/lib/scoring";
+import { ExportMenu } from "@/components/ExportMenu";
+import type { Column } from "@/lib/export";
 
 export const dynamic = "force-dynamic";
+
+const SCORE_COLS: Column[] = [
+  { key: "name", label: "Brand" },
+  { key: "industry", label: "Industry" },
+  { key: "leadScore", label: "Lead score" },
+  { key: "economicalEfficiency", label: "Econ. efficiency" },
+  { key: "easeOfAccess", label: "Ease of access" },
+  { key: "budget", label: "Budget (EUR)" },
+  { key: "tempo", label: "Tempo" },
+  { key: "budgetScore", label: "Budget score" },
+  { key: "customization", label: "Customization" },
+  { key: "accessibility", label: "Accessibility" },
+  { key: "receptivity", label: "Receptivity" },
+  { key: "alignment", label: "Alignment" },
+];
 
 const MODEL = [
   { name: "Tempo", desc: "Freshness — months since last contact, inverted. Recent = high.", range: "0–5" },
@@ -33,15 +50,35 @@ export default async function ScoringPage() {
     .sort((a, b) => (b.score! - a.score!))
     .slice(0, 12);
 
+  const scoreRows: Record<string, unknown>[] = scored.map((b) => ({
+    name: b.name,
+    industry: b.industry,
+    leadScore: leadScore(b),
+    economicalEfficiency: b.scores?.economicalEfficiency ?? null,
+    easeOfAccess: b.scores?.easeOfAccess ?? null,
+    budget: b.scores?.budget ?? null,
+    tempo: b.scores?.tempoScore ?? null,
+    budgetScore: b.scores?.budgetScore ?? null,
+    customization: b.scores?.customizationScore ?? null,
+    accessibility: b.scores?.accessibilityScore ?? null,
+    receptivity: b.scores?.receptivityScore ?? null,
+    alignment: b.scores?.alignmentScore ?? null,
+  }));
+
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Model</div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Scoring model</h1>
-        <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
-          Six sub-scores roll up into <strong>Economical Efficiency</strong> (budget · customization ·
-          tempo) and <strong>Ease of Access</strong> (accessibility · alignment · receptivity).
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-2">Model</div>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Scoring model</h1>
+            <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
+              Six sub-scores roll up into <strong>Economical Efficiency</strong> (budget · customization ·
+              tempo) and <strong>Ease of Access</strong> (accessibility · alignment · receptivity).
+            </p>
+          </div>
+          <ExportMenu filename="scoring" columns={SCORE_COLS} rows={scoreRows} />
+        </div>
       </Reveal>
 
       <Reveal stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

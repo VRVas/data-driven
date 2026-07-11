@@ -2,6 +2,7 @@ import { Reveal } from "@/components/Reveal";
 import { ReminderRow } from "@/components/ReminderRow";
 import { getBrands } from "@/lib/data";
 import { remindersFrom, type Reminder, type ReminderBucket } from "@/lib/reminders";
+import { ExportMenu } from "@/components/ExportMenu";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +21,30 @@ export default async function RemindersPage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Follow-ups</div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Reminders</h1>
-        <p className="mt-1 text-[var(--color-ink-muted)]">
-          {reminders.length === 0
-            ? "Nothing on the radar — no open follow-ups scheduled."
-            : `${dueCount} need attention · ${reminders.length} scheduled in the next 30 days.`}
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-2">Follow-ups</div>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Reminders</h1>
+            <p className="mt-1 text-[var(--color-ink-muted)]">
+              {reminders.length === 0
+                ? "Nothing on the radar — no open follow-ups scheduled."
+                : `${dueCount} need attention · ${reminders.length} scheduled in the next 30 days.`}
+            </p>
+          </div>
+          {reminders.length > 0 && (
+            <ExportMenu
+              filename="reminders"
+              columns={[
+                { key: "name", label: "Lead" },
+                { key: "followUp", label: "Follow up" },
+                { key: "bucket", label: "Bucket" },
+                { key: "days", label: "Days" },
+                { key: "owner", label: "Owner" },
+              ]}
+              rows={reminders.map((r) => ({ name: r.brand.name, followUp: r.date, bucket: r.bucket, days: r.days, owner: r.brand.owner }))}
+            />
+          )}
+        </div>
       </Reveal>
 
       {SECTIONS.map(({ bucket, title, blurb }) => {

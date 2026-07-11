@@ -4,7 +4,8 @@ import { WhitespaceBars } from "@/components/viz/WhitespaceBars";
 import { OpportunityMap } from "@/components/viz/OpportunityMap";
 import { MarketSizingBars } from "@/components/viz/MarketSizingBars";
 import { getDataset } from "@/lib/data";
-import { rankByOpportunity } from "@/lib/tam";
+import { rankByOpportunity, whitespace as whitespaceOf, penetration as penetrationOf, opportunityScore } from "@/lib/tam";
+import { ExportMenu } from "@/components/ExportMenu";
 
 function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
   return (
@@ -32,12 +33,37 @@ export default function WhitespacePage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Market</div>
-        <h1 className="font-display text-3xl font-semibold tracking-tight">Whitespace &amp; TAM</h1>
-        <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
-          Approached vs addressable market across the EU. The room to grow is the space
-          the bars <em>don&apos;t</em> fill — weighted by how valuable each segment is.
-        </p>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="eyebrow mb-2">Market</div>
+            <h1 className="font-display text-3xl font-semibold tracking-tight">Whitespace &amp; TAM</h1>
+            <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
+              Approached vs addressable market across the EU. The room to grow is the space
+              the bars <em>don&apos;t</em> fill — weighted by how valuable each segment is.
+            </p>
+          </div>
+          <ExportMenu
+            filename="whitespace-tam"
+            columns={[
+              { key: "industry", label: "Industry" },
+              { key: "valuation", label: "Valuation" },
+              { key: "addressable", label: "Addressable (EU)" },
+              { key: "approached", label: "Approached" },
+              { key: "untapped", label: "Untapped" },
+              { key: "penetration", label: "Penetration %" },
+              { key: "opportunityScore", label: "Opportunity score" },
+            ]}
+            rows={ranked.map((i) => ({
+              industry: i.name,
+              valuation: i.valuation,
+              addressable: i.companiesEU,
+              approached: i.opened,
+              untapped: whitespaceOf(i.opened, i.companiesEU),
+              penetration: penetrationOf(i.opened, i.companiesEU) != null ? Math.round((penetrationOf(i.opened, i.companiesEU) ?? 0) * 100) : null,
+              opportunityScore: opportunityScore(i),
+            }))}
+          />
+        </div>
       </Reveal>
 
       <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
