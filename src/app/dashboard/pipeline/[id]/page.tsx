@@ -6,6 +6,7 @@ import { EditBrandButton } from "@/components/EditBrandButton";
 import { QuickStatus } from "@/components/QuickStatus";
 import { OutreachComposer } from "@/components/OutreachComposer";
 import { OutreachItem } from "@/components/OutreachItem";
+import { LeadToolbar } from "@/components/LeadToolbar";
 import { getBrand } from "@/lib/data";
 import { getSessionUser } from "@/lib/auth/guards";
 import { getOutreachStore } from "@/lib/store/outreach";
@@ -72,6 +73,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <div className="flex items-center gap-2">
             <OutreachComposer brand={brand} senderName={me?.name ?? "there"} isAdmin={isAdmin} />
             <EditBrandButton brand={brand} canDelete={isAdmin} />
+            <LeadToolbar brand={brand} />
           </div>
         </div>
       </Reveal>
