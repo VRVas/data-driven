@@ -200,7 +200,7 @@ resource cosmos 'Microsoft.DocumentDB/databaseAccounts@2024-11-15' = {
     consistencyPolicy: { defaultConsistencyLevel: 'Session' }
     disableLocalAuth: true
     publicNetworkAccess: 'Disabled'
-    locations: [ { locationName: location, failoverPriority: 0 } ]
+    locations: [ { locationName: location, failoverPriority: 0, isZoneRedundant: false } ]
   }
 }
 
