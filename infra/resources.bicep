@@ -226,6 +226,7 @@ var containers = [
   { name: 'savedViews', pk: '/userId' }
   { name: 'outreach', pk: '/id' }
   { name: 'conversations', pk: '/userId' }
+  { name: 'documents', pk: '/userId' }
 ]
 
 resource cosmosContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-11-15' = [
@@ -494,6 +495,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AZURE_OPENAI_ENDPOINT', value: ai.properties.endpoint }
             { name: 'AZURE_OPENAI_DEPLOYMENT', value: chatModelName }
             { name: 'COPILOT_CHAT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/openai/v1/chat/completions?api-version=preview' }
+            { name: 'AZURE_AI_OPENAI_V1', value: 'https://${aiName}.services.ai.azure.com/openai/v1' }
             { name: 'COPILOT_MODEL', value: chatModelName }
             { name: 'SPEECH_VOICE', value: speechVoice }
             { name: 'SPEECH_LANG', value: speechLang }
