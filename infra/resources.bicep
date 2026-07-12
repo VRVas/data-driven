@@ -79,10 +79,13 @@ var roleFoundryProjectManager = 'eadc314b-1a2d-4efa-be10-5d325db5065e' // Foundr
 var speechVoice = 'it-IT-Luca:MAI-Voice-2'
 var speechLang = 'en-US'
 
-// Foundry IQ (agentic retrieval) — embeddings model + Azure AI Search role.
+// Foundry IQ (agentic retrieval) — embeddings model + Azure AI Search roles.
 var roleSearchIndexReader = '1407120a-92aa-4202-b7e9-c0e197c71c8f' // Search Index Data Reader
+var roleSearchServiceContributor = '7ca78c08-252a-4471-8644-bb5ff32d4ba0' // Search Service Contributor (manage indexes / knowledge sources / knowledge bases)
 var embedModelName = 'text-embedding-3-large'
 var embedModelVersion = '1'
+var searchWebKsName = 'web-grounding' // "web" knowledge source (Grounding with Bing)
+var searchKbName = 'web-kb' // knowledge base that fronts the web knowledge source
 var roleCosmosDataContributor = '00000000-0000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor
 
 // =====================================================================
@@ -365,11 +368,14 @@ resource embedDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-
 }
 
 // =====================================================================
-//  Foundry IQ — Azure AI Search (agentic retrieval), COMPLIANT SCAFFOLD.
-//  Basic tier (semantic ranker on the free plan), keyless (Entra-only),
-//  private (no public network access). The knowledge base + knowledge
-//  sources are created at the data plane (post-provision, from inside the
-//  VNet) once documents exist. No web knowledge source (compliance).
+//  Foundry IQ — Azure AI Search (agentic retrieval), keyless + linked.
+//  Basic tier (semantic ranker on the free plan), keyless (Entra-only).
+//  Public network access is ENABLED so the Foundry portal and the keyless
+//  post-provision hook can manage knowledge sources / knowledge bases; a
+//  private endpoint is ALSO kept for the in-VNet data path. Local (key)
+//  auth stays disabled, so reachability is Entra-only. A "web" knowledge
+//  source (Grounding with Bing) is created at the data plane; Azure AI
+//  Search handles the Bing egress + LLM summarization internally.
 // =====================================================================
 resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
   name: searchName
@@ -383,7 +389,7 @@ resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
     hostingMode: 'default'
     semanticSearch: 'free'
     disableLocalAuth: true
-    publicNetworkAccess: 'disabled'
+    publicNetworkAccess: 'enabled'
   }
 }
 
@@ -409,7 +415,61 @@ resource projectToSearch 'Microsoft.Authorization/roleAssignments@2022-04-01' = 
   }
 }
 
-// private endpoint + DNS for Search (reachable only from the VNet)
+// search -> read the AI account & call the chat model for knowledge-base query
+// planning, answer synthesis, and web-content summarization (keyless). The
+// knowledge base's model reference authenticates with the search identity.
+resource searchToAiCogSvc 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(ai.id, search.id, roleCogSvcUser)
+  scope: ai
+  properties: {
+    principalId: search.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleCogSvcUser)
+  }
+}
+
+// Foundry project -> manage knowledge sources / bases on the search service so
+// they are manageable from the Foundry portal (keyless, project identity).
+resource projectSearchContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, aiProject.id, roleSearchServiceContributor)
+  scope: search
+  properties: {
+    principalId: aiProject.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleSearchServiceContributor)
+  }
+}
+
+// deployer -> create/manage knowledge sources + knowledge bases from the keyless
+// post-provision hook (and directly in the Azure/Foundry portal).
+resource deployerSearchContributor 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(deployerPrincipalId)) {
+  name: guid(search.id, deployerPrincipalId, roleSearchServiceContributor)
+  scope: search
+  properties: {
+    principalId: deployerPrincipalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleSearchServiceContributor)
+  }
+}
+
+// Link the search service INTO the Foundry project as a CognitiveSearch
+// connection (keyless / project identity) so its knowledge sources and
+// knowledge bases are managed from the Foundry portal.
+resource searchConnection 'Microsoft.CognitiveServices/accounts/projects/connections@2025-06-01' = {
+  parent: aiProject
+  name: searchName
+  properties: {
+    category: 'CognitiveSearch'
+    target: 'https://${searchName}.search.windows.net'
+    authType: 'AAD'
+    metadata: {
+      ApiType: 'Azure'
+      ResourceId: search.id
+      location: search.location
+    }
+  }
+}
+
+// private endpoint + DNS for Search (in-VNet data path; public stays enabled)
 resource searchPe 'Microsoft.Network/privateEndpoints@2023-11-01' = {
   name: searchPeName
   location: location
@@ -602,6 +662,8 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AZURE_AI_PROJECT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/api/projects/${aiProjectName}' }
             { name: 'AZURE_AI_PROJECT_NAME', value: aiProjectName }
             { name: 'AZURE_AI_AGENT_NAME', value: agentName }
+            { name: 'AZURE_SEARCH_ENDPOINT', value: 'https://${searchName}.search.windows.net' }
+            { name: 'AZURE_SEARCH_KNOWLEDGE_BASE', value: searchKbName }
             { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: appInsights.properties.ConnectionString }
           ]
         }
@@ -631,3 +693,6 @@ output MANAGED_IDENTITY_CLIENT_ID string = uami.properties.clientId
 output AZURE_SEARCH_ENDPOINT string = 'https://${searchName}.search.windows.net'
 output AZURE_SEARCH_NAME string = search.name
 output AZURE_EMBEDDING_DEPLOYMENT string = embedModelName
+output AZURE_SEARCH_CONNECTION_NAME string = searchConnection.name
+output AZURE_SEARCH_WEB_KS string = searchWebKsName
+output AZURE_SEARCH_KNOWLEDGE_BASE string = searchKbName
