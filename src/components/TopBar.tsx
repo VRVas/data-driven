@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { DashboardNav } from "./DashboardNav";
+import { TourLauncher } from "@/components/tour/TourLauncher";
 import { getBrands } from "@/lib/data";
 import { remindersFrom, countDue } from "@/lib/reminders";
 import { getOutreachStore } from "@/lib/store/outreach";
 
-export async function TopBar() {
+export async function TopBar({ tour = false }: { tour?: boolean } = {}) {
   const session = await auth();
   const user = session?.user;
 
@@ -50,9 +51,11 @@ export async function TopBar() {
 
         {user ? (
           <div className="flex items-center gap-3">
+            {tour && <TourLauncher />}
             <Link
               href="/dashboard/reminders"
               title="Reminders"
+              data-tour="topbar-reminders"
               aria-label={`Reminders${dueCount > 0 ? ` (${dueCount} due)` : ""}`}
               className="relative hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
             >
@@ -72,6 +75,7 @@ export async function TopBar() {
             <Link
               href="/dashboard/outbox"
               title="Outbox"
+              data-tour="topbar-outbox"
               aria-label={`Outbox${pendingOutreach > 0 ? ` (${pendingOutreach} awaiting approval)` : ""}`}
               className="relative hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
             >
@@ -92,6 +96,7 @@ export async function TopBar() {
               <Link
                 href="/dashboard/activity"
                 title="Activity — audit trail"
+                data-tour="topbar-activity"
                 aria-label="Activity — audit trail"
                 className="hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
               >
@@ -104,6 +109,7 @@ export async function TopBar() {
               <Link
                 href="/dashboard/team"
                 title="Team & roles"
+                data-tour="topbar-team"
                 aria-label="Team & roles"
                 className="hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
               >

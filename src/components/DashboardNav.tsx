@@ -26,7 +26,7 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="hidden items-center gap-1 md:flex">
+    <nav data-tour="nav" className="hidden items-center gap-1 md:flex">
       {NAV.map((n) => {
         const current = isActive(pathname, n.href);
         return (

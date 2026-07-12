@@ -282,7 +282,7 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
               Ask about leads, scores, the pipeline, whitespace or reminders. Answers come back as live charts, tables and
               cards — and I can draft outreach (an admin sends it).
             </p>
-            <div className="mt-5 flex flex-col gap-2">
+            <div data-tour="copilot-suggestions" className="mt-5 flex flex-col gap-2">
               {SUGGESTIONS.map((s) => (
                 <button
                   key={s}
@@ -364,6 +364,7 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
           onClick={() => setDeep((v) => !v)}
           title="Think deeply — route to the reasoning model"
           aria-pressed={deep}
+          data-tour="copilot-reasoning"
           className={
             "shrink-0 rounded-full border px-3 py-2 text-xs font-medium transition-colors " +
             (deep
@@ -378,6 +379,7 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
           onChange={(e) => setInput(e.target.value)}
           placeholder="Ask about the pipeline…"
           disabled={pending}
+          data-tour="copilot-input"
           className="h-10 flex-1 rounded-full border border-[var(--color-border-strong)] bg-transparent px-4 text-sm outline-none focus:border-[var(--color-brand)] disabled:opacity-60"
         />
         {pending ? (

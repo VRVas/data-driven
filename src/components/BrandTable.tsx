@@ -122,7 +122,7 @@ export function BrandTable({
   return (
     <div>
       {/* saved views */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
+      <div data-tour="pipe-views" className="mb-3 flex flex-wrap items-center gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Views</span>
         {views.length === 0 && <span className="text-xs text-[var(--color-ink-faint)]">none saved</span>}
         {views.map((v) => (
@@ -145,17 +145,21 @@ export function BrandTable({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search brand, POC, notes…"
+          data-tour="pipe-search"
           className="h-9 w-64 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-brand)]"
         />
         <Select label="Status" value={status} onChange={setStatus} options={statuses} />
         <Select label="Owner" value={owner} onChange={setOwner} options={owners} />
         <button
           onClick={() => setEditing(null)}
+          data-tour="pipe-newlead"
           className="ml-auto rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
         >
           + New lead
         </button>
-        <ExportMenu filename="pipeline" columns={PIPE_COLS} rows={pipeRows(rows)} allRows={pipeRows(brands)} size="sm" />
+        <span data-tour="pipe-export">
+          <ExportMenu filename="pipeline" columns={PIPE_COLS} rows={pipeRows(rows)} allRows={pipeRows(brands)} size="sm" />
+        </span>
         <span className="text-sm text-[var(--color-ink-muted)]">{rows.length} of {brands.length}</span>
       </div>
 
@@ -193,7 +197,7 @@ export function BrandTable({
                 </td>
               </tr>
             )}
-            {rows.map((b) => (
+            {rows.map((b, i) => (
               <tr key={b.id} id={b.id} className="border-t border-[var(--color-border)] transition-colors hover:bg-[var(--color-surface)]/60">
                 <td className="px-3 py-2 font-medium">
                   <Link href={`/dashboard/pipeline/${b.id}`} className="hover:text-[var(--color-brand-bright)] hover:underline">
@@ -216,6 +220,7 @@ export function BrandTable({
                 <td className="px-3 py-2 text-right">
                   <button
                     onClick={() => setEditing(b)}
+                    data-tour={i === 0 ? "pipe-edit" : undefined}
                     className="rounded-md border border-[var(--color-border)] px-2.5 py-1 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-brand)] hover:text-[var(--color-ink)]"
                   >
                     Edit

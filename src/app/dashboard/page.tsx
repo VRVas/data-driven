@@ -22,9 +22,9 @@ const STATUS_ORDER: BrandStatus[] = [
   "Did not work out",
 ];
 
-function Panel({ eyebrow, title, subtitle, children, className }: { eyebrow?: string; title: string; subtitle?: string; children: React.ReactNode; className?: string }) {
+function Panel({ eyebrow, title, subtitle, children, className, tour }: { eyebrow?: string; title: string; subtitle?: string; children: React.ReactNode; className?: string; tour?: string }) {
   return (
-    <section className={`glass p-6 ${className ?? ""}`}>
+    <section data-tour={tour} className={`glass p-6 ${className ?? ""}`}>
       <div className="mb-5">
         {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
         <h2 className="font-display text-lg font-semibold">{title}</h2>
@@ -80,29 +80,31 @@ export default async function DashboardOverview() {
         </div>
       </Reveal>
 
-      <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        <KpiCard label="Total pipeline" value={brands.length} hint={`${hot} hot leads`} />
-        <KpiCard label="Weighted value" value={weighted} format="eur" accent="var(--color-cyan)" hint="probability-adjusted" />
-        <KpiCard label="Deals closed" value={closed} accent="var(--color-mint)" hint="won" />
-        <KpiCard label="Scored coverage" value={Math.round((scored.length / brands.length) * 100)} format="percent" accent="var(--color-amber)" hint={`${brands.length - scored.length} unscored`} />
-      </Reveal>
+      <div data-tour="kpis">
+        <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <KpiCard label="Total pipeline" value={brands.length} hint={`${hot} hot leads`} />
+          <KpiCard label="Weighted value" value={weighted} format="eur" accent="var(--color-cyan)" hint="probability-adjusted" />
+          <KpiCard label="Deals closed" value={closed} accent="var(--color-mint)" hint="won" />
+          <KpiCard label="Scored coverage" value={Math.round((scored.length / brands.length) * 100)} format="percent" accent="var(--color-amber)" hint={`${brands.length - scored.length} unscored`} />
+        </Reveal>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Reveal>
-          <Panel eyebrow="Funnel" title="Pipeline by stage" subtitle="Lead count across the sales funnel">
+          <Panel eyebrow="Funnel" title="Pipeline by stage" subtitle="Lead count across the sales funnel" tour="funnel">
             <StatusFunnel rows={funnel} />
           </Panel>
         </Reveal>
 
         <Reveal>
-          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Economical efficiency × ease of access · bubble = budget">
+          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Economical efficiency × ease of access · bubble = budget" tour="quadrant">
             <PriorityQuadrant points={points} />
           </Panel>
         </Reveal>
       </div>
 
       <Reveal>
-        <Panel eyebrow="Segments" title="Industry scorecard" subtitle="Segment-level model, recomputed from the raw data">
+        <Panel eyebrow="Segments" title="Industry scorecard" subtitle="Segment-level model, recomputed from the raw data" tour="heatmap">
           <IndustryHeatmap industries={industries} />
         </Panel>
       </Reveal>
