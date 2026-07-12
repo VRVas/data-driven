@@ -72,6 +72,54 @@ export function blocksToMarkdown(blocks: Block[]): string {
   return blocks.map(blockToMarkdown).filter(Boolean).join("\n\n");
 }
 
+/** Plain, speakable prose from blocks (for text-to-speech). Skips visual-only
+ *  blocks (charts/tables/dividers) and drops markdown punctuation. */
+export function blocksToSpeech(blocks: Block[]): string {
+  const parts: string[] = [];
+  for (const block of blocks) {
+    switch (block.type) {
+      case "heading":
+        parts.push(block.subtitle ? `${block.title}. ${block.subtitle}` : block.title);
+        break;
+      case "text":
+        parts.push(block.text);
+        break;
+      case "callout":
+        parts.push(block.title ? `${block.title}. ${block.text}` : block.text);
+        break;
+      case "reasoning":
+        parts.push(block.text);
+        break;
+      case "list":
+        parts.push(block.items.join(". "));
+        break;
+      case "metrics":
+        parts.push(block.items.map((it) => `${it.label}: ${it.value}${it.unit ? ` ${it.unit}` : ""}`).join(". "));
+        break;
+      case "keyValue":
+        parts.push(block.items.map((it) => `${it.label}: ${it.value}`).join(". "));
+        break;
+      case "leadCard":
+        parts.push(`${block.name}${block.status ? `, ${block.status}` : ""}`);
+        break;
+      case "leadGrid":
+        parts.push(block.leads.map((l) => l.name).join(", "));
+        break;
+      case "recommendation":
+        parts.push(`Recommendation: ${block.title}. ${block.rationale}`);
+        break;
+      default:
+        break; // chart, table, badges, comparison, timeline, actions, divider
+    }
+  }
+  return parts
+    .join(". ")
+    .replace(/[*_`#>]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/\.\s*\.+/g, ".")
+    .trim();
+}
+
 export interface SerializableMessage {
   role: "user" | "assistant";
   text?: string | null;

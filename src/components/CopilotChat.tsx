@@ -6,7 +6,7 @@ import { runCopilotAction } from "@/app/actions/copilot";
 import { listConversations, loadConversation } from "@/app/actions/conversations";
 import { BlockRenderer } from "@/components/copilot/BlockRenderer";
 import { relativeTime } from "@/lib/time";
-import { blocksToMarkdown, conversationToMarkdown } from "@/lib/copilot/serialize";
+import { blocksToMarkdown, blocksToSpeech, conversationToMarkdown } from "@/lib/copilot/serialize";
 import { copyText, downloadFile, MIME } from "@/lib/download";
 import { toJson, stampName } from "@/lib/export";
 import { useToast } from "@/components/ui/Toast";
@@ -43,7 +43,7 @@ function parseSSE(chunk: string): { event: string; data: unknown } | null {
   }
 }
 
-export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
+export function CopilotChat({ foundryEnabled, voiceEnabled = false }: { foundryEnabled: boolean; voiceEnabled?: boolean }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
@@ -58,6 +58,10 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
   const toast = useToast();
   const router = useRouter();
   const endRef = useRef<HTMLDivElement>(null);
+  const [recording, setRecording] = useState(false);
+  const [speakingKey, setSpeakingKey] = useState<string | null>(null);
+  const mediaRef = useRef<MediaRecorder | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const refreshHistory = () => listConversations().then(setHistory).catch(() => {});
   useEffect(() => {
@@ -171,6 +175,87 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
 
   function stop() {
     abortRef.current?.abort();
+  }
+
+  // Voice input: record from the mic, transcribe, then send as a normal message.
+  async function toggleRecord() {
+    if (recording) {
+      mediaRef.current?.stop();
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mime = MediaRecorder.isTypeSupported("audio/webm")
+        ? "audio/webm"
+        : MediaRecorder.isTypeSupported("audio/mp4")
+          ? "audio/mp4"
+          : "";
+      const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined);
+      const chunks: BlobPart[] = [];
+      rec.ondataavailable = (e) => {
+        if (e.data.size) chunks.push(e.data);
+      };
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        setRecording(false);
+        const blob = new Blob(chunks, { type: rec.mimeType || "audio/webm" });
+        if (blob.size === 0) return;
+        try {
+          const res = await fetch("/api/voice/transcribe", {
+            method: "POST",
+            headers: { "content-type": blob.type },
+            body: blob,
+          });
+          const data = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
+          if (res.ok && data.text) send(data.text);
+          else toast(data.text === "" ? "No speech detected" : "Couldn't transcribe", "error");
+        } catch {
+          toast("Transcription failed", "error");
+        }
+      };
+      mediaRef.current = rec;
+      rec.start();
+      setRecording(true);
+    } catch {
+      toast("Microphone unavailable", "error");
+    }
+  }
+
+  // Voice output: read an answer aloud with the configured voice (Luca).
+  async function speak(msg: Msg, key: string) {
+    if (speakingKey === key) {
+      audioRef.current?.pause();
+      setSpeakingKey(null);
+      return;
+    }
+    audioRef.current?.pause();
+    const text = msg.role === "user" ? msg.text ?? "" : blocksToSpeech(msg.blocks ?? []);
+    if (!text) return;
+    try {
+      const res = await fetch("/api/voice/speak", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      if (!res.ok) {
+        toast("Couldn't play audio", "error");
+        return;
+      }
+      const url = URL.createObjectURL(await res.blob());
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      setSpeakingKey(key);
+      const cleanup = () => {
+        setSpeakingKey((k) => (k === key ? null : k));
+        URL.revokeObjectURL(url);
+      };
+      audio.onended = cleanup;
+      audio.onerror = cleanup;
+      await audio.play();
+    } catch {
+      toast("Audio playback failed", "error");
+      setSpeakingKey(null);
+    }
   }
 
   const copyMessage = async (msg: Msg) => {
@@ -327,6 +412,11 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
                   <button onClick={() => copyMessage(msg)} className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]">
                     Copy
                   </button>
+                  {voiceEnabled && (
+                    <button onClick={() => speak(msg, `speak-${i}`)} className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]">
+                      {speakingKey === `speak-${i}` ? "Stop" : "Listen"}
+                    </button>
+                  )}
                   {i === messages.length - 1 && !pending && (
                     <button onClick={regenerate} className="font-mono text-[10px] uppercase tracking-[0.1em] text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]">
                       Regenerate
@@ -374,6 +464,27 @@ export function CopilotChat({ foundryEnabled }: { foundryEnabled: boolean }) {
         >
           ✦ Think deeply
         </button>
+        {voiceEnabled && (
+          <button
+            type="button"
+            onClick={toggleRecord}
+            title={recording ? "Stop recording" : "Speak your question"}
+            aria-pressed={recording}
+            aria-label={recording ? "Stop recording" : "Record voice"}
+            data-tour="copilot-mic"
+            className={
+              "shrink-0 rounded-full border p-2 transition-colors " +
+              (recording
+                ? "border-[var(--color-rose)] bg-[color-mix(in_srgb,var(--color-rose)_16%,transparent)] text-[var(--color-rose)] animate-pulse"
+                : "border-[var(--color-border-strong)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]")
+            }
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4" />
+            </svg>
+          </button>
+        )}
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}

@@ -3,6 +3,7 @@ import { Reveal } from "@/components/Reveal";
 import { CopilotChat } from "@/components/CopilotChat";
 import { getSessionUser } from "@/lib/auth/guards";
 import { isFoundryConfigured } from "@/lib/copilot/provider";
+import { isSpeechConfigured } from "@/lib/speech/provider";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,7 @@ export default async function CopilotPage() {
         </p>
       </Reveal>
       <Reveal>
-        <CopilotChat foundryEnabled={isFoundryConfigured()} />
+        <CopilotChat foundryEnabled={isFoundryConfigured()} voiceEnabled={isSpeechConfigured()} />
       </Reveal>
     </div>
   );
