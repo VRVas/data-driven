@@ -61,6 +61,8 @@ var aiName = '${prefix}-ai-${resourceToken}'
 var acsName = '${prefix}-acs-${resourceToken}'
 var vnetName = '${prefix}-vnet-${resourceToken}'
 var cosmosPeName = '${prefix}-pe-cosmos-${resourceToken}'
+var searchName = '${prefix}-search-${resourceToken}'
+var searchPeName = '${prefix}-pe-search-${resourceToken}'
 
 var cosmosDatabase = 'bd'
 
@@ -76,6 +78,11 @@ var roleFoundryProjectManager = 'eadc314b-1a2d-4efa-be10-5d325db5065e' // Foundr
 // Voice (keyless STT/TTS on the AI Services account). Luca = multilingual MAI-Voice-2.
 var speechVoice = 'it-IT-Luca:MAI-Voice-2'
 var speechLang = 'en-US'
+
+// Foundry IQ (agentic retrieval) — embeddings model + Azure AI Search role.
+var roleSearchIndexReader = '1407120a-92aa-4202-b7e9-c0e197c71c8f' // Search Index Data Reader
+var embedModelName = 'text-embedding-3-large'
+var embedModelVersion = '1'
 var roleCosmosDataContributor = '00000000-0000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor
 
 // =====================================================================
@@ -346,6 +353,99 @@ resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-0
   }
 }
 
+// text-embedding-3-large — vectorizer for Foundry IQ agentic retrieval (and future memory)
+resource embedDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
+  parent: ai
+  name: embedModelName
+  dependsOn: [ chatDeployment ]
+  sku: { name: 'Standard', capacity: 50 }
+  properties: {
+    model: { format: 'OpenAI', name: embedModelName, version: embedModelVersion }
+  }
+}
+
+// =====================================================================
+//  Foundry IQ — Azure AI Search (agentic retrieval), COMPLIANT SCAFFOLD.
+//  Basic tier (semantic ranker on the free plan), keyless (Entra-only),
+//  private (no public network access). The knowledge base + knowledge
+//  sources are created at the data plane (post-provision, from inside the
+//  VNet) once documents exist. No web knowledge source (compliance).
+// =====================================================================
+resource search 'Microsoft.Search/searchServices@2024-06-01-preview' = {
+  name: searchName
+  location: location
+  tags: tags
+  sku: { name: 'basic' }
+  identity: { type: 'SystemAssigned' }
+  properties: {
+    replicaCount: 1
+    partitionCount: 1
+    hostingMode: 'default'
+    semanticSearch: 'free'
+    disableLocalAuth: true
+    publicNetworkAccess: 'disabled'
+  }
+}
+
+// search -> call the embedding deployment (keyless vectorizer)
+resource searchToAi 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(ai.id, search.id, roleOpenAIUser)
+  scope: ai
+  properties: {
+    principalId: search.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleOpenAIUser)
+  }
+}
+
+// Foundry project -> read search indexes for agentic retrieval (keyless, ProjectManagedIdentity)
+resource projectToSearch 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, aiProject.id, roleSearchIndexReader)
+  scope: search
+  properties: {
+    principalId: aiProject.identity.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleSearchIndexReader)
+  }
+}
+
+// private endpoint + DNS for Search (reachable only from the VNet)
+resource searchPe 'Microsoft.Network/privateEndpoints@2023-11-01' = {
+  name: searchPeName
+  location: location
+  tags: tags
+  properties: {
+    subnet: { id: '${vnet.id}/subnets/pe' }
+    privateLinkServiceConnections: [
+      { name: 'search', properties: { privateLinkServiceId: search.id, groupIds: [ 'searchService' ] } }
+    ]
+  }
+}
+
+resource searchDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.search.windows.net'
+  location: 'global'
+  tags: tags
+}
+
+resource searchDnsLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  parent: searchDnsZone
+  name: '${vnetName}-search-link'
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: { id: vnet.id }
+  }
+}
+
+resource searchPeDns 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-11-01' = {
+  parent: searchPe
+  name: 'default'
+  properties: {
+    privateDnsZoneConfigs: [ { name: 'search', properties: { privateDnsZoneId: searchDnsZone.id } } ]
+  }
+}
+
 // app identity -> inference. Documented role: "Web app -> Azure OpenAI -> Inference".
 resource openAiUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(ai.id, uami.id, roleOpenAIUser)
@@ -528,3 +628,6 @@ output AZURE_AI_AGENT_NAME string = agentName
 output AGENT_INSTRUCTIONS string = agentInstructions
 output KEY_VAULT_NAME string = kv.name
 output MANAGED_IDENTITY_CLIENT_ID string = uami.properties.clientId
+output AZURE_SEARCH_ENDPOINT string = 'https://${searchName}.search.windows.net'
+output AZURE_SEARCH_NAME string = search.name
+output AZURE_EMBEDDING_DEPLOYMENT string = embedModelName
