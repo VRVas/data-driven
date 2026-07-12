@@ -20,7 +20,7 @@ services:
 hooks:
   postprovision:
     shell: sh
-    run: ./scripts/create-agent.sh
+    run: ./scripts/create-agent.sh; ./scripts/create-web-knowledge.sh
     interactive: false
     continueOnError: true
 
