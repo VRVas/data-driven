@@ -69,8 +69,13 @@ var roleAcrPull = '7f951dda-4ed3-4680-a7ca-43fe172d538d' // AcrPull
 var roleKvSecretsUser = '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
 var roleOpenAIUser = '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User (inference)
 var roleCogSvcUser = 'a97b65f3-24c7-4388-baec-2e87135dc908' // Cognitive Services User (read account/deployments)
+var roleSpeechUser = 'f2dc8367-1007-4938-bd23-fe263f013447' // Cognitive Services Speech User (keyless STT/TTS)
 var roleFoundryUser = '53ca6127-db72-4b80-b1b0-d745d6d5456d' // Foundry User (create/edit + consume agents, data plane)
 var roleFoundryProjectManager = 'eadc314b-1a2d-4efa-be10-5d325db5065e' // Foundry Project Manager (deployer creates agent)
+
+// Voice (keyless STT/TTS on the AI Services account). Luca = multilingual MAI-Voice-2.
+var speechVoice = 'it-IT-Luca:MAI-Voice-2'
+var speechLang = 'en-US'
 var roleCosmosDataContributor = '00000000-0000-0000-0000-000000000002' // Cosmos DB Built-in Data Contributor
 
 // =====================================================================
@@ -362,6 +367,17 @@ resource cogSvcUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   }
 }
 
+// app identity -> keyless speech-to-text + text-to-speech (Luca voice)
+resource speechUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(ai.id, uami.id, roleSpeechUser)
+  scope: ai
+  properties: {
+    principalId: uami.properties.principalId
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleSpeechUser)
+  }
+}
+
 // app identity -> create/edit + consume Foundry agents (data plane)
 resource foundryUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(ai.id, uami.id, roleFoundryUser)
@@ -479,6 +495,8 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
             { name: 'AZURE_OPENAI_DEPLOYMENT', value: chatModelName }
             { name: 'COPILOT_CHAT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/openai/v1/chat/completions?api-version=preview' }
             { name: 'COPILOT_MODEL', value: chatModelName }
+            { name: 'SPEECH_VOICE', value: speechVoice }
+            { name: 'SPEECH_LANG', value: speechLang }
             { name: 'AZURE_AI_PROJECT_ENDPOINT', value: 'https://${aiName}.services.ai.azure.com/api/projects/${aiProjectName}' }
             { name: 'AZURE_AI_PROJECT_NAME', value: aiProjectName }
             { name: 'AZURE_AI_AGENT_NAME', value: agentName }
