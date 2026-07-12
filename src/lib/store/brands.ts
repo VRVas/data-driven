@@ -56,14 +56,24 @@ class LocalBrandStore implements BrandStore {
 // Cosmos DB store (production) — container "brands", partition key /id
 // --------------------------------------------------------------------------
 class CosmosBrandStore implements BrandStore {
+  // Seed the empty container at most once per process (parity with LocalBrandStore).
+  private static seeded = false;
   private container() {
     const db = getCosmosDb();
     if (!db) throw new Error("Cosmos DB is not configured");
     return db.container("brands");
   }
   async list(): Promise<Brand[]> {
-    const { resources } = await this.container().items.readAll<Brand>().fetchAll();
-    return resources;
+    const c = this.container();
+    const { resources } = await c.items.readAll<Brand>().fetchAll();
+    // First run against a freshly provisioned (empty) Cosmos: seed from the
+    // cleaned dataset so production matches dev. Cosmos is private (VNet-only),
+    // so seeding through the app is the only way to populate it. Upsert by id
+    // makes this idempotent and safe across concurrent replicas.
+    if (resources.length > 0 || CosmosBrandStore.seeded) return resources;
+    CosmosBrandStore.seeded = true;
+    await Promise.all(SEED.map((b) => c.items.upsert<Brand>(b)));
+    return SEED;
   }
   async get(id: string): Promise<Brand | null> {
     try {

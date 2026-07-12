@@ -56,14 +56,22 @@ class LocalAgentStore implements AgentStore {
 // Cosmos DB store (production) — container "agents", partition key /id
 // --------------------------------------------------------------------------
 class CosmosAgentStore implements AgentStore {
+  // Seed the empty container at most once per process (parity with LocalAgentStore).
+  private static seeded = false;
   private container() {
     const db = getCosmosDb();
     if (!db) throw new Error("Cosmos DB is not configured");
     return db.container("agents");
   }
   async list(): Promise<Agent[]> {
-    const { resources } = await this.container().items.readAll<Agent>().fetchAll();
-    return resources;
+    const c = this.container();
+    const { resources } = await c.items.readAll<Agent>().fetchAll();
+    // First run against a freshly provisioned (empty) Cosmos: seed from the
+    // cleaned dataset so production matches dev (see CosmosBrandStore).
+    if (resources.length > 0 || CosmosAgentStore.seeded) return resources;
+    CosmosAgentStore.seeded = true;
+    await Promise.all(SEED.map((a) => c.items.upsert<Agent>(a)));
+    return SEED;
   }
   async get(id: string): Promise<Agent | null> {
     try {
