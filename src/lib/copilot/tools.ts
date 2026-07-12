@@ -4,6 +4,8 @@ import { z } from "zod";
 import { getBrands, getBrand, getDataset } from "@/lib/data";
 import { getBrandStore } from "@/lib/store/brands";
 import { getOutreachStore, type Outreach } from "@/lib/store/outreach";
+import { answerFromDocuments } from "@/lib/copilot/documents";
+import { getDocRegistryStore } from "@/lib/store/documents";
 import { logAudit } from "@/lib/store/audit";
 import { leadScore, quadrant, weightedValue, winProbability } from "@/lib/scoring";
 import { opportunityScore, penetration, whitespace } from "@/lib/tam";
@@ -357,6 +359,26 @@ const draftOutreach: CopilotTool = {
   },
 };
 
+const searchDocuments: CopilotTool = {
+  name: "search_documents",
+  description:
+    "Search the user's uploaded documents (files they attached to the chat) and answer grounded in them, with citations. Use this whenever the user asks about their attached documents, files, PDFs, reports or uploaded content.",
+  parameters: {
+    type: "object",
+    properties: { query: { type: "string", description: "The question to answer from the uploaded documents." } },
+    required: ["query"],
+  },
+  async execute(args, ctx) {
+    const a = z.object({ query: z.string().min(1) }).parse(args);
+    const reg = await getDocRegistryStore().get(ctx.user.id);
+    if (!reg.vectorStoreId || reg.files.length === 0) {
+      return { empty: true, message: "No documents have been uploaded yet. Use the attach button next to the message box to add one." };
+    }
+    const { answer, citations } = await answerFromDocuments(reg.vectorStoreId, a.query);
+    return { answer, citations, documents: reg.files.map((f) => f.name) };
+  },
+};
+
 export const COPILOT_TOOLS: CopilotTool[] = [
   searchLeads,
   getLead,
@@ -366,6 +388,7 @@ export const COPILOT_TOOLS: CopilotTool[] = [
   listReminders,
   advanceStage,
   draftOutreach,
+  searchDocuments,
 ];
 
 export function getToolByName(name: string): CopilotTool | undefined {

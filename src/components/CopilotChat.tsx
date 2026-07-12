@@ -43,7 +43,7 @@ function parseSSE(chunk: string): { event: string; data: unknown } | null {
   }
 }
 
-export function CopilotChat({ foundryEnabled, voiceEnabled = false }: { foundryEnabled: boolean; voiceEnabled?: boolean }) {
+export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled = false }: { foundryEnabled: boolean; voiceEnabled?: boolean; docsEnabled?: boolean }) {
   const [messages, setMessages] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
   const [pending, setPending] = useState(false);
@@ -62,6 +62,9 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false }: { foundryE
   const [speakingKey, setSpeakingKey] = useState<string | null>(null);
   const mediaRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [docs, setDocs] = useState<{ id: string; name: string }[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const refreshHistory = () => listConversations().then(setHistory).catch(() => {});
   useEffect(() => {
@@ -258,6 +261,43 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false }: { foundryE
     }
   }
 
+  // Documents: load the user's uploaded files; upload/remove.
+  useEffect(() => {
+    if (!docsEnabled) return;
+    fetch("/api/copilot/documents")
+      .then((r) => r.json())
+      .then((d) => setDocs(d.files ?? []))
+      .catch(() => {});
+  }, [docsEnabled]);
+
+  async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/copilot/documents", { method: "POST", body: form });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.file) {
+        setDocs((d) => [...d.filter((x) => x.id !== data.file.id), data.file]);
+        toast(`Added ${data.file.name}`, "success");
+      } else {
+        toast(data.error ?? "Upload failed", "error");
+      }
+    } catch {
+      toast("Upload failed", "error");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  async function removeDoc(id: string) {
+    setDocs((d) => d.filter((x) => x.id !== id));
+    await fetch(`/api/copilot/documents?fileId=${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
+  }
+
   const copyMessage = async (msg: Msg) => {
     const text = msg.role === "user" ? msg.text ?? "" : blocksToMarkdown(msg.blocks ?? []);
     const ok = await copyText(text);
@@ -442,6 +482,19 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false }: { foundryE
         <div ref={endRef} />
       </div>
 
+      {docsEnabled && docs.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-[var(--color-border)] px-4 pt-2">
+          <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Docs</span>
+          {docs.map((d) => (
+            <span key={d.id} className="inline-flex items-center gap-1 rounded-full border border-[var(--color-border-strong)] py-0.5 pl-2.5 pr-1 text-xs text-[var(--color-ink-muted)]">
+              {d.name}
+              <button onClick={() => removeDoc(d.id)} aria-label={`Remove ${d.name}`} className="grid h-4 w-4 place-items-center rounded-full text-[var(--color-ink-faint)] hover:text-[var(--color-rose)]">×</button>
+            </span>
+          ))}
+          {uploading && <span className="text-xs text-[var(--color-ink-faint)]">uploading…</span>}
+        </div>
+      )}
+
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -484,6 +537,30 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false }: { foundryE
               <path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v4" />
             </svg>
           </button>
+        )}
+        {docsEnabled && (
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              onChange={onPickFile}
+              accept=".pdf,.doc,.docx,.txt,.md,.markdown,.csv,.json,.ppt,.pptx,.html,.htm,.rtf"
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileRef.current?.click()}
+              disabled={uploading}
+              title="Attach a document"
+              aria-label="Attach a document"
+              data-tour="copilot-attach"
+              className="shrink-0 rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-ink)] disabled:opacity-50"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48" />
+              </svg>
+            </button>
+          </>
         )}
         <input
           value={input}
