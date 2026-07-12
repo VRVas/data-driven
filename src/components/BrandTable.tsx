@@ -174,6 +174,25 @@ export function BrandTable({
             </tr>
           </thead>
           <tbody>
+            {rows.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-3 py-12 text-center">
+                  <p className="text-sm text-[var(--color-ink-muted)]">
+                    {brands.length === 0
+                      ? "No leads yet — add your first one to start building the pipeline."
+                      : "No leads match your filters."}
+                  </p>
+                  {brands.length === 0 && (
+                    <button
+                      onClick={() => setEditing(null)}
+                      className="mt-3 rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+                    >
+                      + Add your first lead
+                    </button>
+                  )}
+                </td>
+              </tr>
+            )}
             {rows.map((b) => (
               <tr key={b.id} id={b.id} className="border-t border-[var(--color-border)] transition-colors hover:bg-[var(--color-surface)]/60">
                 <td className="px-3 py-2 font-medium">
