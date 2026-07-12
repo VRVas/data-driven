@@ -5,6 +5,7 @@ import { getBrands, getBrand, getDataset } from "@/lib/data";
 import { getBrandStore } from "@/lib/store/brands";
 import { getOutreachStore, type Outreach } from "@/lib/store/outreach";
 import { answerFromDocuments } from "@/lib/copilot/documents";
+import { groundedWebAnswer, isWebGroundingConfigured } from "@/lib/copilot/websearch";
 import { getDocRegistryStore } from "@/lib/store/documents";
 import { logAudit } from "@/lib/store/audit";
 import { leadScore, quadrant, weightedValue, winProbability } from "@/lib/scoring";
@@ -379,6 +380,25 @@ const searchDocuments: CopilotTool = {
   },
 };
 
+const webSearch: CopilotTool = {
+  name: "web_search",
+  description:
+    "Search the live public web (Grounding with Bing) and answer with citations. Use for current events, market/industry research, company or competitor news, funding, launches, trends, or any external fact NOT in the pipeline data or the user's uploaded documents. Prefer internal pipeline/document data when it exists; use the web to enrich, validate or fill gaps. Returns a synthesized answer plus web sources to cite.",
+  parameters: {
+    type: "object",
+    properties: { query: { type: "string", description: "A focused web search question." } },
+    required: ["query"],
+  },
+  async execute(args) {
+    const a = z.object({ query: z.string().min(1) }).parse(args);
+    if (!isWebGroundingConfigured()) {
+      return { unavailable: true, message: "Web search isn't available in this environment." };
+    }
+    const { answer, sources } = await groundedWebAnswer(a.query);
+    return { answer, sources };
+  },
+};
+
 export const COPILOT_TOOLS: CopilotTool[] = [
   searchLeads,
   getLead,
@@ -389,6 +409,7 @@ export const COPILOT_TOOLS: CopilotTool[] = [
   advanceStage,
   draftOutreach,
   searchDocuments,
+  webSearch,
 ];
 
 export function getToolByName(name: string): CopilotTool | undefined {
