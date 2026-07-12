@@ -15,6 +15,7 @@ export function blocksResponseSchema() {
       "chart{variant(bar|donut|scatter|line|progress),title?,series?:[{label,value,tone?}],points?:[{x,y,label?,size?,tone?}],max?} · " +
       "leadCard/leadGrid{leads:[{id,name,status?,score?,budgetEur?,quadrant?}]} · " +
       "recommendation{title,rationale,confidence?} · list{style,items} · timeline{events:[{date?,label,done?}]} · " +
+      "sources{title?,items:[{n?,title,url}]} · " +
       "actions{actions:[{label,tool,args?,style?}]}",
     properties: {
       type: {
@@ -22,7 +23,7 @@ export function blocksResponseSchema() {
         enum: [
           "heading", "text", "reasoning", "callout", "divider", "metrics", "table",
           "keyValue", "list", "badges", "chart", "leadCard", "leadGrid",
-          "comparison", "recommendation", "timeline", "actions",
+          "comparison", "recommendation", "timeline", "actions", "sources",
         ],
       },
       title: { type: "string" },

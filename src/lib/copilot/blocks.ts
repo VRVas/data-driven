@@ -190,6 +190,16 @@ const actionBlock = z.object({
     .max(4),
 });
 
+// Cited web/document sources — clickable external links (used by web grounding).
+const sourcesBlock = z.object({
+  type: z.literal("sources"),
+  title: z.string().nullish(),
+  items: z
+    .array(z.object({ n: z.number().nullish(), title: z.string(), url: z.string() }))
+    .min(1)
+    .max(12),
+});
+
 export const BlockSchema = z.discriminatedUnion("type", [
   headingBlock,
   textBlock,
@@ -208,6 +218,7 @@ export const BlockSchema = z.discriminatedUnion("type", [
   recommendationBlock,
   timelineBlock,
   actionBlock,
+  sourcesBlock,
 ]);
 
 export type Block = z.infer<typeof BlockSchema>;
@@ -275,4 +286,9 @@ export const b = {
   }),
   timeline: (events: z.infer<typeof timelineBlock>["events"]): Block => ({ type: "timeline", events }),
   actions: (actions: ActionSpec[]): Block => ({ type: "actions", actions }),
+  sources: (items: { n?: number; title: string; url: string }[], title?: string): Block => ({
+    type: "sources",
+    title: title ?? null,
+    items: items.map((s) => ({ n: s.n ?? null, title: s.title, url: s.url })),
+  }),
 };

@@ -104,6 +104,8 @@ function BlockView({
       return <Timeline events={block.events} />;
     case "actions":
       return <ActionsBar actions={block.actions} onAction={onAction} pendingAction={pendingAction} />;
+    case "sources":
+      return <Sources title={block.title} items={block.items} />;
     default:
       return null;
   }
@@ -158,6 +160,39 @@ function Callout({ tone, title, text }: { tone: string; title?: string | null; t
     >
       {title && <div className="mb-0.5 text-sm font-semibold" style={{ color: c }}>{title}</div>}
       <div className="text-sm text-[var(--color-ink-muted)]"><RichText text={text} /></div>
+    </div>
+  );
+}
+
+function Sources({ title, items }: { title?: string | null; items: Extract<Block, { type: "sources" }>["items"] }) {
+  const domain = (url: string) => {
+    try {
+      return new URL(url).hostname.replace(/^www\./, "");
+    } catch {
+      return url;
+    }
+  };
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-frosted-canvas)_2%,transparent)] px-4 py-3">
+      <div className="eyebrow mb-2">{title ?? "Sources"}</div>
+      <ol className="space-y-1.5">
+        {items.map((s, i) => (
+          <li key={i} className="flex gap-2 text-sm">
+            {s.n != null && <span className="mt-px shrink-0 tabular-nums text-[var(--color-ink-faint)]">[{s.n}]</span>}
+            <a
+              href={s.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex min-w-0 items-baseline gap-1.5 text-[var(--color-ink-muted)] transition-colors hover:text-[var(--color-brand)]"
+            >
+              <span className="truncate underline decoration-[var(--color-border)] underline-offset-2 group-hover:decoration-[var(--color-brand)]">
+                {s.title}
+              </span>
+              <span className="shrink-0 text-xs text-[var(--color-ink-faint)]">{domain(s.url)} ↗</span>
+            </a>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }

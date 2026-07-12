@@ -62,6 +62,11 @@ function blockToMarkdown(block: Block): string {
       return block.events.map((e) => `- ${e.date ? `\`${e.date}\` ` : ""}${e.label}`).join("\n");
     case "actions":
       return `_Actions: ${block.actions.map((a) => a.label).join(", ")}_`;
+    case "sources":
+      return [
+        block.title ? `**${block.title}**` : "**Sources**",
+        ...block.items.map((s) => `${s.n != null ? `${s.n}. ` : "- "}[${s.title}](${s.url})`),
+      ].join("\n");
     default:
       return "";
   }

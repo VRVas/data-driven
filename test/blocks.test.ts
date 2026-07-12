@@ -30,6 +30,7 @@ describe("block protocol", () => {
       b.leadGrid([{ id: "a", name: "A", score: 3.2 }]),
       b.recommendation("Do X", "because", 0.8),
       b.actions([{ label: "Go", tool: "draft_outreach", args: { id: "a" }, style: "primary" }]),
+      b.sources([{ n: 1, title: "Alpha", url: "https://a.example/x" }], "Sources"),
     ];
     for (const block of built) {
       expect(BlockSchema.safeParse(block).success).toBe(true);
