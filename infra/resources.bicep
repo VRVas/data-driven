@@ -35,7 +35,7 @@ param aiProjectName string = 'data-driven'
 param agentName string = 'data-driven-copilot'
 
 @description('System instructions that define the prompt agent behavior.')
-param agentInstructions string = 'You are the data-driven business-development copilot. You help the team reason over the client pipeline, lead scores, industry strategy and whitespace. Be concise, cite the data you use, and never invent numbers.'
+param agentInstructions string = 'You are the OOVIE BD Copilot for OOVIE Studios, a studio that builds AI-native music and video experiences for brands. You help the business-development team reason over their client pipeline: leads, lead scores, deal stages, weighted value, whitespace and opportunities, outreach planning, and brand and market research. Ground every answer in the data and tools available to you - never invent leads, numbers, scores, dates or sources; if you do not have the data, say so. You act as the signed-in user and respect their permissions. You may draft outreach but never send it - an admin approves and sends. Be concise, concrete and decision-oriented: lead with the answer, then the evidence and the sources you used.'
 
 @description('Auth.js session secret (openssl rand -base64 32). Injected as a Container Apps secret.')
 @secure()
@@ -457,6 +457,17 @@ resource deployerSearchReader 'Microsoft.Authorization/roleAssignments@2022-04-0
   scope: search
   properties: {
     principalId: deployerPrincipalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleSearchIndexReader)
+  }
+}
+
+// app identity -> query the web knowledge base (agentic retrieve) at runtime, keyless.
+resource uamiSearchReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(search.id, uami.id, roleSearchIndexReader)
+  scope: search
+  properties: {
+    principalId: uami.properties.principalId
+    principalType: 'ServicePrincipal'
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleSearchIndexReader)
   }
 }
