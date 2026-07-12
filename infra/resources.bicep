@@ -451,6 +451,16 @@ resource deployerSearchContributor 'Microsoft.Authorization/roleAssignments@2022
   }
 }
 
+// deployer/admin -> query knowledge bases (retrieve) to verify + test in the portal.
+resource deployerSearchReader 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(deployerPrincipalId)) {
+  name: guid(search.id, deployerPrincipalId, roleSearchIndexReader)
+  scope: search
+  properties: {
+    principalId: deployerPrincipalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', roleSearchIndexReader)
+  }
+}
+
 // Link the search service INTO the Foundry project as a CognitiveSearch
 // connection (keyless / project identity) so its knowledge sources and
 // knowledge bases are managed from the Foundry portal.
