@@ -25,6 +25,9 @@ const ROUTES = [
 setup("authenticate", async ({ page }) => {
   setup.setTimeout(180_000); // includes warming every route on a cold dev server
   await login(page);
+  // The product tour auto-starts for first-time users; mark it done in the shared
+  // session so functional specs aren't covered by the tour overlay.
+  await page.evaluate(() => localStorage.setItem("oovie.tour.v1.done", "1"));
   await page.context().storageState({ path: STORAGE_STATE });
 
   // Pre-compile every route via lightweight HTTP requests (the browser context's
