@@ -1,0 +1,74 @@
+name: Deploy
+
+# Azure Developer CLI (azd) deployment pipeline. Provisions infra
+# (infra/main.bicep) and deploys the web service on every push to main and on
+# manual dispatch. Authentication uses secretless OpenID Connect (federated)
+# credentials by default; a client-credentials fallback is kept for setups
+# where OIDC is unavailable.
+#
+# One-time setup: run `azd pipeline config` locally. It creates the service
+# principal + federated credential and populates most of the GitHub variables
+# and secrets referenced below. Then add these app-specific values yourself:
+#   - secret  AUTH_SECRET            Auth.js session secret (`openssl rand -base64 32`)
+#   - variable BUDGET_CONTACT_EMAIL  optional; enables the monthly cost alert
+#   - variable AI_LOCATION           optional; region for AI Foundry (default swedencentral)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+# Secretless Azure federated (OIDC) login requires id-token: write.
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+      AZURE_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
+      AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
+      AI_LOCATION: ${{ vars.AI_LOCATION }}
+      BUDGET_CONTACT_EMAIL: ${{ vars.BUDGET_CONTACT_EMAIL }}
+      AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install azd
+        uses: Azure/setup-azd@v2
+
+      - name: Log in with Azure (Federated Credentials)
+        if: ${{ env.AZURE_CLIENT_ID != '' }}
+        run: |
+          azd auth login `
+            --client-id "$Env:AZURE_CLIENT_ID" `
+            --federated-credential-provider "github" `
+            --tenant-id "$Env:AZURE_TENANT_ID"
+        shell: pwsh
+
+      - name: Log in with Azure (Client Credentials)
+        if: ${{ env.AZURE_CREDENTIALS != '' }}
+        run: |
+          $info = $Env:AZURE_CREDENTIALS | ConvertFrom-Json -AsHashtable;
+          Write-Host "::add-mask::$($info.clientSecret)"
+          azd auth login `
+            --client-id "$($info.clientId)" `
+            --client-secret "$($info.clientSecret)" `
+            --tenant-id "$($info.tenantId)"
+        shell: pwsh
+        env:
+          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Provision infrastructure
+        run: azd provision --no-prompt
+        env:
+          AZD_INITIAL_ENVIRONMENT_CONFIG: ${{ secrets.AZD_INITIAL_ENVIRONMENT_CONFIG }}
+
+      - name: Deploy application
+        run: azd deploy --no-prompt
