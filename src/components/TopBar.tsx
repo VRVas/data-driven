@@ -2,6 +2,7 @@ import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { DashboardNav } from "./DashboardNav";
 import { TourLauncher } from "@/components/tour/TourLauncher";
+import { CommandButton } from "@/components/CommandPalette";
 import { getBrands } from "@/lib/data";
 import { remindersFrom, countDue } from "@/lib/reminders";
 import { getOutreachStore } from "@/lib/store/outreach";
@@ -51,6 +52,7 @@ export async function TopBar({ tour = false }: { tour?: boolean } = {}) {
 
         {user ? (
           <div className="flex items-center gap-3">
+            <CommandButton />
             {tour && <TourLauncher />}
             <Link
               href="/dashboard/reminders"
