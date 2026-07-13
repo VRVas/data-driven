@@ -113,11 +113,53 @@ test.describe("export + copy", () => {
     expect(download.suggestedFilename()).toMatch(/^pipeline-\d{4}-\d{2}-\d{2}\.csv$/);
   });
 
+  test("downloads the pipeline as Excel (.xlsx)", async ({ page }) => {
+    await page.goto("/dashboard/pipeline");
+    await page.getByRole("button", { name: "Export" }).click();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("menuitem", { name: /Download Excel/ }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^pipeline-\d{4}-\d{2}-\d{2}\.xlsx$/);
+  });
+
+  test("downloads the pipeline as PDF", async ({ page }) => {
+    await page.goto("/dashboard/pipeline");
+    await page.getByRole("button", { name: "Export" }).click();
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      page.getByRole("menuitem", { name: /Download PDF/ }).click(),
+    ]);
+    expect(download.suggestedFilename()).toMatch(/^pipeline-\d{4}-\d{2}-\d{2}\.pdf$/);
+  });
+
   test("copies a copilot answer and toasts", async ({ page }) => {
     await page.goto("/dashboard/copilot");
     await page.getByRole("button", { name: "Summarise the pipeline" }).click();
     await expect(page.getByText(/64/).first()).toBeVisible();
     await page.getByRole("button", { name: "Copy", exact: true }).first().click();
     await expect(page.getByText("Copied", { exact: true })).toBeVisible();
+  });
+});
+
+test.describe("command palette", () => {
+  test("opens with the keyboard and jumps to a section", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.keyboard.press("Control+k");
+    const search = page.getByRole("combobox", { name: "Command palette search" });
+    await expect(search).toBeVisible();
+    await shot(page, "23-command-palette");
+    await search.fill("scoring");
+    await search.press("Enter");
+    await expect(page).toHaveURL(/\/dashboard\/scoring$/);
+  });
+
+  test("searches a lead by name and opens it", async ({ page }) => {
+    await page.goto("/dashboard");
+    await page.getByRole("button", { name: "Open command palette" }).click();
+    const search = page.getByRole("combobox", { name: "Command palette search" });
+    await search.fill("alibaba");
+    await page.getByRole("option", { name: /alibaba/i }).first().click();
+    await expect(page).toHaveURL(/\/dashboard\/pipeline\/alibaba$/);
   });
 });
