@@ -29,7 +29,7 @@ afterAll(() => {
 function newBrand(id: string): Brand {
   return {
     id, name: id.toUpperCase(), aliases: [], scored: false,
-    status: null, priority: null, owner: null, poc: null, industry: null, industryRaw: null,
+    status: null, priority: null, owner: null, poc: null, email: null, industry: null, industryRaw: null,
     initialContact: null, lastContact: null, followUp: null, closingFailed: null, notes: null,
   };
 }
