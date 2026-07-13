@@ -12,12 +12,16 @@ name: Deploy
 #   - secret  AUTH_SECRET            Auth.js session secret (`openssl rand -base64 32`)
 #   - variable BUDGET_CONTACT_EMAIL  optional; enables the monthly cost alert
 #   - variable AI_LOCATION           optional; region for AI Foundry (default swedencentral)
+#
+# Trigger is manual (workflow_dispatch) by default because this repo is deployed
+# on demand with `azd up`. To enable continuous deployment once the secrets above
+# exist, uncomment the `push` trigger below.
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+  # push:
+  #   branches:
+  #     - main
 
 # Secretless Azure federated (OIDC) login requires id-token: write.
 permissions:
