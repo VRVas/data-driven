@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { toCsv, toJson, stampName, type Column } from "@/lib/export";
-import { downloadFile, copyText, MIME } from "@/lib/download";
+import { toCsv, toJson, toXlsx, toPdf, stampName, type Column } from "@/lib/export";
+import { downloadFile, downloadBlob, copyText, MIME } from "@/lib/download";
 import { useToast } from "@/components/ui/Toast";
 
 interface Props {
@@ -21,10 +21,12 @@ export function ExportMenu({ filename, columns, rows, allRows, label = "Export",
   const toast = useToast();
   const hasAll = !!allRows && allRows.length !== rows.length;
 
-  const save = (fmt: "csv" | "json", data: Record<string, unknown>[]) => {
+  const save = (fmt: "csv" | "json" | "xlsx" | "pdf", data: Record<string, unknown>[]) => {
     const base = stampName(filename);
     if (fmt === "csv") downloadFile(`${base}.csv`, toCsv(columns, data), MIME.csv);
-    else downloadFile(`${base}.json`, toJson(data), MIME.json);
+    else if (fmt === "json") downloadFile(`${base}.json`, toJson(data), MIME.json);
+    else if (fmt === "xlsx") downloadBlob(`${base}.xlsx`, toXlsx(columns, data), MIME.xlsx);
+    else downloadBlob(`${base}.pdf`, toPdf(titleFromFilename(filename), columns, data), MIME.pdf);
     toast(`Exported ${data.length} ${data.length === 1 ? "row" : "rows"}`);
     setOpen(false);
   };
@@ -58,6 +60,8 @@ export function ExportMenu({ filename, columns, rows, allRows, label = "Export",
           >
             <Item onClick={() => save("csv", rows)}>Download CSV{hasAll ? ` · ${rows.length} shown` : ""}</Item>
             <Item onClick={() => save("json", rows)}>Download JSON</Item>
+            <Item onClick={() => save("xlsx", rows)}>Download Excel (.xlsx)</Item>
+            <Item onClick={() => save("pdf", rows)}>Download PDF</Item>
             {hasAll && (
               <Item onClick={() => save("csv", allRows!)}>
                 Download all {allRows!.length} · CSV
@@ -70,6 +74,14 @@ export function ExportMenu({ filename, columns, rows, allRows, label = "Export",
       )}
     </div>
   );
+}
+
+/** "pipeline" -> "Pipeline", "data-quality" -> "Data Quality" (PDF document title). */
+function titleFromFilename(name: string): string {
+  return name
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
 }
 
 function Item({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {

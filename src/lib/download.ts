@@ -16,6 +16,19 @@ export function downloadFile(filename: string, content: string, mime: string): v
   URL.revokeObjectURL(url);
 }
 
+/** Trigger a file download from binary bytes (e.g. .xlsx / .pdf). */
+export function downloadBlob(filename: string, data: Uint8Array | Blob, mime: string): void {
+  const blob = data instanceof Blob ? data : new Blob([data as BlobPart], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 /** Copy text to the clipboard, with a legacy fallback. Returns success. */
 export async function copyText(text: string): Promise<boolean> {
   try {
@@ -46,4 +59,6 @@ export const MIME = {
   csv: "text/csv;charset=utf-8",
   json: "application/json;charset=utf-8",
   md: "text/markdown;charset=utf-8",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  pdf: "application/pdf",
 } as const;
