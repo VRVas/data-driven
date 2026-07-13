@@ -47,6 +47,18 @@ param deployerPrincipalId string = ''
 @description('Deploy Azure Communication Services email (one-click outreach). Off by default.')
 param deployEmail bool = false
 
+@description('Monthly cost budget (in the billing currency) tracked on the resource group. Used only when a budget contact email is set.')
+param budgetAmount int = 100
+
+@description('Email address notified on cost-budget thresholds. Empty string disables the budget + alert.')
+param budgetContactEmail string = ''
+
+@description('Budget start date (must be the first of a month). Defaults to the current month.')
+param budgetStartDate string = utcNow('yyyy-MM-01')
+
+@description('Daily ingestion cap (GB) for the Log Analytics workspace. Protects against runaway telemetry cost; raise if legitimate telemetry is being clipped.')
+param logAnalyticsDailyQuotaGb int = 1
+
 // ---- naming ---------------------------------------------------------
 var prefix = 'datadriven'
 var law = '${prefix}-log-${resourceToken}'
@@ -107,6 +119,10 @@ resource logs 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   properties: {
     retentionInDays: 30
     sku: { name: 'PerGB2018' }
+    // Cost hardening: cap daily ingestion so a telemetry storm cannot run up cost.
+    workspaceCapping: {
+      dailyQuotaGb: logAnalyticsDailyQuotaGb
+    }
   }
 }
 
@@ -119,6 +135,139 @@ resource appInsights 'Microsoft.Insights/components@2020-02-02' = {
     Application_Type: 'web'
     WorkspaceResourceId: logs.id
     DisableLocalAuth: true
+  }
+}
+
+// Azure Monitor Workbook pinned to the App Insights component: requests,
+// failures, latency, dependencies and exceptions at a glance (no need to open
+// the portal query editor). serializedData is the workbook JSON as a string.
+// Grounded: https://learn.microsoft.com/azure/templates/microsoft.insights/2023-06-01/workbooks
+var workbookContent = {
+  version: 'Notebook/1.0'
+  items: [
+    {
+      type: 1
+      content: {
+        json: 'data-driven - application health. Requests, failures, latency, dependencies and exceptions for the web app. Scope: this Application Insights component. Use the time range control to adjust the window.'
+      }
+    }
+    {
+      type: 3
+      content: {
+        version: 'KqlItem/1.0'
+        query: 'requests | summarize Requests = count() by bin(timestamp, 30m)'
+        size: 0
+        title: 'Request volume'
+        queryType: 0
+        resourceType: 'microsoft.insights/components'
+        visualization: 'timechart'
+      }
+    }
+    {
+      type: 3
+      content: {
+        version: 'KqlItem/1.0'
+        query: 'requests | where success == false | summarize Failed = count() by bin(timestamp, 30m)'
+        size: 0
+        title: 'Failed requests'
+        queryType: 0
+        resourceType: 'microsoft.insights/components'
+        visualization: 'timechart'
+      }
+    }
+    {
+      type: 3
+      content: {
+        version: 'KqlItem/1.0'
+        query: 'requests | summarize AvgDurationMs = round(avg(duration), 1) by bin(timestamp, 30m)'
+        size: 0
+        title: 'Average server response time (ms)'
+        queryType: 0
+        resourceType: 'microsoft.insights/components'
+        visualization: 'timechart'
+      }
+    }
+    {
+      type: 3
+      content: {
+        version: 'KqlItem/1.0'
+        query: 'requests | summarize Count = count(), AvgMs = round(avg(duration), 1), FailRatePct = round(100.0 * countif(success == false) / count(), 1) by name | top 10 by Count desc'
+        size: 0
+        title: 'Top operations'
+        queryType: 0
+        resourceType: 'microsoft.insights/components'
+        visualization: 'table'
+      }
+    }
+    {
+      type: 3
+      content: {
+        version: 'KqlItem/1.0'
+        query: 'dependencies | where success == false | summarize Failures = count() by target, type | top 15 by Failures desc'
+        size: 0
+        title: 'Dependency failures (Cosmos, AI, Search)'
+        queryType: 0
+        resourceType: 'microsoft.insights/components'
+        visualization: 'table'
+      }
+    }
+    {
+      type: 3
+      content: {
+        version: 'KqlItem/1.0'
+        query: 'exceptions | summarize Count = count() by bin(timestamp, 1h), type'
+        size: 0
+        title: 'Exceptions over time'
+        queryType: 0
+        resourceType: 'microsoft.insights/components'
+        visualization: 'timechart'
+      }
+    }
+  ]
+}
+
+resource workbook 'Microsoft.Insights/workbooks@2023-06-01' = {
+  name: guid(appInsights.id, 'app-health')
+  location: location
+  tags: tags
+  kind: 'shared'
+  properties: {
+    displayName: 'data-driven - application health'
+    category: 'workbook'
+    serializedData: string(workbookContent)
+    sourceId: appInsights.id
+    version: 'Notebook/1.0'
+  }
+}
+
+// Opt-in monthly cost budget on the resource group: alert at 80% forecast and
+// 100% actual spend. Skipped entirely unless a contact email is supplied.
+// Grounded: https://learn.microsoft.com/azure/templates/microsoft.consumption/2023-11-01/budgets
+resource budget 'Microsoft.Consumption/budgets@2023-11-01' = if (!empty(budgetContactEmail)) {
+  name: '${prefix}-budget-${resourceToken}'
+  properties: {
+    category: 'Cost'
+    amount: budgetAmount
+    timeGrain: 'Monthly'
+    timePeriod: {
+      startDate: budgetStartDate
+    }
+    notifications: {
+      forecast80: {
+        enabled: true
+        operator: 'GreaterThan'
+        threshold: 80
+        thresholdType: 'Forecasted'
+        contactEmails: [ budgetContactEmail ]
+      }
+      actual100: {
+        enabled: true
+        operator: 'GreaterThan'
+        threshold: 100
+        thresholdType: 'Actual'
+        contactEmails: [ budgetContactEmail ]
+      }
+    }
   }
 }
 
@@ -689,7 +838,9 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           ]
         }
       ]
-      scale: { minReplicas: 0, maxReplicas: 3 }
+      // minReplicas: 1 keeps one instance always warm (no cold starts). Cost of
+      // one always-on Consumption replica is accepted (user directive 2026-07-12).
+      scale: { minReplicas: 1, maxReplicas: 3 }
     }
   }
 }
@@ -717,3 +868,4 @@ output AZURE_EMBEDDING_DEPLOYMENT string = embedModelName
 output AZURE_SEARCH_CONNECTION_NAME string = searchConnection.name
 output AZURE_SEARCH_WEB_KS string = searchWebKsName
 output AZURE_SEARCH_KNOWLEDGE_BASE string = searchKbName
+output APP_INSIGHTS_WORKBOOK_ID string = workbook.id

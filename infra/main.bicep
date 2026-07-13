@@ -22,6 +22,9 @@ param aiLocation string = 'swedencentral'
 @description('Deploy Azure Communication Services email (one-click outreach).')
 param deployEmail bool = false
 
+@description('Email address for the monthly cost-budget alert on the resource group. Empty disables it.')
+param budgetContactEmail string = ''
+
 @description('Auth.js session secret (openssl rand -base64 32).')
 @secure()
 param authSecret string
@@ -60,6 +63,7 @@ module resources 'resources.bicep' = {
     agentName: agentName
     authSecret: authSecret
     deployerPrincipalId: principalId
+    budgetContactEmail: budgetContactEmail
   }
 }
 

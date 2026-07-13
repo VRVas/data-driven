@@ -28,12 +28,13 @@ azd up      # provisions infra/main.bicep, builds the image, deploys the Contain
 | App data store | `Microsoft.DocumentDB/databaseAccounts@2024-11-15` (NoSQL, **serverless**, `disableLocalAuth: true`, **`publicNetworkAccess: Disabled`**) | brands / agents / industries / users / audit / savedViews / outreach |
 | Virtual network | `Microsoft.Network/virtualNetworks@2023-11-01` (`aca` /27 + `pe` /24 subnets) | Private networking |
 | Cosmos private endpoint + DNS | `privateEndpoints@2023-11-01` (groupId `Sql`) + `privatelink.documents.azure.com` | Private Cosmos access |
-| Web app | `Microsoft.App/containerApps@2024-03-01` (Consumption workload profile) | Next.js SSR + API (scale-to-zero) |
+| Web app | `Microsoft.App/containerApps@2024-03-01` (Consumption workload profile) | Next.js SSR + API (min 1 replica, always warm) |
 | Environment | `Microsoft.App/managedEnvironments@2024-03-01` (VNet-integrated, logs → Azure Monitor) | Container Apps env |
 | Registry | `Microsoft.ContainerRegistry/registries@2023-07-01` (Basic, admin disabled) | Image storage (MI pull) |
 | Identity | `Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31` | App identity (Entra-only auth) |
 | Key Vault | `Microsoft.KeyVault/vaults@2023-07-01` (RBAC) | Secrets |
-| Monitoring | Log Analytics + Application Insights (`DisableLocalAuth: true`) | Observability |
+| Monitoring | Log Analytics (`workspaceCapping.dailyQuotaGb` cap) + Application Insights (`DisableLocalAuth: true`) + an Azure Monitor **workbook** | Observability |
+| Cost budget (opt-in) | `Microsoft.Consumption/budgets@2023-11-01` | Monthly spend alert (set `BUDGET_CONTACT_EMAIL`) |
 | Email (optional) | `Microsoft.Communication/communicationServices` | One-click outreach (`deployEmail=true`) |
 
 ## Azure AI Foundry — new Foundry (V2)
@@ -170,3 +171,50 @@ public access to Cosmos DB**.
   app via `secretRef`; `AUTH_TRUST_HOST=true` is set for the HTTPS ingress proxy.
 - `gpt-5.4-mini` deployment `capacity` (`chatModelCapacity`, default 30) is subject to
   regional quota; lower it if a deploy fails on quota.
+
+## Observability dashboard + cost controls
+
+- **App-health workbook** (`Microsoft.Insights/workbooks@2023-06-01`, `kind: shared`,
+  pinned to the App Insights component via `sourceId`). Tiles: request volume, failed
+  requests, average server response time, top operations, dependency failures
+  (Cosmos / AI / Search), and exceptions over time. Open it from **Application Insights →
+  Workbooks → data-driven - application health**, or edit the KQL in
+  [resources.bicep](resources.bicep) (`workbookContent`).
+  Ref: <https://learn.microsoft.com/azure/templates/microsoft.insights/2023-06-01/workbooks>
+- **Log Analytics daily cap** — `workspaceCapping.dailyQuotaGb` (param
+  `logAnalyticsDailyQuotaGb`, default **1 GB/day**) bounds ingestion cost; raise it if
+  legitimate telemetry is being clipped.
+  Ref: <https://learn.microsoft.com/azure/azure-monitor/logs/daily-cap>
+- **Monthly cost budget** (opt-in) — set `azd env set BUDGET_CONTACT_EMAIL you@org.com`
+  (or the GitHub `BUDGET_CONTACT_EMAIL` variable) to create a
+  `Microsoft.Consumption/budgets` alert on the resource group: e-mail at **80 % forecast**
+  and **100 % actual** of `budgetAmount` (default 100). No email → the budget is skipped.
+  Ref: <https://learn.microsoft.com/azure/templates/microsoft.consumption/2023-11-01/budgets>
+- **Always-warm app** — the Container App runs `minReplicas: 1` (no scale-to-zero cold
+  starts). This is a deliberate, cost-accepted trade-off; drop it to `0` in
+  [resources.bicep](resources.bicep) to scale to zero when idle.
+
+## CI/CD pipeline (GitHub Actions)
+
+Two workflows live in [`.github/workflows`](../.github/workflows):
+
+- **`ci.yml`** — quality gate on pushes to `main` and PRs: `npm ci`, `npm run typecheck`,
+  `npm test` (Vitest), `npm run build`, plus the Playwright end-to-end suite. No Azure
+  access required.
+- **`azure-dev.yml`** — the **azd** deploy pipeline: `azd provision` + `azd deploy` on
+  push to `main` (and manual dispatch), authenticating with **secretless OIDC (federated)
+  credentials** by default, with a client-credentials fallback.
+
+Wire it up once with `azd pipeline config` (creates the service principal + federated
+credential and populates most variables/secrets), then add the app-specific values:
+
+| GitHub | Name | Purpose |
+| --- | --- | --- |
+| variable | `AZURE_CLIENT_ID` / `AZURE_TENANT_ID` / `AZURE_SUBSCRIPTION_ID` | federated login target (set by `azd pipeline config`) |
+| variable | `AZURE_ENV_NAME` / `AZURE_LOCATION` | azd environment + app-tier region (set by `azd pipeline config`) |
+| variable | `AI_LOCATION` | *optional* — AI Foundry region (default `swedencentral`) |
+| variable | `BUDGET_CONTACT_EMAIL` | *optional* — enables the monthly cost alert |
+| secret | `AUTH_SECRET` | Auth.js session secret (`openssl rand -base64 32`) |
+
+- azd GitHub Actions pipeline: <https://learn.microsoft.com/azure/developer/azure-developer-cli/pipeline-github-actions>
+- OIDC / federated login: <https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect>
