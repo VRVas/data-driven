@@ -33,6 +33,7 @@ export function CommandButton() {
       onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))}
       title="Command palette"
       aria-label="Open command palette"
+      data-tour="command"
       className="hidden items-center gap-2 rounded-full border border-[var(--color-border-strong)] py-1.5 pl-3 pr-2 text-sm text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
     >
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
