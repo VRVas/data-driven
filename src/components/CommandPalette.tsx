@@ -105,7 +105,6 @@ export function CommandPalette({
     const nav: [string, string, string?][] = [
       ["/dashboard", "Overview"],
       ["/dashboard/pipeline", "Pipeline", "leads crm"],
-      ["/dashboard/agents", "Agents & agencies", "partners"],
       ["/dashboard/scoring", "Scoring", "score quadrant"],
       ["/dashboard/industries", "Industries", "sectors"],
       ["/dashboard/whitespace", "Whitespace & opportunity", "tam market sizing"],

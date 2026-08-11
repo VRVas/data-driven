@@ -7,7 +7,6 @@ test.use({ storageState: STORAGE_STATE });
 
 const PAGES = [
   { nav: "Pipeline", url: /\/dashboard\/pipeline$/, h1: "Pipeline", eyebrow: "Lead tracker" },
-  { nav: "Agents", url: /\/dashboard\/agents$/, h1: "Agents & Agencies", eyebrow: "Partner network" },
   { nav: "Scoring", url: /\/dashboard\/scoring$/, h1: "Scoring model", eyebrow: "Model" },
   { nav: "Industries", url: /\/dashboard\/industries$/, h1: "Industries", eyebrow: "Segments" },
   { nav: "Whitespace", url: /\/dashboard\/whitespace$/, h1: "Whitespace & TAM", eyebrow: "Market" },

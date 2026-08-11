@@ -35,7 +35,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard",
     selector: '[data-tour="nav"]',
     title: "Your command bar",
-    body: "Jump between Overview, Pipeline, Agents, Scoring, Industries, Whitespace, Data Quality and the Copilot. The active section stays lit.",
+    body: "Jump between Overview, Pipeline, Scoring, Industries, Whitespace, Data Quality and the Copilot. The active section stays lit.",
     placement: "bottom",
   },
   {
@@ -133,15 +133,6 @@ export const TOUR_STEPS: TourStep[] = [
     body: "Edit any row inline, or click a brand name to open its detail page with the full scoring breakdown and activity.",
     placement: "left",
     optional: true,
-  },
-  {
-    id: "agents",
-    route: "/dashboard/agents",
-    selector: '[data-tour="nav"]',
-    title: "Agents & agencies",
-    body: "The same tracker, for your agency and talent partners — who you're working with, at what stage.",
-    sheet: "AgentsAgencies (pipeline) + Agency Data (their scoring).",
-    placement: "bottom",
   },
   {
     id: "scoring",

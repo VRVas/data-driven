@@ -7,7 +7,7 @@ import { clsx } from "clsx";
 export const NAV = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/pipeline", label: "Pipeline" },
-  { href: "/dashboard/agents", label: "Agents" },
+  // Agents/agencies hidden from nav (we don't convert through them); /dashboard/agents still exists.
   { href: "/dashboard/scoring", label: "Scoring" },
   { href: "/dashboard/industries", label: "Industries" },
   { href: "/dashboard/whitespace", label: "Whitespace" },
