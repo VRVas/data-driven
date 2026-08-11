@@ -92,11 +92,14 @@ export const STATUS_TOKEN: Record<BrandStatus, string> = {
   "Still to open": "var(--color-status-open)",
 };
 
-export const PRIORITY_TOKEN: Record<Priority, string> = {
-  "Hot Lead": "var(--color-rose)",
-  "Warm Lead": "var(--color-amber)",
-  "Cold Lead": "var(--color-cyan)",
-};
+const PRIORITY_ORDER: readonly Priority[] = ["Cold Lead", "Warm Lead", "Hot Lead"];
+
+/** Colour ramp aligned to PRIORITY_ORDER — green = act now, red = cold. Reverse this line to flip to hot = red. */
+const PRIORITY_RAMP: readonly string[] = ["var(--color-rose)", "var(--color-amber)", "var(--color-mint)"];
+
+export const PRIORITY_TOKEN: Record<Priority, string> = Object.fromEntries(
+  PRIORITY_ORDER.map((p, i) => [p, PRIORITY_RAMP[i]]),
+) as Record<Priority, string>;
 
 export function valuationToken(v: Valuation | null): string {
   if (v === "High") return "var(--color-heat-high)";
