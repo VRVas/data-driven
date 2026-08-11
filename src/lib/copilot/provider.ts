@@ -1,5 +1,5 @@
 import "server-only";
-import { getBrands } from "@/lib/data";
+import { getVisibleBrands } from "@/lib/leads/visible";
 import { runTool, type ToolRun } from "./dispatch";
 import { toolSchemas } from "./tools";
 import { b, parseBlocks, type Block, type LeadCardData } from "./blocks";
@@ -100,7 +100,7 @@ class LocalCopilotProvider implements CopilotProvider {
   readonly name = "local-preview";
 
   private async resolveLead(message: string): Promise<{ id: string; name: string } | null> {
-    const brands = await getBrands();
+    const brands = await getVisibleBrands();
     const lower = message.toLowerCase();
     const hit = brands
       .filter((br) => lower.includes(br.name.toLowerCase()))

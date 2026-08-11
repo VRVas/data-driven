@@ -1,7 +1,8 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getBrands, getBrand, getDataset } from "@/lib/data";
+import { getBrand, getDataset } from "@/lib/data";
+import { getVisibleBrands, canSeeBrand } from "@/lib/leads/visible";
 import { getBrandStore } from "@/lib/store/brands";
 import { getOutreachStore, type Outreach } from "@/lib/store/outreach";
 import { answerFromDocuments } from "@/lib/copilot/documents";
@@ -126,7 +127,7 @@ const searchLeads: CopilotTool = {
       })
       .parse(args);
 
-    let brands = await getBrands();
+    let brands = await getVisibleBrands();
     // An unqualified ranking answers "where do we spend effort next", so finished
     // deals are out. A name lookup or an explicit status is a search — match anything.
     const outcomeFilter = a.outcome ?? (a.status || a.query ? "any" : "open");
@@ -233,7 +234,7 @@ const pipelineSummary: CopilotTool = {
     "Summarise the whole pipeline: totals, scored coverage, weighted (probability-adjusted) value, hot-lead and closed counts, and the count of leads at each stage. Prefer the open* figures when talking about live pipeline — the totals include finished deals.",
   parameters: { type: "object", properties: {} },
   async execute() {
-    const brands = await getBrands();
+    const brands = await getVisibleBrands();
     const live = openLeads(brands);
     const byStatus: Record<string, number> = {};
     for (const b of brands) if (b.status) byStatus[b.status] = (byStatus[b.status] ?? 0) + 1;
@@ -287,7 +288,7 @@ const listReminders: CopilotTool = {
   },
   async execute(args) {
     const { bucket } = z.object({ bucket: z.enum(["overdue", "today", "upcoming"]).optional() }).parse(args);
-    let reminders = remindersFrom(await getBrands());
+    let reminders = remindersFrom(await getVisibleBrands());
     if (bucket) reminders = reminders.filter((r) => r.bucket === bucket);
     return {
       count: reminders.length,
