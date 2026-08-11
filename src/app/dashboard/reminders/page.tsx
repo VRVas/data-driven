@@ -1,6 +1,6 @@
 import { Reveal } from "@/components/Reveal";
 import { ReminderRow } from "@/components/ReminderRow";
-import { getBrands } from "@/lib/data";
+import { getVisibleBrands } from "@/lib/leads/visible";
 import { remindersFrom, type Reminder, type ReminderBucket } from "@/lib/reminders";
 import { ExportMenu } from "@/components/ExportMenu";
 
@@ -13,7 +13,7 @@ const SECTIONS: { bucket: ReminderBucket; title: string; blurb: string }[] = [
 ];
 
 export default async function RemindersPage() {
-  const brands = await getBrands();
+  const brands = await getVisibleBrands();
   const reminders = remindersFrom(brands);
   const byBucket = (b: ReminderBucket): Reminder[] => reminders.filter((r) => r.bucket === b);
   const dueCount = byBucket("overdue").length + byBucket("today").length;

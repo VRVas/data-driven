@@ -4,7 +4,7 @@ import { TourProvider } from "@/components/tour/TourProvider";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SmoothScrollProvider } from "@/lib/gsap/SmoothScrollProvider";
 import { auth, signOut } from "@/auth";
-import { getBrands } from "@/lib/data";
+import { getVisibleBrands } from "@/lib/leads/visible";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -12,7 +12,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   let leads: { id: string; name: string }[] = [];
   try {
-    leads = (await getBrands()).map((b) => ({ id: b.id, name: b.name }));
+    leads = (await getVisibleBrands()).map((b) => ({ id: b.id, name: b.name }));
   } catch {
     leads = [];
   }

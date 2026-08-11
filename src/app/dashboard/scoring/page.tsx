@@ -1,6 +1,6 @@
 import { Reveal } from "@/components/Reveal";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
-import { getScoredBrands } from "@/lib/data";
+import { getVisibleScoredBrands } from "@/lib/leads/visible";
 import { openLeads } from "@/lib/lifecycle";
 import { PRIORITY_TOKEN, leadScore, quadrant, eur } from "@/lib/scoring";
 import { ExportMenu } from "@/components/ExportMenu";
@@ -33,7 +33,7 @@ const MODEL = [
 ];
 
 export default async function ScoringPage() {
-  const scored = await getScoredBrands();
+  const scored = await getVisibleScoredBrands();
   // Targeting views rank where to spend effort next, so finished deals are out.
   const live = openLeads(scored);
   const points: QuadPoint[] = live

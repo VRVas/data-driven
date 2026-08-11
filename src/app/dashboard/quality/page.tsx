@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
-import { getBrands, getDataQuality } from "@/lib/data";
+import { getDataQuality } from "@/lib/data";
+import { getVisibleBrands } from "@/lib/leads/visible";
 import { outcomeConflicts } from "@/lib/lifecycle";
 import { ExportMenu } from "@/components/ExportMenu";
 
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function QualityPage() {
   const { issues, count } = getDataQuality();
-  const conflicts = outcomeConflicts(await getBrands());
+  const conflicts = outcomeConflicts(await getVisibleBrands());
   const groups = issues.reduce<Record<string, typeof issues>>((acc, i) => {
     const bucket = i.issue.includes("date") || i.key.includes("Contact")
       ? "Dates"

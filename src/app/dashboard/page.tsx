@@ -4,7 +4,8 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { StatusFunnel, type FunnelRow } from "@/components/viz/StatusFunnel";
 import { IndustryHeatmap } from "@/components/viz/IndustryHeatmap";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
-import { getDataset, getBrands } from "@/lib/data";
+import { getDataset } from "@/lib/data";
+import { getVisibleBrands } from "@/lib/leads/visible";
 import { openLeads } from "@/lib/lifecycle";
 import { STATUS_TOKEN, PRIORITY_TOKEN, weightedValue } from "@/lib/scoring";
 import type { BrandStatus } from "@/lib/types";
@@ -38,7 +39,7 @@ function Panel({ eyebrow, title, subtitle, children, className, tour }: { eyebro
 
 export default async function DashboardOverview() {
   const ds = getDataset();
-  const brands = await getBrands();
+  const brands = await getVisibleBrands();
   const scored = brands.filter((b) => b.scored && b.scores);
 
   const closed = brands.filter((b) => b.status === "Deal Closed").length;

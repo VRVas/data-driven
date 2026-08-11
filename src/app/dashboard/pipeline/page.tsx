@@ -1,22 +1,14 @@
 import { Reveal } from "@/components/Reveal";
 import { BrandTable } from "@/components/BrandTable";
-import { getBrands } from "@/lib/data";
+import { getVisibleBrands } from "@/lib/leads/visible";
 import { getSessionUser } from "@/lib/auth/guards";
-import { can, requirePermission } from "@/lib/auth/authorize";
-import { ownerIdResolver } from "@/lib/crm/owners";
+import { can } from "@/lib/auth/authorize";
 import { getViewStore } from "@/lib/store/views";
 
 export const dynamic = "force-dynamic";
 
 export default async function PipelinePage() {
-  const auth = await requirePermission("lead:read");
-  const all = await getBrands();
-  // A capability alone doesn't grant access to every row.
-  const resolveOwner = await ownerIdResolver();
-  const brands =
-    auth.superuser || auth.scope === "all"
-      ? all
-      : all.filter((b) => resolveOwner(b.owner) === auth.user.id);
+  const brands = await getVisibleBrands();
   const me = await getSessionUser();
   const isAdmin = await can("lead:delete");
   const views = me ? await getViewStore().listForUser(me.id) : [];
