@@ -5,6 +5,7 @@ import { MobileMenu } from "./MobileMenu";
 import { TourLauncher } from "@/components/tour/TourLauncher";
 import { CommandButton } from "@/components/CommandPalette";
 import { getBrands } from "@/lib/data";
+import { capabilities } from "@/lib/auth/authorize";
 import { remindersFrom, countDue } from "@/lib/reminders";
 import { getOutreachStore } from "@/lib/store/outreach";
 
@@ -14,13 +15,16 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
 
   let dueCount = 0;
   let pendingOutreach = 0;
+  const caps = user
+    ? await capabilities(["audit:read", "user:read", "outreach:send"] as const)
+    : { "audit:read": false, "user:read": false, "outreach:send": false };
   if (user) {
     try {
       dueCount = countDue(remindersFrom(await getBrands()));
     } catch {
       dueCount = 0;
     }
-    if (user.role === "admin") {
+    if (caps["outreach:send"]) {
       try {
         pendingOutreach = (await getOutreachStore().list(300)).filter((o) => o.status === "pending_approval").length;
       } catch {
@@ -101,7 +105,7 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
                 </span>
               )}
             </Link>
-            {user.role === "admin" && (
+            {caps["audit:read"] && (
               <Link
                 href="/dashboard/activity"
                 title="Activity — audit trail"
@@ -114,7 +118,7 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
                 </svg>
               </Link>
             )}
-            {user.role === "admin" && (
+            {caps["user:read"] && (
               <Link
                 href="/dashboard/team"
                 title="Team & roles"
@@ -152,7 +156,7 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
           </div>
           <MobileMenu
             user={{ name: user.name, email: user.email, role: user.role }}
-            isAdmin={user.role === "admin"}
+            isAdmin={caps["user:read"]}
             dueCount={dueCount}
             pendingOutreach={pendingOutreach}
             tour={tour}

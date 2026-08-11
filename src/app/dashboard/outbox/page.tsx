@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Reveal } from "@/components/Reveal";
 import { OutreachItem } from "@/components/OutreachItem";
 import { getSessionUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/authorize";
 import { getOutreachStore, type OutreachStatus } from "@/lib/store/outreach";
 import { ExportMenu } from "@/components/ExportMenu";
 
@@ -17,7 +18,7 @@ const COUNTS: { status: OutreachStatus; label: string; accent: string }[] = [
 export default async function OutboxPage() {
   const me = await getSessionUser();
   if (!me) redirect("/login");
-  const isAdmin = me.role === "admin";
+  const isAdmin = await can("outreach:send");
 
   const all = await getOutreachStore().list(300);
   const count = (s: OutreachStatus) => all.filter((o) => o.status === s).length;

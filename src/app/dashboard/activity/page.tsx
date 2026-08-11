@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Reveal } from "@/components/Reveal";
 import { getSessionUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/authorize";
 import { getAuditStore } from "@/lib/store/audit";
 import { relativeTime } from "@/lib/time";
 import { ExportMenu } from "@/components/ExportMenu";
@@ -19,7 +20,7 @@ function toneFor(action: string): string {
 export default async function ActivityPage() {
   const me = await getSessionUser();
   if (!me) redirect("/login");
-  if (me.role !== "admin") redirect("/dashboard");
+  if (!(await can("audit:read"))) redirect("/dashboard");
 
   const entries = await getAuditStore().list(200);
 

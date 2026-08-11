@@ -2,6 +2,7 @@ import { Reveal } from "@/components/Reveal";
 import { BrandTable } from "@/components/BrandTable";
 import { getBrands } from "@/lib/data";
 import { getSessionUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/authorize";
 import { getViewStore } from "@/lib/store/views";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function PipelinePage() {
   const brands = await getBrands();
   const me = await getSessionUser();
-  const isAdmin = me?.role === "admin";
+  const isAdmin = await can("lead:delete");
   const views = me ? await getViewStore().listForUser(me.id) : [];
   return (
     <div className="space-y-6">

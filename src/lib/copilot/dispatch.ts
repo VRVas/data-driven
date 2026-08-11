@@ -1,5 +1,6 @@
 import "server-only";
 import { getToolByName } from "./tools";
+import { can } from "@/lib/auth/authorize";
 import type { SessionUser } from "@/lib/auth/guards";
 
 export interface ToolRun {
@@ -24,7 +25,9 @@ export async function runTool(
   const tool = getToolByName(name);
   if (!tool) return { ok: false, tool: name, error: `Unknown tool: ${name}` };
   try {
-    const data = await tool.execute(args ?? {}, { user });
+    // Resolved from the session, so the key-authenticated service identity gets false.
+    const canApprove = await can("outreach:approve").catch(() => false);
+    const data = await tool.execute(args ?? {}, { user, canApprove });
     return { ok: true, tool: name, args, data };
   } catch (e) {
     return { ok: false, tool: name, args, error: e instanceof Error ? e.message : "Tool execution failed" };

@@ -20,6 +20,8 @@ import type { SessionUser } from "@/lib/auth/guards";
 
 export interface ToolContext {
   user: SessionUser;
+  /** Whether this caller may hold their own outreach draft rather than queue it. */
+  canApprove: boolean;
 }
 
 export interface CopilotTool {
@@ -359,7 +361,7 @@ const draftOutreach: CopilotTool = {
       subject: rendered.subject,
       body: rendered.body,
       templateId,
-      status: ctx.user.role === "admin" ? "draft" : "pending_approval",
+      status: ctx.canApprove ? "draft" : "pending_approval",
       createdById: ctx.user.id,
       createdByName: ctx.user.name,
       createdAt: now,

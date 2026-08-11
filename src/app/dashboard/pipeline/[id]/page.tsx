@@ -9,6 +9,7 @@ import { OutreachItem } from "@/components/OutreachItem";
 import { LeadToolbar } from "@/components/LeadToolbar";
 import { getBrand } from "@/lib/data";
 import { getSessionUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/authorize";
 import { getOutreachStore } from "@/lib/store/outreach";
 import { allowedTransitions } from "@/lib/workflow";
 import {
@@ -45,7 +46,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const brand = await getBrand(id);
   if (!brand) notFound();
   const me = await getSessionUser();
-  const isAdmin = me?.role === "admin";
+  const isAdmin = await can("outreach:send");
+  const canDeleteLead = await can("lead:delete");
   const outreach = await getOutreachStore().listForBrand(brand.id);
 
   const s = brand.scores;
@@ -72,7 +74,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </div>
           <div className="flex items-center gap-2">
             <OutreachComposer brand={brand} senderName={me?.name ?? "there"} isAdmin={isAdmin} />
-            <EditBrandButton brand={brand} canDelete={isAdmin} />
+            <EditBrandButton brand={brand} canDelete={canDeleteLead} />
             <LeadToolbar brand={brand} />
           </div>
         </div>
