@@ -223,24 +223,30 @@ describe("migrateBrands against the real dataset", () => {
     expect(companyIdFor({ id: "alibaba" } as Brand)).toBe("co-alibaba");
   });
 
-  it("creates a proposal only where commercial terms existed", () => {
-    const scoredWithBudget = brands.filter((b) => b.scored && b.scores?.budget != null).length;
-    expect(result.proposals).toHaveLength(scoredWithBudget);
-    for (const p of result.proposals) expect(p.value).toBeGreaterThanOrEqual(0);
+  it("records no proposals, because the sheet never held one", () => {
+    // Budget and outcome already live on the deal. Re-encoding them as an
+    // accepted or rejected proposal would make the proposal win rate a
+    // restatement of the deal win rate wearing a different name.
+    expect("proposals" in result).toBe(false);
   });
 
-  it("suggests the known same-client groups without merging them", () => {
-    // Generali - Taverna / Generali Bank are the real case; they stay separate
-    // companies until someone says otherwise.
+  it("leaves same-client companies separate for a human to merge", () => {
+    // Generali - Taverna / Generali Bank are the real case: one company per
+    // brand, and duplicateCandidates surfaces the pair as a suggestion.
     expect(result.companies).toHaveLength(brands.length);
-    expect(Array.isArray(result.suggestedGroups)).toBe(true);
+    const generali = duplicateCandidates(result.companies).find((group) =>
+      group.every((c) => c.name.toLowerCase().startsWith("generali")),
+    );
+    expect(generali?.length ?? 0).toBeGreaterThan(1);
   });
 
-  it("is idempotent — re-running yields identical ids", () => {
-    const again = migrateBrands(brands, prob);
-    expect(again.deals.map((d) => d.id)).toEqual(result.deals.map((d) => d.id));
-    expect(again.companies.map((c) => c.id)).toEqual(result.companies.map((c) => c.id));
-    expect(again.proposals.map((p) => p.id)).toEqual(result.proposals.map((p) => p.id));
+  it("is idempotent — re-running at the same instant yields identical records", () => {
+    // Time has to be pinned for the claim to mean anything: updatedAt and
+    // computedAt are stamped from `now`, so the previous version of this test
+    // compared ids only and would have passed even if every other field had
+    // changed.
+    const at = new Date("2026-08-11T09:00:00.000Z");
+    expect(migrateBrands(brands, prob, at)).toEqual(migrateBrands(brands, prob, at));
   });
 
   it("carries the scoring split to the right side of the seam", () => {

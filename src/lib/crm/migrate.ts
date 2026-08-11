@@ -38,12 +38,20 @@ export function companyIdFor(brand: Brand): string {
   return `co-${brand.id}`;
 }
 
+/**
+ * The migration deliberately produces no proposals.
+ *
+ * A brand's budget and outcome already live on the deal, so re-encoding them
+ * as an accepted or rejected proposal would make the proposal win rate a
+ * restatement of the deal win rate under a name that promises something else:
+ * a figure about paperwork we actually sent. These records were never sent
+ * — sentAt would be null on every one of them.
+ *
+ * Proposals therefore start empty and fill up as the team records real ones.
+ */
 export interface MigrationResult {
   companies: Company[];
   deals: Deal[];
-  proposals: Proposal[];
-  /** Companies sharing a normalised name — for human review, never auto-merged. */
-  suggestedGroups: string[][];
 }
 
 export function migrateBrands(
@@ -54,7 +62,6 @@ export function migrateBrands(
   const iso = now.toISOString();
   const companies: Company[] = [];
   const deals: Deal[] = [];
-  const proposals: Proposal[] = [];
 
   for (const brand of brands) {
     const companyId = companyIdFor(brand);
@@ -125,45 +132,9 @@ export function migrateBrands(
       rollup: rollupFor([deal], winProbability, now),
       mergedIntoCompanyId: null,
     });
-
-    // A scored brand carried commercial terms — that was a proposal in all but
-    // name. Unscored brands have nothing to record yet.
-    if (brand.scored && s?.budget != null) {
-      proposals.push({
-        id: `pr-${brand.id}-1`,
-        type: "proposal",
-        companyId,
-        schemaVersion: 2,
-        createdAt: brand.initialContact ?? iso,
-        updatedAt: iso,
-        dealId: brand.id,
-        revision: 1,
-        value: s.budget,
-        currency: "EUR",
-        status: outcome === "won" ? "accepted" : outcome === "lost" ? "rejected" : "draft",
-        sentAt: null,
-        decidedAt: outcome === "open" ? null : brand.closingFailed,
-        validUntil: null,
-        notes: s.assumption === "Estimated" ? "Imported as an estimate, not a sent proposal." : null,
-        createdById: null,
-        createdByName: null,
-      });
-    }
   }
 
-  const byKey = new Map<string, string[]>();
-  for (const c of companies) {
-    const bucket = byKey.get(c.nameKey);
-    if (bucket) bucket.push(c.id);
-    else byKey.set(c.nameKey, [c.id]);
-  }
-
-  return {
-    companies,
-    deals,
-    proposals,
-    suggestedGroups: [...byKey.values()].filter((ids) => ids.length > 1),
-  };
+  return { companies, deals };
 }
 
 export { EMPTY_ROLLUP };
