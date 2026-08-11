@@ -11,6 +11,9 @@ import { logAudit } from "@/lib/store/audit";
 import { leadScore, quadrant, weightedValue, winProbability } from "@/lib/scoring";
 import { openLeads, outcomeOf } from "@/lib/lifecycle";
 import { opportunityScore, penetration, whitespace } from "@/lib/tam";
+import { getCrmGraph, getCompanyDetail, getPipelineMoney } from "@/lib/crm/graph";
+import { proposalsWithStatus } from "@/lib/crm/logic";
+import type { Company } from "@/lib/crm/types";
 import { remindersFrom } from "@/lib/reminders";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
 import { renderTemplate, DEFAULT_TEMPLATE_ID, OUTREACH_TEMPLATES } from "@/lib/mail/templates";
@@ -58,6 +61,24 @@ function leadBrief(b: Brand) {
     weightedValueEur: Math.round(weightedValue(b)),
     followUp: b.followUp,
     lastContact: b.lastContact,
+  };
+}
+
+/** Compact view of a company — the relationship rollup, never the raw document. */
+function companyBrief(c: Company) {
+  const r = c.rollup;
+  return {
+    id: c.id,
+    name: c.name,
+    industry: c.industry,
+    owner: c.owner,
+    openDealCount: r.openDealCount,
+    wonDealCount: r.wonDealCount,
+    openPipelineEur: Math.round(r.openPipelineValue),
+    lifetimeValueEur: Math.round(r.lifetimeValue),
+    repeatValueEur: Math.round(r.repeatValue),
+    winRate: r.winRate,
+    lastContact: r.lastContact,
   };
 }
 
@@ -282,6 +303,126 @@ const listReminders: CopilotTool = {
   },
 };
 
+const searchCompanies: CopilotTool = {
+  name: "search_companies",
+  description:
+    "Find or rank CLIENT COMPANIES — the organisation itself and everything we have done with it across every deal, past and present. Use this for the relationship: lifetime value, repeat business, which clients came back, who our biggest accounts are ('how much repeat business do we have with Fastweb?'). Use search_leads instead when the question is about individual engagements and their pipeline stage — one company can have several leads/deals over time. Returns compact company records with rolled-up open, lifetime and repeat value.",
+  parameters: {
+    type: "object",
+    properties: {
+      query: { type: "string", description: "Free-text match on company name" },
+      minRepeatValue: {
+        type: "number",
+        description: "Only companies whose repeat value (won beyond their first deal) is at least this many euros",
+      },
+      sortBy: { type: "string", enum: ["openPipeline", "lifetimeValue", "repeatValue", "name"] },
+      limit: { type: "integer", minimum: 1, maximum: 25 },
+    },
+  },
+  async execute(args) {
+    const a = z
+      .object({
+        query: z.string().trim().optional(),
+        minRepeatValue: z.number().optional(),
+        sortBy: z.enum(["openPipeline", "lifetimeValue", "repeatValue", "name"]).optional(),
+        limit: z.number().int().min(1).max(25).optional(),
+      })
+      .parse(args);
+
+    const { companies } = await getCrmGraph();
+    let rows = companies;
+    if (a.query) {
+      const q = a.query.toLowerCase();
+      rows = rows.filter((c) => c.name.toLowerCase().includes(q));
+    }
+    const min = a.minRepeatValue;
+    if (min != null) rows = rows.filter((c) => c.rollup.repeatValue >= min);
+
+    const sortBy = a.sortBy ?? "openPipeline";
+    const briefs = rows.map(companyBrief).sort((x, y) => {
+      if (sortBy === "name") return x.name.localeCompare(y.name);
+      const key =
+        sortBy === "lifetimeValue"
+          ? "lifetimeValueEur"
+          : sortBy === "repeatValue"
+            ? "repeatValueEur"
+            : "openPipelineEur";
+      return y[key] - x[key];
+    });
+
+    return { count: briefs.length, sortBy, companies: briefs.slice(0, a.limit ?? 10) };
+  },
+};
+
+const getCompany: CopilotTool = {
+  name: "get_company",
+  description:
+    "The full picture for one client company: its relationship rollup, every deal we have run with it (won, lost and live) and every proposal sent, with values and decisions. Use for 'show me everything for Generali' or any question spanning a client's whole history. Accepts a company id OR any lead/deal id belonging to it. Use get_lead instead for the detail of a single engagement.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Company id, or the id of any lead/deal belonging to the company" },
+    },
+    required: ["id"],
+  },
+  async execute(args) {
+    const { id } = z.object({ id: z.string().min(1) }).parse(args);
+    const graph = await getCrmGraph();
+    // Lead ids are the familiar ones, so a deal id resolves up to its company.
+    const companyId = graph.companies.some((c) => c.id === id)
+      ? id
+      : graph.deals.find((d) => d.id === id)?.companyId;
+    const detail = companyId ? await getCompanyDetail(companyId) : null;
+    if (!detail) return { ok: false, error: `No company or deal matches id '${id}'.` };
+
+    return {
+      ok: true,
+      company: companyBrief(detail.company),
+      deals: detail.deals.map((d) => ({
+        id: d.id,
+        name: d.name,
+        stage: d.stage,
+        outcome: d.outcome,
+        dealType: d.dealType,
+        budgetEur: d.economics.budget == null ? null : Math.round(d.economics.budget),
+        lastContact: d.lastContact,
+        followUpDate: d.followUpDate,
+      })),
+      proposals: detail.proposals.map((p) => ({
+        id: p.id,
+        dealId: p.dealId,
+        revision: p.revision,
+        valueEur: Math.round(p.value),
+        status: p.status,
+        sentAt: p.sentAt,
+        decidedAt: p.decidedAt,
+      })),
+    };
+  },
+};
+
+const proposalPipeline: CopilotTool = {
+  name: "proposal_pipeline",
+  description:
+    "The money view of proposals: how much value is sitting with clients awaiting a decision, how many proposals are sent/accepted/rejected, the real proposal win rate, plus open and weighted pipeline and total repeat business. Use this for 'how much is out awaiting a decision?' and for win rates — proposals are recorded separately from stages, so these are actual euros sent, counting only the newest revision per deal (a re-quote is never double counted). pipeline_summary counts leads by stage; this counts money on real proposals.",
+  parameters: { type: "object", properties: {} },
+  async execute() {
+    const [money, graph] = await Promise.all([getPipelineMoney(), getCrmGraph()]);
+    // money.awaitingDecision is awaitingDecisionValue() — newest sent revision per deal only.
+    return {
+      awaitingDecisionEur: Math.round(money.awaitingDecision),
+      sentCount: proposalsWithStatus(graph.proposals, "sent").length,
+      acceptedCount: proposalsWithStatus(graph.proposals, "accepted").length,
+      rejectedCount: proposalsWithStatus(graph.proposals, "rejected").length,
+      proposalWinRate: money.proposalWinRate,
+      openPipelineEur: Math.round(money.openPipeline),
+      weightedPipelineEur: Math.round(money.weightedPipeline),
+      repeatValueEur: Math.round(money.repeatValue),
+      companiesWithRepeatBusiness: money.companiesWithRepeatBusiness,
+    };
+  },
+};
+
 // ---------------------------------------------------------------------------
 // Write tools (role-gated + audited; outreach never auto-sends)
 // ---------------------------------------------------------------------------
@@ -426,6 +567,9 @@ export const COPILOT_TOOLS: CopilotTool[] = [
   pipelineSummary,
   topOpportunities,
   listReminders,
+  searchCompanies,
+  getCompany,
+  proposalPipeline,
   advanceStage,
   draftOutreach,
   searchDocuments,

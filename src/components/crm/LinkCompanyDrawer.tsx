@@ -15,7 +15,7 @@ export function LinkCompanyDrawer({
   companies,
   onClose,
 }: {
-  deal: { id: string; name: string; companyId: string };
+  deal: { id: string; name: string; companyId: string; isLinked: boolean };
   companies: LinkableCompany[];
   onClose: () => void;
 }) {
@@ -24,9 +24,8 @@ export function LinkCompanyDrawer({
   const [selected, setSelected] = useState("");
   const titleId = useId();
 
-  // An unlinked deal sits under the company generated from its own row
-  // (`co-<dealId>`); anything else means someone linked it by hand.
-  const linkedElsewhere = deal.companyId !== `co-${deal.id}`;
+  // Comes from the stored links rather than the shape of the company id.
+  const linkedElsewhere = deal.isLinked;
 
   const options = useMemo(() => {
     const q = query.trim().toLowerCase();

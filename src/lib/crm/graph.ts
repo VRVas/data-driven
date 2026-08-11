@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { getBrands } from "@/lib/data";
 import { getCrmOverlayStore, type CompanyLink } from "@/lib/store/crm";
+import { ownerIdResolver } from "./owners";
 import { migrateBrands } from "./migrate";
 import { rollupFor, awaitingDecisionValue, proposalWinRate } from "./logic";
 import { winProbability } from "@/lib/scoring";
@@ -28,6 +29,7 @@ export interface CrmGraph {
 export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
   const brands = await getBrands();
   const overlay = await getCrmOverlayStore().read();
+  const resolveOwner = await ownerIdResolver();
   const base = migrateBrands(brands, prob);
 
   const linkByDeal = new Map(overlay.links.map((l) => [l.dealId, l]));
@@ -35,9 +37,10 @@ export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
 
   // Re-point linked deals at their asserted company before anything is rolled up.
   const deals = base.deals.map((d) => {
+    const ownerId = resolveOwner(d.owner);
     const link = linkByDeal.get(d.id);
-    if (!link) return d;
-    return { ...d, companyId: link.companyId, companyName: link.companyName };
+    if (!link) return ownerId === d.ownerId ? d : { ...d, ownerId };
+    return { ...d, ownerId, companyId: link.companyId, companyName: link.companyName };
   });
 
   const dealsByCompany = new Map<string, Deal[]>();

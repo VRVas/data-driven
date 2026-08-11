@@ -7,7 +7,7 @@ export function LinkCompanyButton({
   deal,
   companies,
 }: {
-  deal: { id: string; name: string; companyId: string };
+  deal: { id: string; name: string; companyId: string; isLinked: boolean };
   companies: LinkableCompany[];
 }) {
   const [open, setOpen] = useState(false);

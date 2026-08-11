@@ -10,8 +10,9 @@ import { LeadToolbar } from "@/components/LeadToolbar";
 import { LinkCompanyButton } from "@/components/crm/LinkCompanyButton";
 import { getBrand } from "@/lib/data";
 import { getCrmGraph, getDealWithCompany } from "@/lib/crm/graph";
+import { ownerIdResolver } from "@/lib/crm/owners";
 import { getSessionUser } from "@/lib/auth/guards";
-import { can } from "@/lib/auth/authorize";
+import { can, requirePermission } from "@/lib/auth/authorize";
 import { getOutreachStore } from "@/lib/store/outreach";
 import { allowedTransitions } from "@/lib/workflow";
 import {
@@ -45,8 +46,14 @@ const TIMELINE: { key: "initialContact" | "lastContact" | "followUp" | "closingF
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const auth = await requirePermission("lead:read");
   const brand = await getBrand(id);
   if (!brand) notFound();
+  // Out of scope reads as "not found" rather than confirming the lead exists.
+  if (!auth.superuser && auth.scope !== "all") {
+    const resolveOwner = await ownerIdResolver();
+    if (resolveOwner(brand.owner) !== auth.user.id) notFound();
+  }
   const me = await getSessionUser();
   const isAdmin = await can("outreach:send");
   const canDeleteLead = await can("lead:delete");
@@ -131,7 +138,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             </div>
             {canLinkCompany && (
               <LinkCompanyButton
-                deal={{ id: crm.deal.id, name: crm.deal.name, companyId: crm.company.id }}
+                deal={{
+                  id: crm.deal.id,
+                  name: crm.deal.name,
+                  companyId: crm.company.id,
+                  isLinked: graph.links.some((l) => l.dealId === crm.deal.id),
+                }}
                 companies={companyChoices}
               />
             )}
