@@ -1,6 +1,6 @@
 import "server-only";
 import { cache } from "react";
-import { getBrands } from "@/lib/data";
+import { getVisibleBrands } from "@/lib/leads/visible";
 import { getCrmOverlayStore, type CompanyLink } from "@/lib/store/crm";
 import { ownerIdResolver } from "./owners";
 import { migrateBrands } from "./migrate";
@@ -27,7 +27,7 @@ export interface CrmGraph {
  * applied on top.
  */
 export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
-  const brands = await getBrands();
+  const brands = await getVisibleBrands();
   const overlay = await getCrmOverlayStore().read();
   const resolveOwner = await ownerIdResolver();
   const base = migrateBrands(brands, prob);
