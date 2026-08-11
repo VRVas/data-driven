@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/auth/authorize";
 import { getBrandStore } from "@/lib/store/brands";
 import { getCrmOverlayStore } from "@/lib/store/crm";
+import { authorizeLead } from "@/lib/leads/visible";
 import { logAudit } from "@/lib/store/audit";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
@@ -51,7 +52,8 @@ function slug(name: string): string {
 export async function saveBrand(_prev: BrandActionState, formData: FormData): Promise<BrandActionState> {
   // Pure read of the submitted id: decides which capability the write needs.
   const isNew = !String(formData.get("id") ?? "").trim();
-  const { user } = await requirePermission(isNew ? "lead:create" : "lead:update");
+  const auth = await requirePermission(isNew ? "lead:create" : "lead:update");
+  const { user } = auth;
 
   const parsed = brandInputSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -64,6 +66,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   if (input.id) {
     const existing = await store.get(input.id);
     if (!existing) return { error: "That lead no longer exists." };
+    await authorizeLead(auth, existing);
     brand = { ...existing };
   } else {
     let id = slug(input.name);
@@ -121,11 +124,13 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
 }
 
 export async function deleteBrand(_prev: BrandActionState, formData: FormData): Promise<BrandActionState> {
-  const { user } = await requirePermission("lead:delete");
+  const auth = await requirePermission("lead:delete");
+  const { user } = auth;
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
   const existing = await getBrandStore().get(id);
+  if (existing) await authorizeLead(auth, existing);
   await getBrandStore().remove(id);
   // Lead ids are name slugs and the collision check only looks at live leads,
   // so recreating a deleted lead reuses its id. Without this, the new lead
@@ -157,7 +162,8 @@ export async function changeBrandStatus(
   _prev: BrandActionState,
   formData: FormData,
 ): Promise<BrandActionState> {
-  const { user } = await requirePermission("lead:stage:advance");
+  const auth = await requirePermission("lead:stage:advance");
+  const { user } = auth;
 
   const parsed = statusChangeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Invalid status." };
@@ -167,6 +173,7 @@ export async function changeBrandStatus(
   const store = getBrandStore();
   const brand = await store.get(id);
   if (!brand) return { error: "That lead no longer exists." };
+  await authorizeLead(auth, brand);
 
   const from = brand.status;
   if (from === to) return { ok: true };

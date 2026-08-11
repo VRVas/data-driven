@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/authorize";
 import { getBrandStore } from "@/lib/store/brands";
+import { authorizeLead } from "@/lib/leads/visible";
 import { logAudit } from "@/lib/store/audit";
 import { addDays, todayYmd } from "@/lib/workflow";
 
@@ -16,7 +17,8 @@ const snoozeSchema = z.object({
 
 /** Push a lead's follow-up out by N days from today. */
 export async function snoozeFollowUp(_prev: ReminderActionState, formData: FormData): Promise<ReminderActionState> {
-  const { user } = await requirePermission("reminder:update");
+  const auth = await requirePermission("reminder:update");
+  const { user } = auth;
   const parsed = snoozeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Invalid snooze." };
   const { id, days } = parsed.data;
@@ -24,6 +26,7 @@ export async function snoozeFollowUp(_prev: ReminderActionState, formData: FormD
   const store = getBrandStore();
   const brand = await store.get(id);
   if (!brand) return { error: "That lead no longer exists." };
+  await authorizeLead(auth, brand);
 
   const next = addDays(todayYmd(), days);
   await store.save({ ...brand, followUp: next });
@@ -43,13 +46,15 @@ export async function snoozeFollowUp(_prev: ReminderActionState, formData: FormD
 
 /** Mark a follow-up handled: clear the date and stamp today as last contact. */
 export async function completeFollowUp(_prev: ReminderActionState, formData: FormData): Promise<ReminderActionState> {
-  const { user } = await requirePermission("reminder:complete");
+  const auth = await requirePermission("reminder:complete");
+  const { user } = auth;
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
   const store = getBrandStore();
   const brand = await store.get(id);
   if (!brand) return { error: "That lead no longer exists." };
+  await authorizeLead(auth, brand);
 
   await store.save({ ...brand, followUp: null, lastContact: todayYmd() });
   await logAudit({

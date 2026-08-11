@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { requirePermission } from "@/lib/auth/authorize";
 import { can } from "@/lib/auth/effective";
 import { getBrandStore } from "@/lib/store/brands";
+import { authorizeLead } from "@/lib/leads/visible";
 import { getOutreachStore, type Outreach } from "@/lib/store/outreach";
 import { getEmailProvider } from "@/lib/mail/provider";
 import { logAudit } from "@/lib/store/audit";
@@ -36,6 +37,7 @@ export async function composeOutreach(_prev: OutreachActionState, formData: Form
 
   const brand = await getBrandStore().get(input.brandId);
   if (!brand) return { error: "That lead no longer exists." };
+  await authorizeLead(ctx, brand);
 
   const now = new Date().toISOString();
   const record: Outreach = {
@@ -71,7 +73,8 @@ export async function composeOutreach(_prev: OutreachActionState, formData: Form
 
 /** Approve (if needed) and send an outreach message. Admin-only. */
 export async function sendOutreach(_prev: OutreachActionState, formData: FormData): Promise<OutreachActionState> {
-  const { user: admin } = await requirePermission("outreach:send");
+  const auth = await requirePermission("outreach:send");
+  const { user: admin } = auth;
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
@@ -80,6 +83,10 @@ export async function sendOutreach(_prev: OutreachActionState, formData: FormDat
   if (!record) return { error: "That message no longer exists." };
   if (record.status === "sent") return { ok: true };
   if (record.status === "cancelled") return { error: "This message was cancelled." };
+
+  // Before the send, not after: an email cannot be recalled once it has gone.
+  const brand = await getBrandStore().get(record.brandId);
+  if (brand) await authorizeLead(auth, brand);
 
   const result = await getEmailProvider().send({
     to: record.to,
@@ -101,7 +108,6 @@ export async function sendOutreach(_prev: OutreachActionState, formData: FormDat
 
   if (result.ok) {
     // Sending counts as a touch — refresh the lead's last-contact date.
-    const brand = await getBrandStore().get(record.brandId);
     if (brand) await getBrandStore().save({ ...brand, lastContact: todayYmd() });
   }
 

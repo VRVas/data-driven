@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/authorize";
+import { authorizeLead } from "@/lib/leads/visible";
 import { getCrmOverlayStore } from "@/lib/store/crm";
 import { getCrmGraph } from "@/lib/crm/graph";
 import { logAudit } from "@/lib/store/audit";
@@ -23,7 +24,8 @@ const todayIso = () => new Date().toISOString();
  * and "Allianz CH" are probably different customers.
  */
 export async function linkDealToCompany(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
-  const { user } = await requirePermission("lead:update");
+  const auth = await requirePermission("lead:update");
+  const { user } = auth;
 
   const parsed = z
     .object({ dealId: z.string().min(1), companyId: z.string().min(1) })
@@ -36,6 +38,7 @@ export async function linkDealToCompany(_prev: CrmActionState, formData: FormDat
   const target = graph.companies.find((c) => c.id === companyId);
   if (!deal) return { error: "That lead no longer exists." };
   if (!target) return { error: "That company no longer exists." };
+  await authorizeLead(auth, deal);
   if (deal.companyId === companyId) return { ok: true };
 
   await getCrmOverlayStore().linkDeal({
@@ -64,7 +67,8 @@ export async function linkDealToCompany(_prev: CrmActionState, formData: FormDat
 
 /** Undo a link — the deal goes back to standing on its own. */
 export async function unlinkDeal(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
-  const { user } = await requirePermission("lead:update");
+  const auth = await requirePermission("lead:update");
+  const { user } = auth;
 
   const dealId = String(formData.get("dealId") ?? "").trim();
   if (!dealId) return { error: "Missing lead." };
@@ -74,6 +78,7 @@ export async function unlinkDeal(_prev: CrmActionState, formData: FormData): Pro
   const graph = await getCrmGraph();
   const deal = graph.deals.find((d) => d.id === dealId);
   if (!deal) return { error: "That lead no longer exists." };
+  await authorizeLead(auth, deal);
 
   await getCrmOverlayStore().unlinkDeal(dealId);
   await logAudit({
@@ -114,7 +119,8 @@ const proposalSchema = z.object({
 });
 
 export async function saveProposal(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
-  const { user } = await requirePermission("proposal:manage");
+  const auth = await requirePermission("proposal:manage");
+  const { user } = auth;
 
   const parsed = proposalSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the proposal." };
@@ -123,6 +129,8 @@ export async function saveProposal(_prev: CrmActionState, formData: FormData): P
   const graph = await getCrmGraph();
   const deal = graph.deals.find((d) => d.id === input.dealId);
   if (!deal) return { error: "That lead no longer exists." };
+  // A proposal belongs to a deal, so the deal's owner decides who may write it.
+  await authorizeLead(auth, deal);
 
   const existing = input.id ? graph.proposals.find((p) => p.id === input.id) : null;
   if (input.id && !existing) return { error: "That proposal no longer exists." };
@@ -173,7 +181,8 @@ export async function saveProposal(_prev: CrmActionState, formData: FormData): P
 }
 
 export async function deleteProposal(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
-  const { user } = await requirePermission("proposal:manage");
+  const auth = await requirePermission("proposal:manage");
+  const { user } = auth;
 
   const id = String(formData.get("id") ?? "").trim();
   if (!id) return { error: "Missing proposal." };
@@ -181,6 +190,8 @@ export async function deleteProposal(_prev: CrmActionState, formData: FormData):
   const graph = await getCrmGraph();
   const proposal = graph.proposals.find((p) => p.id === id);
   if (!proposal) return { ok: true };
+  const deal = graph.deals.find((d) => d.id === proposal.dealId);
+  if (deal) await authorizeLead(auth, deal);
 
   await getCrmOverlayStore().removeProposal(id);
   await logAudit({

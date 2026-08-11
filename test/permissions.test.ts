@@ -13,10 +13,15 @@ import {
   ADMIN_PROFILE_ID,
   SALES_REP_PROFILE_ID,
   READ_ONLY_PROFILE_ID,
+  EMPTY_ASSIGNMENT,
   systemProfile,
   type Profile,
 } from "@/lib/auth/profiles";
 import { resolvePermissions, scopeFor, can, exceedsAuthority } from "@/lib/auth/effective";
+import { authorizeRecord, scopeFilter, type Authorized } from "@/lib/auth/authorize";
+import { ForbiddenError } from "@/lib/auth/errors";
+import type { AuthzContext } from "@/lib/auth/resolve";
+import type { Scope } from "@/lib/auth/catalogue";
 
 const profile = (id: string, permissions: Profile["permissions"], superuser = false): Profile => ({
   id,
@@ -141,5 +146,88 @@ describe("seeded profiles", () => {
       expect(can(ro, k), `${k} must not be granted`).toBe(false);
     }
     expect(can(ro, "lead:read", "all")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Record gates — the half of authorization that says "this row", not "a row"
+// ---------------------------------------------------------------------------
+
+const context = (over: Partial<AuthzContext> = {}): AuthzContext => ({
+  user: { id: "u1", email: "u1@example.com", name: "U1", role: "member" },
+  effective: resolvePermissions([], EMPTY_ASSIGNMENT),
+  superuser: false,
+  profileIds: [],
+  teamIds: [],
+  ...over,
+});
+
+const authorized = (scope: Exclude<Scope, "none">, over: Partial<AuthzContext> = {}): Authorized => ({
+  ...context(over),
+  scope,
+});
+
+describe("authorizeRecord", () => {
+  it("lets an org-wide scope through regardless of owner", () => {
+    expect(() => authorizeRecord(context(), "all", { ownerId: "someone-else" })).not.toThrow();
+  });
+
+  it("lets a superuser through even at a narrow scope", () => {
+    expect(() => authorizeRecord(context({ superuser: true }), "own", { ownerId: "x" })).not.toThrow();
+  });
+
+  it("allows own records and refuses everyone else's", () => {
+    expect(() => authorizeRecord(context(), "own", { ownerId: "u1" })).not.toThrow();
+    expect(() => authorizeRecord(context(), "own", { ownerId: "u2" })).toThrow(ForbiddenError);
+  });
+
+  it("refuses a record with no owner at a narrow scope", () => {
+    // An unowned record matches nobody, so "own" cannot cover it. Failing open
+    // here would make every unassigned lead editable by everyone.
+    expect(() => authorizeRecord(context(), "own", { ownerId: null })).toThrow(ForbiddenError);
+    expect(() => authorizeRecord(context(), "own", {})).toThrow(ForbiddenError);
+  });
+
+  it("allows a team-mate's record only at team scope", () => {
+    const inTeam = context({ teamIds: ["t1"] });
+    expect(() => authorizeRecord(inTeam, "team", { ownerId: "u2", teamId: "t1" })).not.toThrow();
+    expect(() => authorizeRecord(inTeam, "own", { ownerId: "u2", teamId: "t1" })).toThrow(ForbiddenError);
+    expect(() => authorizeRecord(inTeam, "team", { ownerId: "u2", teamId: "t2" })).toThrow(ForbiddenError);
+  });
+
+  it("refuses everything at scope none", () => {
+    expect(() => authorizeRecord(context(), "none", { ownerId: "u1" })).toThrow(ForbiddenError);
+  });
+
+  it("reads the scope the write permission resolved to", () => {
+    // The point of the fix: an Authorized carries its own scope, so a caller
+    // with lead:read all and lead:update own cannot write through the wider one.
+    const narrow = authorized("own");
+    expect(() => authorizeRecord(narrow, narrow.scope, { ownerId: "u2" })).toThrow(ForbiddenError);
+    const wide = authorized("all");
+    expect(() => authorizeRecord(wide, wide.scope, { ownerId: "u2" })).not.toThrow();
+  });
+});
+
+describe("scopeFilter", () => {
+  const rows = [
+    { ownerId: "u1", teamId: "t1" },
+    { ownerId: "u2", teamId: "t1" },
+    { ownerId: "u3", teamId: "t2" },
+    { ownerId: null, teamId: null },
+  ];
+
+  it("keeps everything at all, nothing at none", () => {
+    expect(rows.filter(scopeFilter(context(), "all"))).toHaveLength(4);
+    expect(rows.filter(scopeFilter(context(), "none"))).toHaveLength(0);
+  });
+
+  it("keeps only my rows at own, and my team's at team", () => {
+    expect(rows.filter(scopeFilter(context(), "own"))).toEqual([{ ownerId: "u1", teamId: "t1" }]);
+    expect(rows.filter(scopeFilter(context({ teamIds: ["t1"] }), "team"))).toHaveLength(2);
+  });
+
+  it("drops unowned rows rather than showing them to everyone", () => {
+    expect(rows.filter(scopeFilter(context(), "own")).some((r) => r.ownerId === null)).toBe(false);
   });
 });
