@@ -100,9 +100,15 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
           </button>
         </form>
 
-        {!isNew && canDelete && (
+        {!isNew && (
           <footer className="border-t border-[var(--color-border)] px-6 py-4">
-            <DeleteControl id={brand!.id} onDeleted={onClose} />
+            {canDelete ? (
+              <DeleteControl id={brand!.id} onDeleted={onClose} />
+            ) : (
+              <p className="text-sm text-[var(--color-ink-faint)]">
+                Deleting a lead is restricted to admins — ask an admin to remove it.
+              </p>
+            )}
           </footer>
         )}
       </div>
