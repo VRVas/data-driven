@@ -4,12 +4,49 @@ import { getVisibleBrands } from "@/lib/leads/visible";
 import { getCrmOverlayStore, type CompanyLink } from "@/lib/store/crm";
 import { ownerIdResolver } from "./owners";
 import { migrateBrands } from "./migrate";
-import { rollupFor, awaitingDecisionValue, proposalWinRate } from "./logic";
+import { rollupFor, awaitingDecisionValue, proposalWinRate, EMPTY_ROLLUP } from "./logic";
 import { winProbability } from "@/lib/scoring";
 import type { BrandStatus } from "@/lib/types";
 import type { Company, Deal, DealStage, Proposal } from "./types";
 
 const prob = (stage: DealStage) => winProbability(stage as BrandStatus);
+
+/**
+ * A company we know only by name, because the deal that described it is gone
+ * or out of scope.
+ *
+ * Built from nothing rather than cloned from a real company: spreading one
+ * carried its industry, owner, country and notes across, so the group rendered
+ * an unrelated client's details as fact — on the page, and to the copilot.
+ * Blank fields say "we don't know"; borrowed ones say something false.
+ */
+function placeholderCompany(companyId: string, name: string, from: Deal): Company {
+  return {
+    id: companyId,
+    type: "company",
+    companyId,
+    schemaVersion: 2,
+    createdAt: from.createdAt,
+    updatedAt: from.updatedAt,
+    name,
+    nameKey: "",
+    aliases: [],
+    industry: null,
+    industryRaw: null,
+    owner: null,
+    country: null,
+    notes: null,
+    access: {
+      accessibilityRaw: null,
+      accessibilityScore: null,
+      receptivityScore: null,
+      alignmentScore: null,
+      easeOfAccess: null,
+    },
+    rollup: EMPTY_ROLLUP,
+    mergedIntoCompanyId: null,
+  };
+}
 
 export interface CrmGraph {
   companies: Company[];
@@ -55,26 +92,10 @@ export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
     const seed = companyById.get(companyId);
     const link = linkByDeal.get(companyDeals[0].id);
     const first = companyDeals[0];
-    // A link can point at a company whose own deal has since been deleted, so
-    // fall back to the group's own details rather than dropping it.
-    const identity: Company =
-      seed ??
-      companyById.get(first.companyId) ??
-      {
-        ...base.companies[0],
-        id: companyId,
-        companyId,
-        name: link?.companyName ?? first.companyName,
-        nameKey: "",
-        aliases: [],
-        access: {
-          accessibilityRaw: null,
-          accessibilityScore: null,
-          receptivityScore: null,
-          alignmentScore: null,
-          easeOfAccess: null,
-        },
-      };
+    // A link can point at a company whose own deal has since been deleted or
+    // sits outside this viewer's scope, so the group has to be describable
+    // without it.
+    const identity = seed ?? placeholderCompany(companyId, link?.companyName ?? first.companyName, first);
     companies.push({
       ...identity,
       id: companyId,
