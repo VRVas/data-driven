@@ -102,26 +102,52 @@ export function proposalsWithStatus(proposals: Proposal[], status: ProposalStatu
 }
 
 /**
- * Value sent to clients that nobody has answered yet — the "waiting for
- * greenlight" figure. Only the newest revision of each deal counts, so a
- * re-quoted deal isn't added twice.
+ * The live revision of each deal's proposal.
+ *
+ * A re-quote adds a revision and leaves the old one behind, so counting raw
+ * proposals counts the same negotiation once per round trip. Only the newest
+ * revision describes where a deal actually stands.
  */
-export function awaitingDecisionValue(proposals: Proposal[]): number {
+export function currentProposals(proposals: Proposal[]): Proposal[] {
   const newestByDeal = new Map<string, Proposal>();
   for (const p of proposals) {
-    if (p.status !== "sent") continue;
     const current = newestByDeal.get(p.dealId);
     if (!current || p.revision > current.revision) newestByDeal.set(p.dealId, p);
   }
-  return [...newestByDeal.values()].reduce((sum, p) => sum + p.value, 0);
+  return [...newestByDeal.values()];
 }
 
-/** Decided proposals only — an honest win rate, not a stage-based guess. */
+/**
+ * Value sent to clients that nobody has answered yet — the "waiting for
+ * greenlight" figure.
+ *
+ * The newest revision is chosen before the status is read, not after: picking
+ * the newest *sent* revision instead keeps quoting a superseded number, so a
+ * deal re-quoted and then rejected would sit in this total forever.
+ */
+export function awaitingDecisionValue(proposals: Proposal[]): number {
+  return currentProposals(proposals)
+    .filter((p) => p.status === "sent")
+    .reduce((sum, p) => sum + p.value, 0);
+}
+
+/**
+ * Decided proposals only — an honest win rate, not a stage-based guess.
+ *
+ * One vote per deal, decided by its most recent accept/reject. Counting every
+ * revision separately scores a deal that was re-quoted twice and finally won
+ * as one win and two losses.
+ */
 export function proposalWinRate(proposals: Proposal[]): number | null {
-  const accepted = proposals.filter((p) => p.status === "accepted").length;
-  const rejected = proposals.filter((p) => p.status === "rejected").length;
-  const decided = accepted + rejected;
-  return decided === 0 ? null : accepted / decided;
+  const decidedByDeal = new Map<string, Proposal>();
+  for (const p of proposals) {
+    if (p.status !== "accepted" && p.status !== "rejected") continue;
+    const current = decidedByDeal.get(p.dealId);
+    if (!current || p.revision > current.revision) decidedByDeal.set(p.dealId, p);
+  }
+  const decided = [...decidedByDeal.values()];
+  if (decided.length === 0) return null;
+  return decided.filter((p) => p.status === "accepted").length / decided.length;
 }
 
 // ---------------------------------------------------------------------------

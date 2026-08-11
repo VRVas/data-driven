@@ -6,6 +6,7 @@ import {
   openDeals,
   awaitingDecisionValue,
   proposalWinRate,
+  currentProposals,
   rollupFor,
   latestProposal,
 } from "@/lib/crm/logic";
@@ -97,15 +98,49 @@ describe("proposals", () => {
     expect(value).toBe(17_000);
   });
 
+  it("drops a deal once its newest revision stops awaiting an answer", () => {
+    // Quoted, re-quoted, then turned down. Reading the newest *sent* revision
+    // instead of the newest revision leaves the superseded €10k sitting in the
+    // total for a deal that is already dead.
+    const requotedThenRejected = [
+      proposal({ dealId: "a", revision: 1, value: 10_000, status: "sent" }),
+      proposal({ dealId: "a", revision: 2, value: 12_000, status: "rejected" }),
+    ];
+    expect(awaitingDecisionValue(requotedThenRejected)).toBe(0);
+  });
+
+  it("counts one live revision per deal", () => {
+    expect(
+      currentProposals([
+        proposal({ id: "p1", dealId: "a", revision: 1 }),
+        proposal({ id: "p2", dealId: "a", revision: 2 }),
+        proposal({ id: "p3", dealId: "b", revision: 1 }),
+      ]).map((p) => p.id).sort(),
+    ).toEqual(["p2", "p3"]);
+  });
+
   it("derives a win rate from decided proposals only", () => {
     expect(proposalWinRate([])).toBeNull();
     expect(proposalWinRate([proposal({ status: "sent" })])).toBeNull();
     expect(
       proposalWinRate([
-        proposal({ status: "accepted" }), proposal({ status: "rejected" }),
-        proposal({ status: "sent" }), proposal({ status: "expired" }),
+        proposal({ id: "p1", dealId: "a", status: "accepted" }),
+        proposal({ id: "p2", dealId: "b", status: "rejected" }),
+        proposal({ id: "p3", dealId: "c", status: "sent" }),
+        proposal({ id: "p4", dealId: "d", status: "expired" }),
       ]),
     ).toBe(0.5);
+  });
+
+  it("scores a re-quoted deal once, by its most recent decision", () => {
+    // Haggled down twice and finally won. Counting revisions instead of deals
+    // reports one win against two losses for a deal we did not lose.
+    const oneDealWonAfterTwoRounds = [
+      proposal({ id: "p1", dealId: "a", revision: 1, status: "rejected" }),
+      proposal({ id: "p2", dealId: "a", revision: 2, status: "rejected" }),
+      proposal({ id: "p3", dealId: "a", revision: 3, status: "accepted" }),
+    ];
+    expect(proposalWinRate(oneDealWonAfterTwoRounds)).toBe(1);
   });
 
   it("takes the highest revision as current", () => {

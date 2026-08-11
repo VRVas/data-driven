@@ -13,7 +13,7 @@ import { leadScore, quadrant, weightedValue, winProbability } from "@/lib/scorin
 import { openLeads, outcomeOf } from "@/lib/lifecycle";
 import { opportunityScore, penetration, whitespace } from "@/lib/tam";
 import { getCrmGraph, getCompanyDetail, getPipelineMoney } from "@/lib/crm/graph";
-import { proposalsWithStatus } from "@/lib/crm/logic";
+import { proposalsWithStatus, currentProposals } from "@/lib/crm/logic";
 import type { Company } from "@/lib/crm/types";
 import { remindersFrom } from "@/lib/reminders";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
@@ -409,12 +409,14 @@ const proposalPipeline: CopilotTool = {
   parameters: { type: "object", properties: {} },
   async execute() {
     const [money, graph] = await Promise.all([getPipelineMoney(), getCrmGraph()]);
-    // money.awaitingDecision is awaitingDecisionValue() — newest sent revision per deal only.
+    // Counts describe deals, not paperwork: a deal re-quoted three times is one
+    // negotiation, so only its live revision is counted.
+    const current = currentProposals(graph.proposals);
     return {
       awaitingDecisionEur: Math.round(money.awaitingDecision),
-      sentCount: proposalsWithStatus(graph.proposals, "sent").length,
-      acceptedCount: proposalsWithStatus(graph.proposals, "accepted").length,
-      rejectedCount: proposalsWithStatus(graph.proposals, "rejected").length,
+      sentCount: proposalsWithStatus(current, "sent").length,
+      acceptedCount: proposalsWithStatus(current, "accepted").length,
+      rejectedCount: proposalsWithStatus(current, "rejected").length,
       proposalWinRate: money.proposalWinRate,
       openPipelineEur: Math.round(money.openPipeline),
       weightedPipelineEur: Math.round(money.weightedPipeline),
