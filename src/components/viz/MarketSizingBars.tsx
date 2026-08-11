@@ -31,26 +31,27 @@ export function MarketSizingBars({ sectors }: { sectors: MarketSizing[] }) {
   );
 
   return (
-    <div ref={ref} className="space-y-2.5">
+    <div ref={ref} className="space-y-3">
       {rows.map((s) => (
-        <div key={s.sector} className="flex items-center gap-3">
-          <div className="w-44 shrink-0 truncate text-right text-sm text-[var(--color-ink-muted)]" title={s.sector}>
-            {s.sector}
+        <div key={s.sector}>
+          <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
+            <span className="min-w-0 truncate font-medium" title={s.sector}>
+              {s.sector}
+            </span>
+            <span className="shrink-0 text-[var(--color-ink-muted)]">
+              <span className="font-semibold text-[var(--color-cyan)]">${s.marketSizeUsdBn}B</span>
+              <span className="text-[var(--color-ink-faint)]"> · {s.companies}&nbsp;cos.</span>
+            </span>
           </div>
-          <div className="relative h-7 flex-1 overflow-hidden rounded-md bg-[var(--color-surface)]">
+          <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface)]">
             <div
               data-bar
-              className="flex h-full items-center rounded-md px-2.5 text-xs font-semibold text-black/80"
+              className="h-full rounded-full"
               style={{
-                width: `${Math.max(6, ((s.marketSizeUsdBn ?? 0) / max) * 100)}%`,
+                width: `${Math.max(3, ((s.marketSizeUsdBn ?? 0) / max) * 100)}%`,
                 background: "linear-gradient(90deg, var(--color-cyan), color-mix(in srgb, var(--color-cyan) 60%, black))",
               }}
-            >
-              ${s.marketSizeUsdBn}B
-            </div>
-          </div>
-          <div className="w-24 shrink-0 text-right text-xs text-[var(--color-ink-faint)]">
-            {s.companies}&nbsp;cos.
+            />
           </div>
         </div>
       ))}

@@ -40,7 +40,7 @@ export function WhitespaceBars({ industries }: { industries: IndustryStat[] }) {
         const color = valuationToken(ind.valuation);
         return (
           <div key={ind.name}>
-            <div className="mb-1 flex items-baseline justify-between text-sm">
+            <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
               <span className="font-medium">{ind.name}</span>
               <span className="text-[var(--color-ink-muted)]">
                 <span style={{ color }}>{ind.opened}</span> / {total} approached ·{" "}
@@ -49,8 +49,9 @@ export function WhitespaceBars({ industries }: { industries: IndustryStat[] }) {
             </div>
             {/* addressable market track, filled by approached share */}
             <div
-              className="relative h-6 w-full overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)]"
-              style={{ width: `${Math.max(12, (total / maxTotal) * 100)}%` }}
+              className="relative h-6 overflow-hidden rounded-md border border-[var(--color-border)] bg-[var(--color-surface)]"
+              // minWidth keeps the right-aligned percentage from being clipped on short tracks.
+              style={{ width: `${Math.max(12, (total / maxTotal) * 100)}%`, minWidth: "5.5rem" }}
             >
               <div
                 data-fill
