@@ -40,17 +40,33 @@ export function companyNameKey(name: string): string {
     .trim();
 }
 
-/** Companies whose keys collide — surfaced for review, never merged silently. */
+/**
+ * The leading word of a company name — a deliberately loose grouping signal.
+ *
+ * Exact key matching is useless here: the real cases ("Generali - Taverna" and
+ * "Generali Bank") never match exactly, so nothing would ever be suggested.
+ * This casts a wider net on purpose and WILL pair genuinely different clients
+ * (Qatar Airways / Qatar Museums). That is the intended trade — it surfaces a
+ * question for a human, never an answer.
+ */
+export function companyRoot(name: string): string {
+  return companyNameKey(name).split(" ")[0] ?? "";
+}
+
+/** Companies that might be the same client. A suggestion, never a merge. */
 export function duplicateCandidates(companies: Company[]): Company[][] {
   const groups = new Map<string, Company[]>();
   for (const c of companies) {
     if (c.mergedIntoCompanyId) continue;
-    const key = c.nameKey || companyNameKey(c.name);
+    const key = companyRoot(c.name);
+    if (!key) continue;
     const bucket = groups.get(key);
     if (bucket) bucket.push(c);
     else groups.set(key, [c]);
   }
-  return [...groups.values()].filter((g) => g.length > 1);
+  return [...groups.values()]
+    .filter((g) => g.length > 1)
+    .sort((a, b) => a[0].name.localeCompare(b[0].name));
 }
 
 // ---------------------------------------------------------------------------

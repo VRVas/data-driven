@@ -53,14 +53,27 @@ describe("companyNameKey", () => {
 });
 
 describe("duplicateCandidates", () => {
-  it("groups exact key matches only, and skips merged companies", () => {
-    const c = (id: string, name: string, merged: string | null = null) =>
-      ({ id, name, nameKey: companyNameKey(name), mergedIntoCompanyId: merged } as Company);
+  const c = (id: string, name: string, merged: string | null = null) =>
+    ({ id, name, nameKey: companyNameKey(name), mergedIntoCompanyId: merged } as Company);
+
+  it("surfaces the real same-client cases for review", () => {
+    // These never match exactly, which is why exact-key grouping found nothing.
     const groups = duplicateCandidates([
-      c("1", "Reply"), c("2", "Reply Ltd"), c("3", "Alibaba"), c("4", "Reply", "1"),
+      c("1", "Generali - Taverna"), c("2", "Generali Bank"), c("3", "Alibaba"),
     ]);
     expect(groups).toHaveLength(1);
     expect(groups[0].map((x) => x.id).sort()).toEqual(["1", "2"]);
+  });
+
+  it("casts wide enough to catch pairs that are probably NOT the same client", () => {
+    // Deliberate: the grouping only asks the question, a human answers it.
+    expect(duplicateCandidates([c("1", "Qatar Airways"), c("2", "Qatar Museums")])).toHaveLength(1);
+    // They still remain distinct companies — nothing is merged.
+    expect(companyNameKey("Qatar Airways")).not.toBe(companyNameKey("Qatar Museums"));
+  });
+
+  it("ignores companies already merged away", () => {
+    expect(duplicateCandidates([c("1", "Reply"), c("2", "Reply Ltd", "1")])).toHaveLength(0);
   });
 });
 
