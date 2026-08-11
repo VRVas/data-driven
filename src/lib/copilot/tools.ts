@@ -9,6 +9,7 @@ import { groundedWebAnswer, isWebGroundingConfigured } from "@/lib/copilot/webse
 import { getDocRegistryStore } from "@/lib/store/documents";
 import { logAudit } from "@/lib/store/audit";
 import { leadScore, quadrant, weightedValue, winProbability } from "@/lib/scoring";
+import { openLeads, outcomeOf } from "@/lib/lifecycle";
 import { opportunityScore, penetration, whitespace } from "@/lib/tam";
 import { remindersFrom } from "@/lib/reminders";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
@@ -40,6 +41,7 @@ function leadBrief(b: Brand) {
     id: b.id,
     name: b.name,
     status: b.status,
+    outcome: outcomeOf(b.status),
     priority: b.priority,
     industry: b.industry,
     owner: b.owner,
@@ -64,12 +66,18 @@ function leadBrief(b: Brand) {
 const searchLeads: CopilotTool = {
   name: "search_leads",
   description:
-    "Search and rank leads in the pipeline by any combination of status, priority, industry, owner or free text. Returns compact lead summaries with computed lead score, quadrant and weighted value.",
+    "Search and rank leads in the pipeline by any combination of status, priority, industry, owner or free text. Returns compact lead summaries with computed lead score, quadrant and weighted value. Ranks only live deals unless asked otherwise: pass outcome='won'/'lost'/'any' to include finished ones.",
   parameters: {
     type: "object",
     properties: {
       query: { type: "string", description: "Free-text match on name, POC, notes or industry" },
       status: { type: "string", enum: [...BRAND_STATUSES] },
+      outcome: {
+        type: "string",
+        enum: ["open", "won", "lost", "any"],
+        description:
+          "Unqualified rankings default to 'open' so only live deals are ranked; a free-text query or an explicit status searches everything. Set explicitly to override.",
+      },
       priority: { type: "string", enum: [...PRIORITIES] },
       industry: { type: "string", enum: [...INDUSTRIES] },
       owner: { type: "string" },
@@ -84,6 +92,7 @@ const searchLeads: CopilotTool = {
       .object({
         query: z.string().trim().optional(),
         status: z.enum(asEnum(BRAND_STATUSES)).optional(),
+        outcome: z.enum(["open", "won", "lost", "any"]).optional(),
         priority: z.enum(asEnum(PRIORITIES)).optional(),
         industry: z.enum(asEnum(INDUSTRIES)).optional(),
         owner: z.string().trim().optional(),
@@ -95,6 +104,10 @@ const searchLeads: CopilotTool = {
       .parse(args);
 
     let brands = await getBrands();
+    // An unqualified ranking answers "where do we spend effort next", so finished
+    // deals are out. A name lookup or an explicit status is a search — match anything.
+    const outcomeFilter = a.outcome ?? (a.status || a.query ? "any" : "open");
+    if (outcomeFilter !== "any") brands = brands.filter((b) => outcomeOf(b.status) === outcomeFilter);
     if (a.query) {
       const q = a.query.toLowerCase();
       brands = brands.filter((b) =>
@@ -116,7 +129,7 @@ const searchLeads: CopilotTool = {
       return (Number(y[key] ?? -1) || -1) - (Number(x[key] ?? -1) || -1);
     });
 
-    return { count: briefs.length, leads: briefs.slice(0, a.limit ?? 10) };
+    return { count: briefs.length, outcomeFilter, leads: briefs.slice(0, a.limit ?? 10) };
   },
 };
 
@@ -194,18 +207,23 @@ const explainScore: CopilotTool = {
 const pipelineSummary: CopilotTool = {
   name: "pipeline_summary",
   description:
-    "Summarise the whole pipeline: totals, scored coverage, weighted (probability-adjusted) value, hot-lead and closed counts, and the count of leads at each stage.",
+    "Summarise the whole pipeline: totals, scored coverage, weighted (probability-adjusted) value, hot-lead and closed counts, and the count of leads at each stage. Prefer the open* figures when talking about live pipeline — the totals include finished deals.",
   parameters: { type: "object", properties: {} },
   async execute() {
     const brands = await getBrands();
+    const live = openLeads(brands);
     const byStatus: Record<string, number> = {};
     for (const b of brands) if (b.status) byStatus[b.status] = (byStatus[b.status] ?? 0) + 1;
     return {
       totalLeads: brands.length,
+      openLeadCount: live.length,
+      wonLeadCount: brands.filter((b) => outcomeOf(b.status) === "won").length,
+      lostLeadCount: brands.filter((b) => outcomeOf(b.status) === "lost").length,
       scored: brands.filter((b) => b.scored).length,
       hotLeads: brands.filter((b) => b.priority === "Hot Lead").length,
       dealsClosed: brands.filter((b) => b.status === "Deal Closed").length,
       weightedValueEur: Math.round(brands.reduce((sum, b) => sum + weightedValue(b), 0)),
+      openWeightedValueEur: Math.round(live.reduce((sum, b) => sum + weightedValue(b), 0)),
       byStatus,
     };
   },
