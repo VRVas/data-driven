@@ -32,4 +32,40 @@ test.describe("responsive — dashboard", () => {
       await shot(page, `11-dashboard-${vp.name}`);
     });
   }
+
+  // The full horizontal nav only fits from `xl` (1280px) up; below that it
+  // collapses into the hamburger drawer, which must still reach every section.
+  for (const vp of [VIEWPORTS[0], VIEWPORTS[1], { name: "small-laptop", width: 1024, height: 768 }]) {
+    test(`menu drawer navigates at ${vp.name} (${vp.width}px)`, async ({ page }) => {
+      await page.setViewportSize({ width: vp.width, height: vp.height });
+      await page.goto("/dashboard");
+
+      await expect(page.getByRole("navigation")).toBeHidden();
+      await page.getByRole("button", { name: "Open menu" }).click();
+
+      const drawer = page.getByRole("dialog", { name: "Menu" });
+      await expect(drawer).toBeVisible();
+      await expect(drawer.getByRole("link", { name: "Overview" })).toHaveAttribute("aria-current", "page");
+      await shot(page, `12-menu-${vp.name}`);
+
+      await drawer.getByRole("link", { name: "Whitespace", exact: true }).click();
+      await expect(page).toHaveURL(/\/dashboard\/whitespace$/);
+      await expect(drawer).toBeHidden();
+    });
+  }
+
+  test("no horizontal overflow on dashboard pages", async ({ page }) => {
+    const routes = ["/dashboard", "/dashboard/pipeline", "/dashboard/agents", "/dashboard/team"];
+    for (const width of [360, 768, 1024, 1280]) {
+      await page.setViewportSize({ width, height: 900 });
+      for (const route of routes) {
+        await page.goto(route);
+        const { doc, win } = await page.evaluate(() => ({
+          doc: document.documentElement.scrollWidth,
+          win: window.innerWidth,
+        }));
+        expect(doc, `${route} overflows at ${width}px`).toBeLessThanOrEqual(win + 1);
+      }
+    }
+  });
 });
