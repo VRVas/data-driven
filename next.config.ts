@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   poweredByHeader: false,
+  // Hide the dev-only on-screen indicator (keeps captured UI clean).
+  devIndicators: false,
   experimental: {
     optimizePackageImports: ["gsap"],
   },
