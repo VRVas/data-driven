@@ -258,3 +258,28 @@ describe("migrateBrands against the real dataset", () => {
     expect(alibabaCo.access.easeOfAccess).toBeCloseTo(4.6667, 3);
   });
 });
+
+describe("timestamp normalisation", () => {
+  const at = new Date("2026-08-11T09:00:00.000Z");
+  const lead = (over: Partial<Brand>): Brand => ({
+    id: "x", name: "X", aliases: [], scored: false, status: null, priority: null,
+    owner: null, poc: null, email: null, industry: null, industryRaw: null,
+    initialContact: null, lastContact: null, followUp: null, closingFailed: null, notes: null,
+    ...over,
+  });
+
+  it("widens sheet dates to full ISO stamps", () => {
+    // Mixing "2026-06-09" with "2026-06-09T09:00:00.000Z" in one field makes a
+    // string compare order the date-only value first.
+    expect(migrateBrands([lead({ initialContact: "2026-06-09" })], prob, at).deals[0].createdAt).toBe(
+      "2026-06-09T00:00:00.000Z",
+    );
+    expect(migrateBrands([lead({ initialContact: null })], prob, at).deals[0].createdAt).toBe(at.toISOString());
+  });
+
+  it("falls back rather than emitting an invalid stamp", () => {
+    expect(migrateBrands([lead({ initialContact: "not-a-date" })], prob, at).deals[0].createdAt).toBe(
+      at.toISOString(),
+    );
+  });
+});

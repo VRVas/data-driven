@@ -23,9 +23,12 @@ export function CompanyProposals({
   const dealNames = useMemo(() => new Map(deals.map((d) => [d.id, d.name])), [deals]);
   const rows = useMemo(
     () =>
+      // Compared by day: sentAt comes from a date input, createdAt is a full
+      // ISO stamp, and comparing them raw puts a same-day sentAt first.
       [...proposals].sort(
         (a, b) =>
-          (b.sentAt ?? b.createdAt).localeCompare(a.sentAt ?? a.createdAt) || b.revision - a.revision,
+          (b.sentAt ?? b.createdAt).slice(0, 10).localeCompare((a.sentAt ?? a.createdAt).slice(0, 10)) ||
+          b.revision - a.revision,
       ),
     [proposals],
   );

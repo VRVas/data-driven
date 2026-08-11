@@ -39,6 +39,17 @@ export function companyIdFor(brand: Brand): string {
 }
 
 /**
+ * Sheet dates are `yyyy-MM-dd` while everything written since is a full ISO
+ * stamp. Storing both in the same field makes a plain string compare order a
+ * date-only value before a same-day timestamp, so widen on the way in.
+ */
+function asTimestamp(day: string | null, fallback: string): string {
+  if (!day) return fallback;
+  const parsed = new Date(`${day}T00:00:00.000Z`);
+  return Number.isNaN(parsed.getTime()) ? fallback : parsed.toISOString();
+}
+
+/**
  * The migration deliberately produces no proposals.
  *
  * A brand's budget and outcome already live on the deal, so re-encoding them
@@ -74,7 +85,7 @@ export function migrateBrands(
       type: "deal",
       companyId,
       schemaVersion: 2,
-      createdAt: brand.initialContact ?? iso,
+      createdAt: asTimestamp(brand.initialContact, iso),
       updatedAt: iso,
       companyName: brand.name,
       name: brand.name,
@@ -112,7 +123,7 @@ export function migrateBrands(
       type: "company",
       companyId,
       schemaVersion: 2,
-      createdAt: brand.initialContact ?? iso,
+      createdAt: asTimestamp(brand.initialContact, iso),
       updatedAt: iso,
       name: brand.name,
       nameKey: companyNameKey(brand.name),
