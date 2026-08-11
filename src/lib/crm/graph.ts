@@ -9,7 +9,15 @@ import { winProbability } from "@/lib/scoring";
 import type { BrandStatus } from "@/lib/types";
 import type { Company, Deal, DealStage, Proposal } from "./types";
 
-const prob = (stage: DealStage) => winProbability(stage as BrandStatus);
+/**
+ * Recurring work moved off the stage axis and onto the deal type, so a
+ * recurring deal now sits at stage "Advanced". Weighting it by that stage gave
+ * it 0.6 here while every lead-facing surface still read
+ * winProbability("Recurring") = 0.85 — the same deal, two different weighted
+ * values depending on which page you were on.
+ */
+const prob = (deal: Pick<Deal, "stage" | "dealType">) =>
+  winProbability((deal.dealType === "Recurring" ? "Recurring" : deal.stage) as BrandStatus);
 
 /**
  * A company we know only by name, because the deal that described it is gone
@@ -163,7 +171,7 @@ export async function getPipelineMoney(): Promise<PipelineMoney> {
   const repeat = companies.filter((c) => c.rollup.repeatValue > 0);
   return {
     openPipeline: open.reduce((s, d) => s + (d.economics.budget ?? 0), 0),
-    weightedPipeline: open.reduce((s, d) => s + (d.economics.budget ?? 0) * prob(d.stage), 0),
+    weightedPipeline: open.reduce((s, d) => s + (d.economics.budget ?? 0) * prob(d), 0),
     awaitingDecision: awaitingDecisionValue(proposals),
     proposalWinRate: proposalWinRate(proposals),
     companiesWithRepeatBusiness: repeat.length,

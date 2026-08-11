@@ -161,12 +161,20 @@ const earliest = (dates: (string | null)[]): string | null =>
   dates.filter((d): d is string => !!d).sort().at(0) ?? null;
 
 /**
+ * How likely a deal is to close.
+ *
+ * Takes the deal rather than its stage: `Recurring` moved off the stage axis
+ * onto the deal type, so the stage alone no longer identifies it.
+ */
+export type DealProbability = (deal: Pick<Deal, "stage" | "dealType">) => number;
+
+/**
  * Recompute a company's totals from its deals. Cheap enough to run on read;
  * the cached copy on the document is only there to keep list views fast.
  */
 export function rollupFor(
   deals: Deal[],
-  winProbability: (stage: DealStage) => number,
+  winProbability: DealProbability,
   now: Date = new Date(),
 ): CompanyRollup {
   const open = deals.filter((d) => d.outcome === "open");
@@ -188,7 +196,7 @@ export function rollupFor(
     wonDealCount: won.length,
     lostDealCount: lost.length,
     openPipelineValue: open.reduce((s, d) => s + valueOf(d), 0),
-    weightedPipelineValue: open.reduce((s, d) => s + valueOf(d) * winProbability(d.stage), 0),
+    weightedPipelineValue: open.reduce((s, d) => s + valueOf(d) * winProbability(d), 0),
     lifetimeValue,
     repeatValue: lifetimeValue - (firstWon ? (firstWon.wonValue ?? valueOf(firstWon)) : 0),
     winRate: decided === 0 ? null : won.length / decided,

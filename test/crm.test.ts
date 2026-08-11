@@ -16,7 +16,9 @@ import type { Company, Deal, Proposal, DealStage } from "@/lib/crm/types";
 import type { Brand } from "@/lib/types";
 import dataset from "@/data/dataset.json";
 
-const prob = (stage: DealStage) => winProbability(stage as never);
+// Mirrors src/lib/crm/graph.ts, so the tests weight deals the way the app does.
+const prob = (d: Pick<Deal, "stage" | "dealType">) =>
+  winProbability((d.dealType === "Recurring" ? "Recurring" : d.stage) as never);
 
 const deal = (over: Partial<Deal> = {}): Deal => ({
   id: "d", type: "deal", companyId: "c", schemaVersion: 2,
@@ -162,13 +164,29 @@ describe("rollupFor", () => {
     expect(r.lifetimeValue).toBe(65_000);
     expect(r.repeatValue).toBe(25_000); // everything after the first win
     expect(r.openPipelineValue).toBe(30_000);
-    expect(r.weightedPipelineValue).toBeCloseTo(30_000 * prob("Advanced"));
+    expect(r.weightedPipelineValue).toBeCloseTo(30_000 * prob({ stage: "Advanced", dealType: "New Business" }));
     expect(r.winRate).toBeCloseTo(2 / 3);
     expect(r.firstWonAt).toBe("2026-01-10");
   });
 
-  it("reports no win rate rather than zero when nothing has closed", () => {
-    expect(rollupFor([deal()], prob).winRate).toBeNull();
+  it("weights recurring work the same as the lead pages do", () => {
+    // Recurring moved off the stage axis onto the deal type, so the deal now
+    // sits at "Advanced". Weighting by stage alone valued it at 0.6 here while
+    // the lead pages still used winProbability("Recurring") = 0.85.
+    const recurring = rollupFor(
+      [deal({ stage: "Advanced", dealType: "Recurring", economics: { ...deal().economics, budget: 100_000 } })],
+      prob,
+    );
+    expect(recurring.weightedPipelineValue).toBeCloseTo(100_000 * winProbability("Recurring"));
+
+    const newBusiness = rollupFor(
+      [deal({ stage: "Advanced", dealType: "New Business", economics: { ...deal().economics, budget: 100_000 } })],
+      prob,
+    );
+    expect(newBusiness.weightedPipelineValue).toBeCloseTo(100_000 * winProbability("Advanced"));
+  });
+
+  it("reports no win rate rather than zero when nothing has closed", () => {    expect(rollupFor([deal()], prob).winRate).toBeNull();
   });
 
   it("picks the same first win regardless of order when wins are undated", () => {

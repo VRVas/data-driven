@@ -7,7 +7,7 @@
  *    NOT merged here; that is a human decision, surfaced as a suggestion.
  */
 import type { Brand } from "../types";
-import { companyNameKey, outcomeOfStage, rollupFor } from "./logic";
+import { companyNameKey, outcomeOfStage, rollupFor, type DealProbability } from "./logic";
 import { EMPTY_ROLLUP } from "./logic";
 import type {
   Company,
@@ -48,7 +48,7 @@ export interface MigrationResult {
 
 export function migrateBrands(
   brands: Brand[],
-  winProbability: (stage: DealStage) => number,
+  winProbability: DealProbability,
   now: Date = new Date(),
 ): MigrationResult {
   const iso = now.toISOString();
