@@ -43,6 +43,7 @@ const READ_KEYS = PERMISSION_KEYS.filter((k) => k.endsWith(":read"));
 const SALES_REP_KEYS: PermissionKey[] = [
   "lead:read", "lead:create", "lead:update", "lead:stage:advance", "lead:assign",
   "agent:read", "agent:create", "agent:update", "agent:delete",
+  "proposal:read", "proposal:manage",
   "outreach:read", "outreach:compose", "outreach:cancel",
   "reminder:read", "reminder:update", "reminder:complete",
   "view:read", "view:create", "view:delete",

@@ -27,6 +27,7 @@ export function scopeAtLeast(actual: Scope, required: Scope): boolean {
 export type PermissionCategory =
   | "Pipeline"
   | "Agents"
+  | "Proposals"
   | "Outreach"
   | "Reminders"
   | "Saved views"
@@ -61,6 +62,10 @@ export const PERMISSIONS = [
   { key: "agent:create", category: "Agents", label: "Add agents", scoped: false },
   { key: "agent:update", category: "Agents", label: "Edit agents", scoped: true },
   { key: "agent:delete", category: "Agents", label: "Delete agents", scoped: true, risk: "high" },
+
+  // ---- Proposals ----------------------------------------------------------
+  { key: "proposal:read", category: "Proposals", label: "View proposals", scoped: true },
+  { key: "proposal:manage", category: "Proposals", label: "Add and update proposals", scoped: true, help: "Recording what was quoted and whether it was accepted." },
 
   // ---- Outreach -----------------------------------------------------------
   { key: "outreach:read", category: "Outreach", label: "View outreach", scoped: true },
@@ -131,6 +136,7 @@ export function isPermissionKey(key: string): key is PermissionKey {
 export const PERMISSION_CATEGORIES = [
   "Pipeline",
   "Agents",
+  "Proposals",
   "Outreach",
   "Reminders",
   "Saved views",
