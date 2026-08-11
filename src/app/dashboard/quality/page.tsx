@@ -40,7 +40,7 @@ export default function QualityPage() {
         </div>
       </Reveal>
 
-      <Reveal stagger className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {Object.entries(groups).map(([g, list]) => (
           <div key={g} className="glass p-5">
             <div className="eyebrow">{g}</div>
@@ -51,30 +51,32 @@ export default function QualityPage() {
 
       <Reveal>
         <div className="glass overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--color-surface)]">
-              <tr>
-                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Entity</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Field</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Issue</th>
-                <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Resolution</th>
-              </tr>
-            </thead>
-            <tbody>
-              {issues.map((i, idx) => (
-                <tr key={idx} className="border-t border-[var(--color-border)]">
-                  <td className="px-4 py-2.5 font-medium">{i.entity}</td>
-                  <td className="px-4 py-2.5 text-[var(--color-ink-muted)]">{i.key}</td>
-                  <td className="px-4 py-2.5 text-[var(--color-ink-muted)]">{i.issue}</td>
-                  <td className="px-4 py-2.5">
-                    <span className="rounded-full bg-[color-mix(in_srgb,var(--color-mint)_14%,transparent)] px-2 py-0.5 text-xs text-[var(--color-mint)]">
-                      {i.fix}
-                    </span>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[36rem] text-sm">
+              <thead className="bg-[var(--color-surface)]">
+                <tr>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Entity</th>
+                  <th className="hidden px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] sm:table-cell">Field</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Issue</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Resolution</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {issues.map((i, idx) => (
+                  <tr key={idx} className="border-t border-[var(--color-border)]">
+                    <td className="px-4 py-2.5 font-medium">{i.entity}</td>
+                    <td className="hidden px-4 py-2.5 text-[var(--color-ink-muted)] sm:table-cell">{i.key}</td>
+                    <td className="px-4 py-2.5 text-[var(--color-ink-muted)]">{i.issue}</td>
+                    <td className="px-4 py-2.5">
+                      <span className="whitespace-nowrap rounded-full bg-[color-mix(in_srgb,var(--color-mint)_14%,transparent)] px-2 py-0.5 text-xs text-[var(--color-mint)]">
+                        {i.fix}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Reveal>
     </div>

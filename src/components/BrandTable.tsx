@@ -169,11 +169,11 @@ export function BrandTable({
             <tr>
               {th("name", "Brand")}
               {th("status", "Status")}
-              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Priority</th>
-              {th("owner", "Owner")}
-              {th("industry", "Industry")}
-              {th("budget", "Budget", "text-right")}
-              {th("lastContact", "Last contact")}
+              <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] sm:table-cell">Priority</th>
+              {th("owner", "Owner", "hidden lg:table-cell")}
+              {th("industry", "Industry", "hidden md:table-cell")}
+              {th("budget", "Budget", "hidden text-right sm:table-cell")}
+              {th("lastContact", "Last contact", "hidden xl:table-cell")}
               <th className="px-3 py-2" />
             </tr>
           </thead>
@@ -208,15 +208,15 @@ export function BrandTable({
                 <td className="px-3 py-2">
                   {b.status && <Badge color={STATUS_TOKEN[b.status as BrandStatus]}>{b.status}</Badge>}
                 </td>
-                <td className="px-3 py-2">
+                <td className="hidden px-3 py-2 sm:table-cell">
                   {b.priority && <Badge color={PRIORITY_TOKEN[b.priority as Priority]}>{b.priority.replace(" Lead", "")}</Badge>}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{b.owner ?? "—"}</td>
-                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{b.industry ?? "—"}</td>
-                <td className="px-3 py-2 text-right tabular-nums">
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] lg:table-cell">{b.owner ?? "—"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] md:table-cell">{b.industry ?? "—"}</td>
+                <td className="hidden px-3 py-2 text-right tabular-nums sm:table-cell">
                   {b.scores?.budget ? eur(b.scores.budget) : "—"}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{b.lastContact ?? "—"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] xl:table-cell">{b.lastContact ?? "—"}</td>
                 <td className="px-3 py-2 text-right">
                   <button
                     onClick={() => setEditing(b)}

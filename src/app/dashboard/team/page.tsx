@@ -29,35 +29,37 @@ export default async function TeamPage() {
 
       <Reveal>
         <div className="glass overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="border-b border-[var(--color-border)]">
-              <tr className="text-left">
-                <th className="px-6 py-3 eyebrow">Name</th>
-                <th className="px-6 py-3 eyebrow">Email</th>
-                <th className="px-6 py-3 eyebrow">Joined</th>
-                <th className="px-6 py-3 text-right eyebrow">Role</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className="border-t border-[var(--color-border)]">
-                  <td className="px-6 py-3 font-medium">
-                    {u.name}
-                    {u.id === me.id && <span className="ml-2 text-xs text-[var(--color-ink-faint)]">you</span>}
-                  </td>
-                  <td className="px-6 py-3 font-mono text-xs text-[var(--color-ink-muted)]">{u.email}</td>
-                  <td className="px-6 py-3 tabular-nums text-[var(--color-ink-muted)]">
-                    {u.createdAt ? u.createdAt.slice(0, 10) : "—"}
-                  </td>
-                  <td className="px-6 py-3">
-                    <div className="flex justify-end">
-                      <RoleControl userId={u.id} role={u.role} />
-                    </div>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="border-b border-[var(--color-border)]">
+                <tr className="text-left">
+                  <th className="eyebrow px-4 py-3 sm:px-6">Name</th>
+                  <th className="eyebrow hidden px-4 py-3 sm:table-cell sm:px-6">Email</th>
+                  <th className="eyebrow hidden px-4 py-3 md:table-cell sm:px-6">Joined</th>
+                  <th className="eyebrow px-4 py-3 text-right sm:px-6">Role</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} className="border-t border-[var(--color-border)]">
+                    <td className="px-4 py-3 font-medium sm:px-6">
+                      {u.name}
+                      {u.id === me.id && <span className="ml-2 text-xs text-[var(--color-ink-faint)]">you</span>}
+                    </td>
+                    <td className="hidden px-4 py-3 font-mono text-xs text-[var(--color-ink-muted)] sm:table-cell sm:px-6">{u.email}</td>
+                    <td className="hidden px-4 py-3 tabular-nums text-[var(--color-ink-muted)] md:table-cell sm:px-6">
+                      {u.createdAt ? u.createdAt.slice(0, 10) : "—"}
+                    </td>
+                    <td className="px-4 py-3 sm:px-6">
+                      <div className="flex justify-end">
+                        <RoleControl userId={u.id} role={u.role} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </Reveal>
     </div>

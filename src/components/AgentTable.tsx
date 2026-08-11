@@ -67,9 +67,13 @@ export function AgentTable({ agents }: { agents: Agent[] }) {
         <table className="w-full text-sm">
           <thead className="bg-[var(--color-surface)]">
             <tr>
-              {["Agent / Agency", "Status", "Priority", "Owner", "POC", "Last contact", ""].map((h, i) => (
-                <th key={i} className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">{h}</th>
-              ))}
+              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Agent / Agency</th>
+              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Status</th>
+              <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] sm:table-cell">Priority</th>
+              <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] lg:table-cell">Owner</th>
+              <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] md:table-cell">POC</th>
+              <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] xl:table-cell">Last contact</th>
+              <th className="px-3 py-2" />
             </tr>
           </thead>
           <tbody>
@@ -79,12 +83,12 @@ export function AgentTable({ agents }: { agents: Agent[] }) {
                 <td className="px-3 py-2">
                   {a.status && <Badge color={STATUS_TOKEN[a.status as BrandStatus] ?? "var(--color-ink-faint)"}>{a.status}</Badge>}
                 </td>
-                <td className="px-3 py-2">
+                <td className="hidden px-3 py-2 sm:table-cell">
                   {a.priority && <Badge color={PRIORITY_TOKEN[a.priority as Priority]}>{a.priority.replace(" Lead", "")}</Badge>}
                 </td>
-                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{a.owner ?? "—"}</td>
-                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{a.poc ?? "—"}</td>
-                <td className="whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)]">{a.lastContact ?? "—"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] lg:table-cell">{a.owner ?? "—"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] md:table-cell">{a.poc ?? "—"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] xl:table-cell">{a.lastContact ?? "—"}</td>
                 <td className="px-3 py-2 text-right">
                   <button
                     onClick={() => setEditing(a)}
