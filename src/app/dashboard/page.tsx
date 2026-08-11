@@ -5,6 +5,7 @@ import { StatusFunnel, type FunnelRow } from "@/components/viz/StatusFunnel";
 import { IndustryHeatmap } from "@/components/viz/IndustryHeatmap";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
 import { getDataset, getBrands } from "@/lib/data";
+import { openLeads } from "@/lib/lifecycle";
 import { STATUS_TOKEN, PRIORITY_TOKEN, weightedValue } from "@/lib/scoring";
 import type { BrandStatus } from "@/lib/types";
 
@@ -54,7 +55,7 @@ export default async function DashboardOverview() {
     (a, b) => (b.economicalEfficiency ?? 0) - (a.economicalEfficiency ?? 0),
   );
 
-  const points: QuadPoint[] = scored
+  const points: QuadPoint[] = openLeads(scored)
     .filter((b) => b.scores?.economicalEfficiency != null && b.scores?.easeOfAccess != null)
     .map((b) => ({
       id: b.id,
@@ -97,7 +98,7 @@ export default async function DashboardOverview() {
         </Reveal>
 
         <Reveal>
-          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Economical efficiency × ease of access · bubble = budget" tour="quadrant">
+          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Open leads · economical efficiency × ease of access · bubble = budget" tour="quadrant">
             <PriorityQuadrant points={points} />
           </Panel>
         </Reveal>

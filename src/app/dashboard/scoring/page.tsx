@@ -1,6 +1,7 @@
 import { Reveal } from "@/components/Reveal";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
 import { getScoredBrands } from "@/lib/data";
+import { openLeads } from "@/lib/lifecycle";
 import { PRIORITY_TOKEN, leadScore, quadrant, eur } from "@/lib/scoring";
 import { ExportMenu } from "@/components/ExportMenu";
 import type { Column } from "@/lib/export";
@@ -33,7 +34,9 @@ const MODEL = [
 
 export default async function ScoringPage() {
   const scored = await getScoredBrands();
-  const points: QuadPoint[] = scored
+  // Targeting views rank where to spend effort next, so finished deals are out.
+  const live = openLeads(scored);
+  const points: QuadPoint[] = live
     .filter((b) => b.scores?.economicalEfficiency != null && b.scores?.easeOfAccess != null)
     .map((b) => ({
       id: b.id,
@@ -44,7 +47,7 @@ export default async function ScoringPage() {
       color: b.priority ? PRIORITY_TOKEN[b.priority] : "var(--color-ink-faint)",
     }));
 
-  const ranked = [...scored]
+  const ranked = [...live]
     .map((b) => ({ b, score: leadScore(b) }))
     .filter((r) => r.score != null)
     .sort((a, b) => (b.score! - a.score!))
@@ -96,14 +99,20 @@ export default async function ScoringPage() {
       <div className="grid gap-6 lg:grid-cols-2">
         <Reveal>
           <div className="glass p-6">
-            <h2 className="mb-4 font-display text-lg font-semibold">Priority quadrant</h2>
+            <h2 className="font-display text-lg font-semibold">Priority quadrant</h2>
+            <p className="mb-4 mt-1 text-sm text-[var(--color-ink-muted)]">
+              {points.length} open leads · won and lost deals are excluded
+            </p>
             <PriorityQuadrant points={points} />
           </div>
         </Reveal>
 
         <Reveal>
           <div className="glass p-6">
-            <h2 className="mb-4 font-display text-lg font-semibold">Top-ranked leads</h2>
+            <h2 className="font-display text-lg font-semibold">Top-ranked leads</h2>
+            <p className="mb-4 mt-1 text-sm text-[var(--color-ink-muted)]">
+              Where to spend effort next · won and lost deals are excluded
+            </p>
             <ol className="space-y-1.5">
               {ranked.map((r, i) => {
                 const q = quadrant(r.b.scores!.economicalEfficiency!, r.b.scores!.easeOfAccess!);
