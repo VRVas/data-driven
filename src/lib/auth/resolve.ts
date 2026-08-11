@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { getSessionUser, type SessionUser } from "./guards";
 import { resolvePermissions, type EffectivePermissions } from "./effective";
+import { currentPrincipal } from "./principal";
 import { getProfileStore } from "@/lib/store/profiles";
 import { getUserStore } from "@/lib/store/users";
 import {
@@ -88,8 +89,19 @@ async function resolveForUser(user: SessionUser): Promise<AuthzContext> {
 }
 
 /** Cached per request, so a page with many guarded reads pays for one lookup. */
-export const getAuthzContext = cache(async (): Promise<AuthzContext | null> => {
+const getSessionAuthzContext = cache(async (): Promise<AuthzContext | null> => {
   const user = await getSessionUser();
   if (!user) return null;
   return resolveForUser(user);
 });
+
+/**
+ * The caller's permissions, however they authenticated.
+ *
+ * An explicitly bound principal wins over the session because it is the
+ * narrower claim: it is only ever established by a route that has already
+ * verified a credential the session does not carry.
+ */
+export async function getAuthzContext(): Promise<AuthzContext | null> {
+  return currentPrincipal() ?? getSessionAuthzContext();
+}
