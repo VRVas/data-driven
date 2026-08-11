@@ -36,6 +36,8 @@ export interface CrmOverlayStore {
   unlinkDeal(dealId: string): Promise<void>;
   saveProposal(proposal: Proposal): Promise<Proposal>;
   removeProposal(id: string): Promise<void>;
+  /** Drop everything belonging to a deal. Called when the lead itself is deleted. */
+  purgeDeal(dealId: string): Promise<void>;
 }
 
 const DATA_DIR = path.join(process.cwd(), ".data");
@@ -78,6 +80,12 @@ class LocalCrmOverlayStore implements CrmOverlayStore {
     o.proposals = o.proposals.filter((p) => p.id !== id);
     await this.writeAll(o);
   }
+  async purgeDeal(dealId: string) {
+    const o = await this.readAll();
+    o.links = o.links.filter((l) => l.dealId !== dealId);
+    o.proposals = o.proposals.filter((p) => p.dealId !== dealId);
+    await this.writeAll(o);
+  }
 }
 
 /** Cosmos: container `crm`, partitioned by /companyId. */
@@ -86,6 +94,16 @@ class CosmosCrmOverlayStore implements CrmOverlayStore {
     const db = getCosmosDb();
     if (!db) throw new Error("Cosmos DB is not configured");
     return db.container("crm");
+  }
+  /**
+   * An id is only unique within a logical partition, and the partition key here
+   * is the company. Moving a record to a different company therefore writes a
+   * second document rather than replacing the first, leaving two live records
+   * with the same id and letting the reader pick whichever came back first.
+   */
+  private async removeFromOldPartition(id: string, previousCompanyId: string | undefined, nextCompanyId: string) {
+    if (!previousCompanyId || previousCompanyId === nextCompanyId) return;
+    await this.container().item(id, previousCompanyId).delete().catch(() => undefined);
   }
   async read(): Promise<CrmOverlay> {
     const { resources } = await this.container()
@@ -97,7 +115,10 @@ class CosmosCrmOverlayStore implements CrmOverlayStore {
     };
   }
   async linkDeal(link: CompanyLink) {
-    await this.container().items.upsert({ ...link, id: `link-${link.dealId}`, type: "link" });
+    const id = `link-${link.dealId}`;
+    const existing = (await this.read()).links.find((l) => l.dealId === link.dealId);
+    await this.removeFromOldPartition(id, existing?.companyId, link.companyId);
+    await this.container().items.upsert({ ...link, id, type: "link" });
   }
   async unlinkDeal(dealId: string) {
     const existing = (await this.read()).links.find((l) => l.dealId === dealId);
@@ -105,6 +126,8 @@ class CosmosCrmOverlayStore implements CrmOverlayStore {
     await this.container().item(`link-${dealId}`, existing.companyId).delete().catch(() => undefined);
   }
   async saveProposal(proposal: Proposal) {
+    const existing = (await this.read()).proposals.find((p) => p.id === proposal.id);
+    await this.removeFromOldPartition(proposal.id, existing?.companyId, proposal.companyId);
     await this.container().items.upsert<Proposal>(proposal);
     return proposal;
   }
@@ -112,6 +135,16 @@ class CosmosCrmOverlayStore implements CrmOverlayStore {
     const existing = (await this.read()).proposals.find((p) => p.id === id);
     if (!existing) return;
     await this.container().item(id, existing.companyId).delete().catch(() => undefined);
+  }
+  async purgeDeal(dealId: string) {
+    const overlay = await this.read();
+    const doomed = [
+      ...overlay.links.filter((l) => l.dealId === dealId).map((l) => [`link-${l.dealId}`, l.companyId] as const),
+      ...overlay.proposals.filter((p) => p.dealId === dealId).map((p) => [p.id, p.companyId] as const),
+    ];
+    await Promise.all(
+      doomed.map(([id, companyId]) => this.container().item(id, companyId).delete().catch(() => undefined)),
+    );
   }
 }
 

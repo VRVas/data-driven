@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/authorize";
 import { getBrandStore } from "@/lib/store/brands";
+import { getCrmOverlayStore } from "@/lib/store/crm";
 import { logAudit } from "@/lib/store/audit";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
@@ -126,6 +127,10 @@ export async function deleteBrand(_prev: BrandActionState, formData: FormData): 
 
   const existing = await getBrandStore().get(id);
   await getBrandStore().remove(id);
+  // Lead ids are name slugs and the collision check only looks at live leads,
+  // so recreating a deleted lead reuses its id. Without this, the new lead
+  // would inherit the dead one's proposals and company link.
+  await getCrmOverlayStore().purgeDeal(id);
   await logAudit({
     actorId: user.id,
     actorName: user.name,
@@ -138,6 +143,7 @@ export async function deleteBrand(_prev: BrandActionState, formData: FormData): 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/pipeline");
   revalidatePath("/dashboard/scoring");
+  revalidatePath("/dashboard/companies");
   return { ok: true };
 }
 
