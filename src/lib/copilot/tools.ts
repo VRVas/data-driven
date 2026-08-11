@@ -14,6 +14,7 @@ import { openLeads, outcomeOf } from "@/lib/lifecycle";
 import { opportunityScore, penetration, whitespace } from "@/lib/tam";
 import { getCrmGraph, getCompanyDetail, getPipelineMoney } from "@/lib/crm/graph";
 import { proposalsWithStatus, currentProposals } from "@/lib/crm/logic";
+import { can } from "@/lib/auth/authorize";
 import type { Company } from "@/lib/crm/types";
 import { remindersFrom } from "@/lib/reminders";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
@@ -375,6 +376,7 @@ const getCompany: CopilotTool = {
       : graph.deals.find((d) => d.id === id)?.companyId;
     const detail = companyId ? await getCompanyDetail(companyId) : null;
     if (!detail) return { ok: false, error: `No company or deal matches id '${id}'.` };
+    const showProposals = await can("proposal:read");
 
     return {
       ok: true,
@@ -389,15 +391,17 @@ const getCompany: CopilotTool = {
         lastContact: d.lastContact,
         followUpDate: d.followUpDate,
       })),
-      proposals: detail.proposals.map((p) => ({
-        id: p.id,
-        dealId: p.dealId,
-        revision: p.revision,
-        valueEur: Math.round(p.value),
-        status: p.status,
-        sentAt: p.sentAt,
-        decidedAt: p.decidedAt,
-      })),
+      proposals: showProposals
+        ? detail.proposals.map((p) => ({
+            id: p.id,
+            dealId: p.dealId,
+            revision: p.revision,
+            valueEur: Math.round(p.value),
+            status: p.status,
+            sentAt: p.sentAt,
+            decidedAt: p.decidedAt,
+          }))
+        : [],
     };
   },
 };
@@ -408,6 +412,9 @@ const proposalPipeline: CopilotTool = {
     "The money view of proposals: how much value is sitting with clients awaiting a decision, how many proposals are sent/accepted/rejected, the real proposal win rate, plus open and weighted pipeline and total repeat business. Use this for 'how much is out awaiting a decision?' and for win rates — proposals are recorded separately from stages, so these are actual euros sent, counting only the newest revision per deal (a re-quote is never double counted). pipeline_summary counts leads by stage; this counts money on real proposals.",
   parameters: { type: "object", properties: {} },
   async execute() {
+    if (!(await can("proposal:read"))) {
+      return { ok: false, error: "You don't have permission to see proposal figures." };
+    }
     const [money, graph] = await Promise.all([getPipelineMoney(), getCrmGraph()]);
     // Counts describe deals, not paperwork: a deal re-quoted three times is one
     // negotiation, so only its live revision is counted.

@@ -23,7 +23,10 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
   const { company, proposals } = detail;
   const rollup = company.rollup;
-  const canManageProposals = await can("proposal:manage");
+  const [canReadProposals, canManageProposals] = await Promise.all([
+    can("proposal:read"),
+    can("proposal:manage"),
+  ]);
 
   const deals = [...detail.deals].sort(
     (a, b) =>
@@ -141,9 +144,11 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         </section>
       </Reveal>
 
-      <Reveal>
-        <CompanyProposals proposals={proposals} deals={dealChoices} canManage={canManageProposals} />
-      </Reveal>
+      {canReadProposals && (
+        <Reveal>
+          <CompanyProposals proposals={proposals} deals={dealChoices} canManage={canManageProposals} />
+        </Reveal>
+      )}
     </div>
   );
 }
