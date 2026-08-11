@@ -59,7 +59,7 @@ export default async function OutboxPage() {
         </div>
       </Reveal>
 
-      <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         {COUNTS.map((c) => (
           <div key={c.status} className="glass relative overflow-hidden p-5">
             <div className="absolute inset-x-0 top-0 h-px" style={{ background: `linear-gradient(90deg, transparent, ${c.accent}, transparent)` }} />

@@ -79,7 +79,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       </Reveal>
 
       {/* headline metrics */}
-      <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Metric label="Lead score" value={score != null ? score.toFixed(2) : "—"} accent="var(--color-brand)" />
         <Metric label="Quadrant" value={q ?? "—"} accent="var(--color-cyan)" />
         <Metric label="Budget" value={s?.budget ? eur(s.budget) : "—"} accent="var(--color-amber)" />

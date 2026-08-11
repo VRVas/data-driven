@@ -66,7 +66,7 @@ export default function WhitespacePage() {
         </div>
       </Reveal>
 
-      <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <KpiCard label="Addressable (EU)" value={addressable} hint="companies in scope" />
         <KpiCard label="Approached" value={approached} accent="var(--color-mint)" hint="opened so far" />
         <KpiCard label="Penetration" value={Math.round(penetration * 100)} format="percent" accent="var(--color-amber)" hint="of the market" />

@@ -81,7 +81,7 @@ export default async function DashboardOverview() {
       </Reveal>
 
       <div data-tour="kpis">
-        <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard label="Total pipeline" value={brands.length} hint={`${hot} hot leads`} />
           <KpiCard label="Weighted value" value={weighted} format="eur" accent="var(--color-cyan)" hint="probability-adjusted" />
           <KpiCard label="Deals closed" value={closed} accent="var(--color-mint)" hint="won" />
