@@ -5,7 +5,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
     <div className="grid min-h-screen lg:grid-cols-2">
       {/* Brand panel */}
       <div className="relative hidden overflow-hidden border-r border-[var(--color-border)] bg-field lg:block">
-        <div className="absolute inset-0 opacity-70" />
         <div className="relative flex h-full flex-col justify-between p-12">
           <Link href="/" className="flex items-center gap-2.5">
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--color-brand)] font-display text-base font-bold text-white shadow-[var(--shadow-glow)]">
@@ -31,8 +30,20 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </div>
 
       {/* Form panel */}
-      <div className="flex items-center justify-center p-6 sm:p-12">
-        <div className="w-full max-w-sm">{children}</div>
+      <div className="flex flex-col items-center justify-center p-6 sm:p-12">
+        <div className="w-full max-w-sm">
+          {/* The brand panel is desktop-only, so small screens get their own way home. */}
+          <Link href="/" className="mb-8 inline-flex items-center gap-2.5 lg:hidden">
+            <span
+              className="grid h-8 w-8 place-items-center rounded-lg font-display text-sm font-bold text-[var(--color-absolute-zero)]"
+              style={{ background: "linear-gradient(114.41deg, #9d95ff 20.74%, #00bae2 65.5%)" }}
+            >
+              O
+            </span>
+            <span className="font-display text-base font-semibold tracking-tight">OOVIE</span>
+          </Link>
+          {children}
+        </div>
       </div>
     </div>
   );
