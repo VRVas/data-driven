@@ -2,6 +2,7 @@ import { TopBar } from "@/components/TopBar";
 import { ToastProvider } from "@/components/ui/Toast";
 import { TourProvider } from "@/components/tour/TourProvider";
 import { CommandPalette } from "@/components/CommandPalette";
+import { SmoothScrollProvider } from "@/lib/gsap/SmoothScrollProvider";
 import { auth, signOut } from "@/auth";
 import { getBrands } from "@/lib/data";
 
@@ -24,10 +25,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
   return (
     <ToastProvider>
       <TourProvider autoStart>
-        <div className="min-h-screen">
-          <TopBar tour />
-          <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
-        </div>
+        {/* Outside the smoother: ScrollSmoother transforms its content, which
+            would defeat a sticky/fixed header. */}
+        <TopBar tour fixed />
+        <SmoothScrollProvider>
+          <main className="mx-auto max-w-7xl px-6 pb-8 pt-24">{children}</main>
+        </SmoothScrollProvider>
         <CommandPalette leads={leads} isAdmin={isAdmin} signOutAction={signOutAction} />
       </TourProvider>
     </ToastProvider>

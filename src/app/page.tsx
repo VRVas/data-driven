@@ -2,6 +2,7 @@ import { TopBar } from "@/components/TopBar";
 import { Reveal } from "@/components/Reveal";
 import { KpiCard } from "@/components/KpiCard";
 import { Hero } from "@/components/landing/Hero";
+import { SmoothScrollProvider } from "@/lib/gsap/SmoothScrollProvider";
 import { getDataset } from "@/lib/data";
 import { weightedValue } from "@/lib/scoring";
 
@@ -24,74 +25,76 @@ export default function Home() {
 
   return (
     <>
-      <TopBar />
+      <TopBar fixed />
 
-      {/* ---------------- HERO ---------------- */}
-      <Hero leadCount={brands.length} />
+      <SmoothScrollProvider>
+        {/* ---------------- HERO ---------------- */}
+        <Hero leadCount={brands.length} />
 
-      {/* KPI strip */}
-      <section className="mx-auto max-w-7xl px-6 pb-16">
-        <Reveal>
-          <p className="eyebrow mb-5">
-            <strong>Snapshot</strong> · {ds.meta.snapshotDate}
-          </p>
-        </Reveal>
-        <Reveal stagger className="grid grid-cols-2 gap-4 md:grid-cols-4">
-          <KpiCard label="Pipeline leads" value={brands.length} hint={`${scored.length} fully scored`} />
-          <KpiCard
-            label="Weighted value"
-            value={weighted}
-            format="eur"
-            hint="probability-adjusted"
-            accent="var(--color-cyan)"
-          />
-          <KpiCard label="Deals closed" value={closed} hint="won this cycle" accent="var(--color-mint)" />
-          <KpiCard
-            label="Budget in play"
-            value={totalBudget}
-            format="eur"
-            hint={`${ds.industries.length} industries`}
-            accent="var(--color-amber)"
-          />
-        </Reveal>
-      </section>
+        {/* KPI strip */}
+        <section className="mx-auto max-w-7xl px-6 pb-16">
+          <Reveal>
+            <p className="eyebrow mb-5">
+              <strong>Snapshot</strong> · {ds.meta.snapshotDate}
+            </p>
+          </Reveal>
+          <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+            <KpiCard label="Pipeline leads" value={brands.length} hint={`${scored.length} fully scored`} />
+            <KpiCard
+              label="Weighted value"
+              value={weighted}
+              format="eur"
+              hint="probability-adjusted"
+              accent="var(--color-cyan)"
+            />
+            <KpiCard label="Deals closed" value={closed} hint="won this cycle" accent="var(--color-mint)" />
+            <KpiCard
+              label="Budget in play"
+              value={totalBudget}
+              format="eur"
+              hint={`${ds.industries.length} industries`}
+              accent="var(--color-amber)"
+            />
+          </Reveal>
+        </section>
 
-      <div className="hairline mx-auto h-px max-w-7xl" />
+        <div className="hairline mx-auto h-px max-w-7xl" />
 
-      {/* ---------------- FEATURES ---------------- */}
-      <section className="mx-auto max-w-7xl px-6 py-20">
-        <Reveal>
-          <p className="eyebrow mb-4">
-            <strong>The platform</strong> · six lenses
-          </p>
-          <h2 className="max-w-3xl font-display text-3xl font-semibold tracking-tight md:text-5xl">
-            Six lenses on <span className="text-gradient">one dataset.</span>
-          </h2>
-          <p className="mt-4 max-w-2xl text-[var(--color-ink-muted)]">
-            Everything below is derived from the real data — no mock-ups.
-          </p>
-        </Reveal>
+        {/* ---------------- FEATURES ---------------- */}
+        <section className="mx-auto max-w-7xl px-6 py-20">
+          <Reveal>
+            <p className="eyebrow mb-4">
+              <strong>The platform</strong> · six lenses
+            </p>
+            <h2 className="max-w-3xl font-display text-3xl font-semibold tracking-tight md:text-5xl">
+              Six lenses on <span className="text-gradient">one dataset.</span>
+            </h2>
+            <p className="mt-4 max-w-2xl text-[var(--color-ink-muted)]">
+              Everything below is derived from the real data — no mock-ups.
+            </p>
+          </Reveal>
 
-        <Reveal stagger className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f) => (
-            <div
-              key={f.title}
-              className="beam-card glass group p-6 transition-transform duration-300 ease-[var(--ease-brand-snap)] hover:-translate-y-1.5"
-            >
-              <div className="eyebrow text-[var(--color-brand-bright)]">{f.tag}</div>
-              <h3 className="mt-3 font-display text-xl font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-muted)]">{f.body}</p>
-            </div>
-          ))}
-        </Reveal>
-      </section>
+          <Reveal stagger className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((f) => (
+              <div
+                key={f.title}
+                className="beam-card glass group p-6 transition-transform duration-300 ease-[var(--ease-brand-snap)] hover:-translate-y-1.5"
+              >
+                <div className="eyebrow text-[var(--color-brand-bright)]">{f.tag}</div>
+                <h3 className="mt-3 font-display text-xl font-semibold">{f.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-[var(--color-ink-muted)]">{f.body}</p>
+              </div>
+            ))}
+          </Reveal>
+        </section>
 
-      <footer className="border-t border-[var(--color-border)] py-10">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 text-sm text-[var(--color-ink-faint)] md:flex-row">
-          <span>OOVIE Studios · Business Development Intelligence</span>
-          <span>Snapshot {ds.meta.snapshotDate} · Next.js on Azure</span>
-        </div>
-      </footer>
+        <footer className="border-t border-[var(--color-border)] py-10">
+          <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 text-sm text-[var(--color-ink-faint)] md:flex-row">
+            <span>OOVIE Studios · Business Development Intelligence</span>
+            <span>Snapshot {ds.meta.snapshotDate} · Next.js on Azure</span>
+          </div>
+        </footer>
+      </SmoothScrollProvider>
     </>
   );
 }
