@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
 import { DashboardNav } from "./DashboardNav";
+import { MobileMenu } from "./MobileMenu";
 import { TourLauncher } from "@/components/tour/TourLauncher";
 import { CommandButton } from "@/components/CommandPalette";
 import { getBrands } from "@/lib/data";
 import { remindersFrom, countDue } from "@/lib/reminders";
 import { getOutreachStore } from "@/lib/store/outreach";
 
-export async function TopBar({ tour = false }: { tour?: boolean } = {}) {
+export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; fixed?: boolean } = {}) {
   const session = await auth();
   const user = session?.user;
 
@@ -28,19 +29,24 @@ export async function TopBar({ tour = false }: { tour?: boolean } = {}) {
     }
   }
 
+  async function signOutAction() {
+    "use server";
+    await signOut({ redirectTo: "/" });
+  }
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-absolute-zero)_72%,transparent)] backdrop-blur-xl">
+    <header className={`${fixed ? "fixed inset-x-0" : "sticky"} top-0 z-50 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-absolute-zero)_72%,transparent)] backdrop-blur-xl`}>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="group flex items-center gap-2.5">
+        <Link href="/" className="group flex shrink-0 items-center gap-2.5">
           <span
-            className="grid h-8 w-8 place-items-center rounded-lg font-display text-sm font-bold text-[var(--color-absolute-zero)] transition-transform duration-300 ease-[var(--ease-brand-snap)] group-hover:-rotate-6"
+            className="grid h-8 w-8 shrink-0 place-items-center rounded-lg font-display text-sm font-bold text-[var(--color-absolute-zero)] transition-transform duration-300 ease-[var(--ease-brand-snap)] group-hover:-rotate-6"
             style={{ background: "linear-gradient(114.41deg, #9d95ff 20.74%, #00bae2 65.5%)" }}
           >
             O
           </span>
           <span className="flex flex-col leading-none">
             <span className="font-display text-[15px] font-semibold tracking-tight">OOVIE</span>
-            <span className="mt-0.5 font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
+            <span className="mt-0.5 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
               BD Intelligence
             </span>
           </span>
@@ -51,7 +57,8 @@ export async function TopBar({ tour = false }: { tour?: boolean } = {}) {
         )}
 
         {user ? (
-          <div className="flex items-center gap-3">
+          <>
+          <div className="hidden items-center gap-2 xl:flex">
             <CommandButton />
             {tour && <TourLauncher />}
             <Link
@@ -132,22 +139,26 @@ export async function TopBar({ tour = false }: { tour?: boolean } = {}) {
               >
                 {user.role === "admin" ? "Admin" : "Member"}
               </span>
-              <span className="font-mono text-xs text-[var(--color-ink-muted)]">{user.name ?? user.email}</span>
+              <span className="hidden whitespace-nowrap font-mono text-xs text-[var(--color-ink-muted)] 2xl:inline">{user.name ?? user.email}</span>
             </span>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
+            <form action={signOutAction}>
               <button
                 type="submit"
-                className="rounded-full border border-[var(--color-border-strong)] px-4 py-1.5 text-sm font-medium text-[var(--color-ink)] transition-colors duration-300 ease-[var(--ease-brand-snap)] hover:border-[var(--color-frosted-canvas)] hover:bg-[var(--color-frosted-canvas)] hover:text-[var(--color-absolute-zero)]"
+                className="whitespace-nowrap rounded-full border border-[var(--color-border-strong)] px-4 py-1.5 text-sm font-medium text-[var(--color-ink)] transition-colors duration-300 ease-[var(--ease-brand-snap)] hover:border-[var(--color-frosted-canvas)] hover:bg-[var(--color-frosted-canvas)] hover:text-[var(--color-absolute-zero)]"
               >
                 Sign out
               </button>
             </form>
           </div>
+          <MobileMenu
+            user={{ name: user.name, email: user.email, role: user.role }}
+            isAdmin={user.role === "admin"}
+            dueCount={dueCount}
+            pendingOutreach={pendingOutreach}
+            tour={tour}
+            signOutAction={signOutAction}
+          />
+          </>
         ) : (
           <Link
             href="/login"
