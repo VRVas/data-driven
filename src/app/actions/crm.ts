@@ -69,6 +69,12 @@ export async function unlinkDeal(_prev: CrmActionState, formData: FormData): Pro
   const dealId = String(formData.get("dealId") ?? "").trim();
   if (!dealId) return { error: "Missing lead." };
 
+  // The id arrives from the form, so it has to be checked against what this
+  // user can see rather than trusted.
+  const graph = await getCrmGraph();
+  const deal = graph.deals.find((d) => d.id === dealId);
+  if (!deal) return { error: "That lead no longer exists." };
+
   await getCrmOverlayStore().unlinkDeal(dealId);
   await logAudit({
     actorId: user.id,
@@ -76,7 +82,7 @@ export async function unlinkDeal(_prev: CrmActionState, formData: FormData): Pro
     action: "company.unlink",
     entity: "deal",
     entityId: dealId,
-    summary: `Unlinked ${dealId} from its company`,
+    summary: `Unlinked ${deal.name} from its company`,
   });
 
   revalidatePath("/dashboard/companies");
