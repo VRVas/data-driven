@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { composeOutreach, type OutreachActionState } from "@/app/actions/outreach";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import { OUTREACH_TEMPLATES, DEFAULT_TEMPLATE_ID, renderTemplate } from "@/lib/mail/templates";
 import type { Brand } from "@/lib/types";
 
@@ -62,6 +63,7 @@ function ComposerPanel({
   }, [onClose]);
 
   return (
+    <OverlayPortal>
     <div className="fixed inset-0 z-[100] flex justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="relative flex h-full w-full max-w-lg flex-col border-l border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl">
@@ -148,5 +150,6 @@ function ComposerPanel({
         </form>
       </div>
     </div>
+    </OverlayPortal>
   );
 }

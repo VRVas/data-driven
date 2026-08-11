@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { saveAgent, deleteAgent, type AgentActionState } from "@/app/actions/agents";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import { AGENT_STATUSES, PRIORITIES } from "@/lib/vocab";
 import type { Agent } from "@/lib/types";
 
@@ -20,6 +21,7 @@ export function AgentEditor({ agent, onClose }: { agent: Agent | null; onClose: 
   }, [onClose]);
 
   return (
+    <OverlayPortal>
     <div className="fixed inset-0 z-[100] flex justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="relative flex h-full w-full max-w-md flex-col border-l border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl">
@@ -91,6 +93,7 @@ export function AgentEditor({ agent, onClose }: { agent: Agent | null; onClose: 
         )}
       </div>
     </div>
+    </OverlayPortal>
   );
 }
 

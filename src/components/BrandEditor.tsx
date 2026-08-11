@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { saveBrand, deleteBrand, type BrandActionState } from "@/app/actions/brands";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import type { Brand } from "@/lib/types";
 
@@ -22,6 +23,7 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
   }, [onClose]);
 
   return (
+    <OverlayPortal>
     <div className="fixed inset-0 z-[100] flex justify-end">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="relative flex h-full w-full max-w-md flex-col border-l border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl">
@@ -105,6 +107,7 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
         )}
       </div>
     </div>
+    </OverlayPortal>
   );
 }
 

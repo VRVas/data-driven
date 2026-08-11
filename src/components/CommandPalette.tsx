@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import { useTour } from "@/components/tour/TourProvider";
 
 const OPEN_EVENT = "oovie:command-palette";
@@ -40,7 +41,7 @@ export function CommandButton() {
         <circle cx="11" cy="11" r="7" />
         <path d="m21 21-4.3-4.3" />
       </svg>
-      <span className="hidden lg:inline">Search</span>
+      <span className="hidden 2xl:inline">Search</span>
       <kbd className="rounded border border-[var(--color-border-strong)] px-1.5 py-0.5 font-mono text-[10px] tracking-wide text-[var(--color-ink-faint)]">
         {mod}K
       </kbd>
@@ -93,16 +94,11 @@ export function CommandPalette({
     };
   }, []);
 
-  // Focus the input and lock body scroll while open.
+  // Focus the input when opened (OverlayPortal handles the scroll lock).
   useEffect(() => {
     if (!open) return;
     const raf = requestAnimationFrame(() => inputRef.current?.focus());
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      cancelAnimationFrame(raf);
-      document.body.style.overflow = prev;
-    };
+    return () => cancelAnimationFrame(raf);
   }, [open]);
 
   const commands = useMemo<Command[]>(() => {
@@ -192,6 +188,7 @@ export function CommandPalette({
   if (!open) return null;
 
   return (
+    <OverlayPortal>
     <div
       className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-[12vh]"
       role="dialog"
@@ -272,5 +269,6 @@ export function CommandPalette({
         </div>
       </div>
     </div>
+    </OverlayPortal>
   );
 }
