@@ -1,38 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser, type SessionUser } from "@/lib/auth/guards";
+import { apiPermission } from "@/lib/auth/api";
+import { copilotCaller } from "@/lib/auth/service";
+import { runAsPrincipal } from "@/lib/auth/principal";
 import { getToolByName } from "@/lib/copilot/tools";
 import { runTool } from "@/lib/copilot/dispatch";
 
 export const dynamic = "force-dynamic";
-
-// Read-only service identity used when the caller authenticates with an API key
-// (e.g. the Foundry OpenAPI tool). Write tools are rejected on this channel.
-const SERVICE_USER: SessionUser = { id: "copilot-service", name: "Copilot Service", email: "", role: "member" };
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ name: string }> }) {
   const { name } = await params;
   const tool = getToolByName(name);
   if (!tool) return NextResponse.json({ error: `Unknown tool: ${name}` }, { status: 404 });
 
-  const session = await getSessionUser();
-  const apiKey = process.env.COPILOT_API_KEY;
-  const keyAuthed = !!apiKey && (req.headers.get("x-api-key") ?? "") === apiKey;
+  const principal = await copilotCaller(req.headers.get("x-api-key"));
+  if (!principal) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  if (!session && !keyAuthed) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!session && tool.write) {
-    return NextResponse.json({ error: "Write tools require an in-app user session." }, { status: 403 });
-  }
+  return runAsPrincipal(principal, async () => {
+    const gate = await apiPermission("copilot:use");
+    if (gate instanceof Response) return gate;
 
-  let args: Record<string, unknown> = {};
-  try {
-    const body = await req.json();
-    if (body && typeof body === "object") args = body as Record<string, unknown>;
-  } catch {
-    /* empty body is fine */
-  }
+    // Checked here as well as inside each tool: this is the boundary where the
+    // caller picks the tool by name, so it is the boundary that has to refuse.
+    if (tool.write) {
+      const write = await apiPermission("copilot:tool:write");
+      if (write instanceof Response) return write;
+    }
 
-  const run = await runTool(name, args, session ?? SERVICE_USER);
-  return NextResponse.json(run, { status: run.ok ? 200 : 400 });
+    let args: Record<string, unknown> = {};
+    try {
+      const body = await req.json();
+      if (body && typeof body === "object") args = body as Record<string, unknown>;
+    } catch {
+      /* empty body is fine */
+    }
+
+    const run = await runTool(name, args, principal.user);
+    return NextResponse.json(run, { status: run.ok ? 200 : 400 });
+  });
 }

@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import { getSessionUser } from "@/lib/auth/guards";
-import { can } from "@/lib/auth/authorize";
+import { apiPermission } from "@/lib/auth/api";
 import { isDocsConfigured, createVectorStore, uploadDocument, removeDocument } from "@/lib/copilot/documents";
 import { getDocRegistryStore } from "@/lib/store/documents";
 
@@ -11,19 +10,17 @@ const ALLOWED = /\.(pdf|docx?|txt|md|markdown|csv|json|pptx?|html?|rtf)$/i;
 
 /** List the signed-in user's uploaded documents. */
 export async function GET() {
-  const user = await getSessionUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-  if (!(await can("copilot:documents"))) return Response.json({ error: "Forbidden" }, { status: 403 });
+  const gate = await apiPermission("copilot:documents");
+  if (gate instanceof Response) return gate;
   if (!isDocsConfigured()) return Response.json({ files: [], enabled: false });
-  const reg = await getDocRegistryStore().get(user.id);
+  const reg = await getDocRegistryStore().get(gate.user.id);
   return Response.json({ files: reg.files, enabled: true });
 }
 
 /** Upload a document (multipart 'file') into the user's vector store. */
 export async function POST(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-  if (!(await can("copilot:documents"))) return Response.json({ error: "Forbidden" }, { status: 403 });
+  const gate = await apiPermission("copilot:documents");
+  if (gate instanceof Response) return gate;
   if (!isDocsConfigured()) return Response.json({ error: "Documents not configured" }, { status: 503 });
 
   const form = await req.formData().catch(() => null);
@@ -35,14 +32,14 @@ export async function POST(req: NextRequest) {
 
   const store = getDocRegistryStore();
   try {
-    const reg = await store.get(user.id);
+    const reg = await store.get(gate.user.id);
     let vsId = reg.vectorStoreId;
     if (!vsId) {
-      vsId = await createVectorStore(`docs-${user.id}`);
-      await store.setVectorStore(user.id, vsId);
+      vsId = await createVectorStore(`docs-${gate.user.id}`);
+      await store.setVectorStore(gate.user.id, vsId);
     }
     const doc = await uploadDocument(vsId, await file.arrayBuffer(), file.name, file.type);
-    await store.addFile(user.id, doc);
+    await store.addFile(gate.user.id, doc);
     return Response.json({ file: doc });
   } catch (e) {
     return Response.json({ error: (e as Error).message }, { status: 502 });
@@ -51,15 +48,14 @@ export async function POST(req: NextRequest) {
 
 /** Remove a document (query param `fileId`). */
 export async function DELETE(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
-  if (!(await can("copilot:documents"))) return Response.json({ error: "Forbidden" }, { status: 403 });
+  const gate = await apiPermission("copilot:documents");
+  if (gate instanceof Response) return gate;
   const fileId = new URL(req.url).searchParams.get("fileId");
   if (!fileId) return Response.json({ error: "Missing fileId" }, { status: 400 });
 
   const store = getDocRegistryStore();
-  const reg = await store.get(user.id);
+  const reg = await store.get(gate.user.id);
   if (reg.vectorStoreId) await removeDocument(reg.vectorStoreId, fileId).catch(() => {});
-  await store.removeFile(user.id, fileId);
+  await store.removeFile(gate.user.id, fileId);
   return Response.json({ ok: true });
 }

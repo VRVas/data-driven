@@ -1,15 +1,13 @@
 import { NextRequest } from "next/server";
-import { getSessionUser } from "@/lib/auth/guards";
-import { can } from "@/lib/auth/authorize";
+import { apiPermission } from "@/lib/auth/api";
 import { synthesize, isSpeechConfigured } from "@/lib/speech/provider";
 
 export const dynamic = "force-dynamic";
 
 /** Text-to-speech: returns MP3 audio of `text` read by the configured voice (Luca). */
 export async function POST(req: NextRequest) {
-  const user = await getSessionUser();
-  if (!user) return new Response("Unauthorized", { status: 401 });
-  if (!(await can("copilot:use"))) return new Response("Forbidden", { status: 403 });
+  const gate = await apiPermission("copilot:use");
+  if (gate instanceof Response) return gate;
   if (!isSpeechConfigured()) return new Response("Voice not configured", { status: 503 });
 
   let text = "";
