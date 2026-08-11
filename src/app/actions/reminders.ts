@@ -41,6 +41,8 @@ export async function snoozeFollowUp(_prev: ReminderActionState, formData: FormD
 
   revalidatePath("/dashboard/reminders");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/pipeline");
+  revalidatePath(`/dashboard/pipeline/${id}`);
   return { ok: true };
 }
 
@@ -68,5 +70,7 @@ export async function completeFollowUp(_prev: ReminderActionState, formData: For
 
   revalidatePath("/dashboard/reminders");
   revalidatePath("/dashboard");
+  revalidatePath("/dashboard/pipeline");
+  revalidatePath(`/dashboard/pipeline/${id}`);
   return { ok: true };
 }

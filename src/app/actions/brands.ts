@@ -119,7 +119,10 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/pipeline");
+  revalidatePath(`/dashboard/pipeline/${brand.id}`);
   revalidatePath("/dashboard/scoring");
+  // Companies and their rollups are projected from leads, so an edit moves them.
+  revalidatePath("/dashboard/companies");
   return { ok: true };
 }
 
@@ -195,5 +198,6 @@ export async function changeBrandStatus(
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/pipeline");
   revalidatePath(`/dashboard/pipeline/${id}`);
+  revalidatePath("/dashboard/companies");
   return { ok: true };
 }

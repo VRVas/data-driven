@@ -61,6 +61,8 @@ export async function linkDealToCompany(_prev: CrmActionState, formData: FormDat
 
   revalidatePath("/dashboard/companies");
   revalidatePath(`/dashboard/companies/${companyId}`);
+  // The company it just left also lost a deal, so its rollup is stale too.
+  revalidatePath(`/dashboard/companies/${deal.companyId}`);
   revalidatePath(`/dashboard/pipeline/${dealId}`);
   return { ok: true };
 }
@@ -91,6 +93,7 @@ export async function unlinkDeal(_prev: CrmActionState, formData: FormData): Pro
   });
 
   revalidatePath("/dashboard/companies");
+  revalidatePath(`/dashboard/companies/${deal.companyId}`);
   revalidatePath(`/dashboard/pipeline/${dealId}`);
   return { ok: true };
 }
@@ -177,6 +180,8 @@ export async function saveProposal(_prev: CrmActionState, formData: FormData): P
 
   revalidatePath(`/dashboard/pipeline/${input.dealId}`);
   revalidatePath("/dashboard/companies");
+  // The proposals table lives on the company page.
+  revalidatePath(`/dashboard/companies/${deal.companyId}`);
   return { ok: true };
 }
 
@@ -204,5 +209,7 @@ export async function deleteProposal(_prev: CrmActionState, formData: FormData):
   });
 
   revalidatePath(`/dashboard/pipeline/${proposal.dealId}`);
+  revalidatePath("/dashboard/companies");
+  revalidatePath(`/dashboard/companies/${proposal.companyId}`);
   return { ok: true };
 }
