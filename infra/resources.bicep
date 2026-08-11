@@ -386,6 +386,8 @@ var containers = [
   { name: 'outreach', pk: '/id' }
   { name: 'conversations', pk: '/userId' }
   { name: 'documents', pk: '/userId' }
+  { name: 'crm', pk: '/companyId' }
+  { name: 'profiles', pk: '/id' }
 ]
 
 resource cosmosContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-11-15' = [

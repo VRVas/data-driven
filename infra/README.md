@@ -25,7 +25,7 @@ azd up      # provisions infra/main.bicep, builds the image, deploys the Contain
 | AI Foundry project | `Microsoft.CognitiveServices/accounts/projects@2025-06-01` | Foundry project (agents / data isolation) |
 | Model deployment | `Microsoft.CognitiveServices/accounts/deployments@2025-06-01` (`gpt-5.4-mini` 2026-03-17, GlobalStandard) | Chat model for the copilot |
 | Prompt agent | Projects API via **azd postprovision hook** (keyless) | Foundry **prompt agent** (data-plane), visible in the portal |
-| App data store | `Microsoft.DocumentDB/databaseAccounts@2024-11-15` (NoSQL, **serverless**, `disableLocalAuth: true`, **`publicNetworkAccess: Disabled`**) | brands / agents / industries / users / audit / savedViews / outreach |
+| App data store | `Microsoft.DocumentDB/databaseAccounts@2024-11-15` (NoSQL, **serverless**, `disableLocalAuth: true`, **`publicNetworkAccess: Disabled`**) | brands / agents / industries / users / audit / savedViews / outreach / crm / profiles |
 | Virtual network | `Microsoft.Network/virtualNetworks@2023-11-01` (`aca` /27 + `pe` /24 subnets) | Private networking |
 | Cosmos private endpoint + DNS | `privateEndpoints@2023-11-01` (groupId `Sql`) + `privatelink.documents.azure.com` | Private Cosmos access |
 | Web app | `Microsoft.App/containerApps@2024-03-01` (Consumption workload profile) | Next.js SSR + API (min 1 replica, always warm) |
