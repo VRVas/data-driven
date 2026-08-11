@@ -12,6 +12,7 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
+import { gsap, ScrollSmoother } from "@/lib/gsap/register";
 import { TOUR_STEPS, type TourStep } from "@/lib/tour/steps";
 
 const DONE_KEY = "oovie.tour.v1.done";
@@ -119,7 +120,10 @@ export function TourProvider({
       if (cancelled) return;
       const el = document.querySelector(step.selector as string) as HTMLElement | null;
       if (el) {
-        el.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+        // ScrollSmoother hijacks the scroller, so native scrollIntoView can't move the page.
+        const smoother = ScrollSmoother.get();
+        if (smoother) smoother.scrollTo(el, true, "center center");
+        else el.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
         window.setTimeout(() => {
           if (!cancelled) setRect(el.getBoundingClientRect());
         }, 340);
@@ -139,19 +143,23 @@ export function TourProvider({
     };
   }, [active, step, pathname, index, go]);
 
-  // Keep the spotlight aligned while scrolling/resizing.
+  // Keep the spotlight glued to its anchor. Sampling per frame (instead of on
+  // scroll events) is what keeps it aligned while ScrollSmoother eases to rest.
   useEffect(() => {
     if (!active || !step?.selector) return;
+    const selector = step.selector;
+    let last = "";
     const update = () => {
-      const el = document.querySelector(step.selector as string) as HTMLElement | null;
-      if (el) setRect(el.getBoundingClientRect());
+      const el = document.querySelector(selector) as HTMLElement | null;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const key = `${Math.round(r.top)}:${Math.round(r.left)}:${Math.round(r.width)}:${Math.round(r.height)}`;
+      if (key === last) return;
+      last = key;
+      setRect(r);
     };
-    window.addEventListener("scroll", update, true);
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update, true);
-      window.removeEventListener("resize", update);
-    };
+    gsap.ticker.add(update);
+    return () => gsap.ticker.remove(update);
   }, [active, step]);
 
   // Keyboard controls.
