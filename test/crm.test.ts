@@ -165,7 +165,7 @@ describe("rollupFor", () => {
     expect(r.repeatValue).toBe(25_000); // everything after the first win
     expect(r.openPipelineValue).toBe(30_000);
     expect(r.weightedPipelineValue).toBeCloseTo(30_000 * prob({ stage: "Advanced", dealType: "New Business" }));
-    expect(r.winRate).toBeCloseTo(2 / 3);
+    expect(r.dealWinRate).toBeCloseTo(2 / 3);
     expect(r.firstWonAt).toBe("2026-01-10");
   });
 
@@ -186,7 +186,7 @@ describe("rollupFor", () => {
     expect(newBusiness.weightedPipelineValue).toBeCloseTo(100_000 * winProbability("Advanced"));
   });
 
-  it("reports no win rate rather than zero when nothing has closed", () => {    expect(rollupFor([deal()], prob).winRate).toBeNull();
+  it("reports no win rate rather than zero when nothing has closed", () => {    expect(rollupFor([deal()], prob).dealWinRate).toBeNull();
   });
 
   it("picks the same first win regardless of order when wins are undated", () => {

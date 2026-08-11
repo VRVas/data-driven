@@ -57,7 +57,7 @@ export interface CompanyRollup {
   lifetimeValue: number;
   /** Won value beyond the first deal — what the relationship earned us after landing it. */
   repeatValue: number;
-  winRate: number | null;
+  dealWinRate: number | null;
   firstWonAt: string | null;
   lastWonAt: string | null;
   lastContact: string | null;

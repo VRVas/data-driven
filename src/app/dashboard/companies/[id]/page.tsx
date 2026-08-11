@@ -64,9 +64,9 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         />
         <Metric label="Open pipeline" value={eur(rollup.openPipelineValue)} accent="var(--color-amber)" />
         <Metric
-          label="Win rate"
-          value={rollup.winRate == null ? "—" : `${Math.round(rollup.winRate * 100)}%`}
-          hint={rollup.winRate == null ? "nothing decided yet" : "of decided deals"}
+          label="Deal win rate"
+          value={rollup.dealWinRate == null ? "—" : `${Math.round(rollup.dealWinRate * 100)}%`}
+          hint={rollup.dealWinRate == null ? "nothing decided yet" : "of decided deals"}
           accent="var(--color-cyan)"
         />
       </Reveal>

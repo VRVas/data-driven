@@ -79,7 +79,10 @@ function companyBrief(c: Company) {
     openPipelineEur: Math.round(r.openPipelineValue),
     lifetimeValueEur: Math.round(r.lifetimeValue),
     repeatValueEur: Math.round(r.repeatValue),
-    winRate: r.winRate,
+    // Named for what it measures: proposal_pipeline reports a different rate
+    // over sent paperwork, and an unqualified "winRate" invited the model to
+    // treat the two as interchangeable.
+    dealWinRate: r.dealWinRate,
     lastContact: r.lastContact,
   };
 }
