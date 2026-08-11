@@ -1,9 +1,15 @@
+import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
-import { getDataQuality } from "@/lib/data";
+import { getBrands, getDataQuality } from "@/lib/data";
+import { outcomeConflicts } from "@/lib/lifecycle";
 import { ExportMenu } from "@/components/ExportMenu";
 
-export default function QualityPage() {
+// Reads the live brand store for the split-lead check.
+export const dynamic = "force-dynamic";
+
+export default async function QualityPage() {
   const { issues, count } = getDataQuality();
+  const conflicts = outcomeConflicts(await getBrands());
   const groups = issues.reduce<Record<string, typeof issues>>((acc, i) => {
     const bucket = i.issue.includes("date") || i.key.includes("Contact")
       ? "Dates"
@@ -48,6 +54,44 @@ export default function QualityPage() {
           </div>
         ))}
       </Reveal>
+
+      {conflicts.length > 0 && (
+        <Reveal>
+          <section className="glass p-6">
+            <div className="eyebrow mb-2">Needs review</div>
+            <h2 className="font-display text-lg font-semibold">
+              {conflicts.length} leads look like two deals in one row
+            </h2>
+            <p className="mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">
+              The imported outcome disagrees with the current stage. That is rarely a typo — it usually means
+              one deal finished and another is already running with the same brand (won, then re-approached; or
+              lost, then a fresh attempt). Splitting these into separate deals per company is coming.
+            </p>
+            <ul className="mt-4 space-y-2">
+              {conflicts.map((c) => (
+                <li
+                  key={c.id}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-[var(--color-border)] px-3 py-2 text-sm"
+                >
+                  <Link
+                    href={`/dashboard/pipeline/${c.id}`}
+                    className="font-medium hover:text-[var(--color-brand-bright)] hover:underline"
+                  >
+                    {c.name}
+                  </Link>
+                  <span className="text-[var(--color-ink-muted)]">
+                    stage <span className="text-[var(--color-ink)]">{c.status ?? "—"}</span>
+                  </span>
+                  <span className="text-[var(--color-ink-faint)]">vs</span>
+                  <span className="text-[var(--color-ink-muted)]">
+                    imported outcome <span className="text-[var(--color-ink)]">{c.process}</span>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </section>
+        </Reveal>
+      )}
 
       <Reveal>
         <div className="glass overflow-hidden">
