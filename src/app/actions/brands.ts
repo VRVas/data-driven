@@ -91,7 +91,9 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   brand.status = (input.status as Brand["status"]) ?? null;
   brand.priority = (input.priority as Brand["priority"]) ?? null;
   brand.industry = (input.industry as Brand["industry"]) ?? null;
-  brand.industryRaw = (input.industry as string) ?? brand.industryRaw ?? null;
+  // industryRaw records what the import actually said, so an edit must not
+  // overwrite it with the normalised enum.
+  brand.industryRaw = brand.industryRaw ?? (input.industry as string) ?? null;
   brand.owner = input.owner ?? null;
   brand.poc = input.poc ?? null;
   brand.email = input.email ?? null;

@@ -53,20 +53,21 @@ export default async function ScoringPage() {
     .sort((a, b) => (b.score! - a.score!))
     .slice(0, 12);
 
-  const scoreRows: Record<string, unknown>[] = scored.map((b) => ({
-    name: b.name,
-    industry: b.industry,
-    leadScore: leadScore(b),
-    economicalEfficiency: b.scores?.economicalEfficiency ?? null,
-    easeOfAccess: b.scores?.easeOfAccess ?? null,
-    budget: b.scores?.budget ?? null,
-    tempo: b.scores?.tempoScore ?? null,
-    budgetScore: b.scores?.budgetScore ?? null,
-    customization: b.scores?.customizationScore ?? null,
-    accessibility: b.scores?.accessibilityScore ?? null,
-    receptivity: b.scores?.receptivityScore ?? null,
-    alignment: b.scores?.alignmentScore ?? null,
-  }));
+  const scoreRowsFrom = (list: typeof scored): Record<string, unknown>[] =>
+    list.map((b) => ({
+      name: b.name,
+      industry: b.industry,
+      leadScore: leadScore(b),
+      economicalEfficiency: b.scores?.economicalEfficiency ?? null,
+      easeOfAccess: b.scores?.easeOfAccess ?? null,
+      budget: b.scores?.budget ?? null,
+      tempo: b.scores?.tempoScore ?? null,
+      budgetScore: b.scores?.budgetScore ?? null,
+      customization: b.scores?.customizationScore ?? null,
+      accessibility: b.scores?.accessibilityScore ?? null,
+      receptivity: b.scores?.receptivityScore ?? null,
+      alignment: b.scores?.alignmentScore ?? null,
+    }));
 
   return (
     <div className="space-y-8">
@@ -80,7 +81,12 @@ export default async function ScoringPage() {
               tempo) and <strong>Ease of Access</strong> (accessibility · alignment · receptivity).
             </p>
           </div>
-          <ExportMenu filename="scoring" columns={SCORE_COLS} rows={scoreRows} />
+          <ExportMenu
+            filename="scoring"
+            columns={SCORE_COLS}
+            rows={scoreRowsFrom(live)}
+            allRows={scoreRowsFrom(scored)}
+          />
         </div>
       </Reveal>
 
