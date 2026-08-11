@@ -122,6 +122,14 @@ describe("rollupFor", () => {
   it("reports no win rate rather than zero when nothing has closed", () => {
     expect(rollupFor([deal()], prob).winRate).toBeNull();
   });
+
+  it("picks the same first win regardless of order when wins are undated", () => {
+    const a = deal({ id: "a", outcome: "won", stage: "Deal Closed", wonValue: 10_000, wonAt: null });
+    const b = deal({ id: "b", outcome: "won", stage: "Deal Closed", wonValue: 40_000, wonAt: null });
+    // Repeat value must not depend on the order deals happened to arrive in.
+    expect(rollupFor([a, b], prob).repeatValue).toBe(rollupFor([b, a], prob).repeatValue);
+    expect(rollupFor([a, b], prob).repeatValue).toBe(40_000);
+  });
 });
 
 describe("migrateBrands against the real dataset", () => {

@@ -7,7 +7,9 @@ import { QuickStatus } from "@/components/QuickStatus";
 import { OutreachComposer } from "@/components/OutreachComposer";
 import { OutreachItem } from "@/components/OutreachItem";
 import { LeadToolbar } from "@/components/LeadToolbar";
+import { LinkCompanyButton } from "@/components/crm/LinkCompanyButton";
 import { getBrand } from "@/lib/data";
+import { getCrmGraph, getDealWithCompany } from "@/lib/crm/graph";
 import { getSessionUser } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/authorize";
 import { getOutreachStore } from "@/lib/store/outreach";
@@ -48,7 +50,19 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const me = await getSessionUser();
   const isAdmin = await can("outreach:send");
   const canDeleteLead = await can("lead:delete");
+  const canLinkCompany = await can("lead:update");
   const outreach = await getOutreachStore().listForBrand(brand.id);
+
+  const [crm, graph] = await Promise.all([getDealWithCompany(brand.id), getCrmGraph()]);
+  const dealsPerCompany = graph.deals.reduce<Map<string, number>>(
+    (counts, d) => counts.set(d.companyId, (counts.get(d.companyId) ?? 0) + 1),
+    new Map(),
+  );
+  const companyChoices = graph.companies.map((c) => ({
+    id: c.id,
+    name: c.name,
+    dealCount: dealsPerCompany.get(c.id) ?? 0,
+  }));
 
   const s = brand.scores;
   const score = leadScore(brand);
@@ -98,6 +112,32 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <QuickStatus brandId={brand.id} current={brand.status} allowed={allowedTransitions(brand.status)} />
         </section>
       </Reveal>
+      {crm && (
+        <Reveal>
+          <section className="glass flex flex-wrap items-center justify-between gap-3 p-5">
+            <div className="min-w-0">
+              <div className="eyebrow mb-1">Company</div>
+              <Link
+                href={`/dashboard/companies/${crm.company.id}`}
+                className="font-display text-lg font-semibold hover:text-[var(--color-brand)]"
+              >
+                {crm.company.name}
+              </Link>
+              {(dealsPerCompany.get(crm.company.id) ?? 0) > 1 && (
+                <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+                  {dealsPerCompany.get(crm.company.id)} deals · {eur(crm.company.rollup.lifetimeValue)} lifetime
+                </p>
+              )}
+            </div>
+            {canLinkCompany && (
+              <LinkCompanyButton
+                deal={{ id: crm.deal.id, name: crm.deal.name, companyId: crm.company.id }}
+                companies={companyChoices}
+              />
+            )}
+          </section>
+        </Reveal>
+      )}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* score breakdown */}
         <Reveal>

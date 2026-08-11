@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { getBrands } from "@/lib/data";
 import { getCrmOverlayStore, type CompanyLink } from "@/lib/store/crm";
 import { migrateBrands } from "./migrate";
@@ -24,7 +25,7 @@ export interface CrmGraph {
  * company) and genuinely new records (proposals) come from the overlay and are
  * applied on top.
  */
-export async function getCrmGraph(): Promise<CrmGraph> {
+export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
   const brands = await getBrands();
   const overlay = await getCrmOverlayStore().read();
   const base = migrateBrands(brands, prob);
@@ -82,7 +83,7 @@ export async function getCrmGraph(): Promise<CrmGraph> {
 
   companies.sort((a, b) => a.name.localeCompare(b.name));
   return { companies, deals, proposals: overlay.proposals, links: overlay.links };
-}
+});
 
 export interface CompanyDetail {
   company: Company;

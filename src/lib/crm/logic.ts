@@ -133,8 +133,12 @@ export function rollupFor(
 
   const valueOf = (d: Deal) => d.economics.budget ?? 0;
   const lifetimeValue = won.reduce((s, d) => s + (d.wonValue ?? valueOf(d)), 0);
-  const firstWonAt = earliest(won.map((d) => d.wonAt));
-  const firstWon = won.find((d) => d.wonAt === firstWonAt);
+  // Undated wins would otherwise make "which came first" depend on array order,
+  // and repeat value with it. Fall back to the id so the answer is stable.
+  const wonInOrder = [...won].sort((a, b) =>
+    (a.wonAt ?? "9999-12-31").localeCompare(b.wonAt ?? "9999-12-31") || a.id.localeCompare(b.id),
+  );
+  const firstWon = wonInOrder[0] ?? null;
   const decided = won.length + lost.length;
 
   return {
@@ -146,7 +150,7 @@ export function rollupFor(
     lifetimeValue,
     repeatValue: lifetimeValue - (firstWon ? (firstWon.wonValue ?? valueOf(firstWon)) : 0),
     winRate: decided === 0 ? null : won.length / decided,
-    firstWonAt,
+    firstWonAt: earliest(won.map((d) => d.wonAt)),
     lastWonAt: latest(won.map((d) => d.wonAt)),
     lastContact: latest(deals.map((d) => d.lastContact)),
     nextFollowUpDate: earliest(open.map((d) => d.followUpDate)),
