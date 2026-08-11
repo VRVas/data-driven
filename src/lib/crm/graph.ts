@@ -85,7 +85,18 @@ export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
   }
 
   companies.sort((a, b) => a.name.localeCompare(b.name));
-  return { companies, deals, proposals: overlay.proposals, links: overlay.links };
+
+  // Overlay records belong to a deal, so they inherit that deal's visibility.
+  // Without this the money figures, the proposal_pipeline tool and the edit and
+  // delete actions all still reach proposals attached to leads the viewer
+  // cannot open — addressable by id, because the id is all they take.
+  const visibleDeals = new Set(deals.map((d) => d.id));
+  return {
+    companies,
+    deals,
+    proposals: overlay.proposals.filter((p) => visibleDeals.has(p.dealId)),
+    links: overlay.links.filter((l) => visibleDeals.has(l.dealId)),
+  };
 });
 
 export interface CompanyDetail {
