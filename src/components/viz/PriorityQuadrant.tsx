@@ -46,7 +46,12 @@ export function PriorityQuadrant({ points }: { points: QuadPoint[] }) {
   );
 
   return (
-    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Priority quadrant">
+    // Below ~460px the viewBox would scale the labels down to a few pixels, so the
+    // chart keeps a legible floor and scrolls sideways instead.
+    // w-0 + min-w-full keeps this box's min-content contribution at zero, so an
+    // ancestor grid track can't be widened by the chart's minimum width.
+    <div className="w-0 min-w-full overflow-x-auto">
+    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[460px]" role="img" aria-label="Priority quadrant">
       {/* quadrant background tints */}
       <rect x={sx(MID)} y={PAD} width={W - PAD - sx(MID)} height={sy(MID) - PAD}
         fill="color-mix(in srgb, var(--color-mint) 8%, transparent)" />
@@ -89,5 +94,6 @@ export function PriorityQuadrant({ points }: { points: QuadPoint[] }) {
         </Link>
       ))}
     </svg>
+    </div>
   );
 }

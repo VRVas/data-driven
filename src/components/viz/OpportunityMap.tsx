@@ -42,7 +42,8 @@ export function OpportunityMap({ industries }: { industries: IndustryStat[] }) {
   );
 
   return (
-    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Opportunity map">
+    <div className="w-0 min-w-full overflow-x-auto">
+    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[460px]" role="img" aria-label="Opportunity map">
       {/* prime-whitespace tint: low penetration, high value (top-left) */}
       <rect x={PAD} y={PAD} width={(W - PAD * 2) / 2} height={(H - PAD * 2) / 2}
         fill="color-mix(in srgb, var(--color-mint) 8%, transparent)" />
@@ -84,5 +85,6 @@ export function OpportunityMap({ industries }: { industries: IndustryStat[] }) {
         );
       })}
     </svg>
+    </div>
   );
 }
