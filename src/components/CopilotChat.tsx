@@ -331,7 +331,8 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
   }
 
   return (
-    <div className="glass flex h-[calc(100vh-13rem)] flex-col overflow-hidden">
+    // dvh (not vh) so a mobile browser's collapsing URL bar can't push the composer off-screen.
+    <div className="glass flex h-[calc(100dvh-15rem)] min-h-[24rem] flex-col overflow-hidden sm:h-[calc(100dvh-13rem)]">
       <div className="relative flex items-center justify-between border-b border-[var(--color-border)] px-4 py-2">
         <button
           onClick={newChat}
@@ -515,7 +516,7 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
               : "border-[var(--color-border-strong)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]")
           }
         >
-          ✦ Think deeply
+          ✦<span className="hidden sm:inline"> Think deeply</span>
         </button>
         {voiceEnabled && (
           <button
@@ -568,13 +569,13 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
           placeholder="Ask about the pipeline…"
           disabled={pending}
           data-tour="copilot-input"
-          className="h-10 flex-1 rounded-full border border-[var(--color-border-strong)] bg-transparent px-4 text-sm outline-none focus:border-[var(--color-brand)] disabled:opacity-60"
+          className="h-10 min-w-0 flex-1 rounded-full border border-[var(--color-border-strong)] bg-transparent px-4 text-sm outline-none focus:border-[var(--color-brand)] disabled:opacity-60"
         />
         {pending ? (
           <button
             type="button"
             onClick={stop}
-            className="rounded-full border border-[color-mix(in_srgb,var(--color-rose)_50%,transparent)] px-5 py-2.5 text-sm font-medium text-[var(--color-rose)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-rose)_12%,transparent)]"
+            className="shrink-0 rounded-full border border-[color-mix(in_srgb,var(--color-rose)_50%,transparent)] px-4 py-2.5 text-sm font-medium text-[var(--color-rose)] transition-colors hover:bg-[color-mix(in_srgb,var(--color-rose)_12%,transparent)] sm:px-5"
           >
             Stop
           </button>
@@ -582,7 +583,7 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
           <button
             type="submit"
             disabled={!input.trim()}
-            className="rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03] disabled:opacity-50"
+            className="shrink-0 rounded-full bg-[var(--color-brand)] px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03] disabled:opacity-50 sm:px-5"
           >
             Ask
           </button>
