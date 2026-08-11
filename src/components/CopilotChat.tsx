@@ -25,6 +25,7 @@ const SUGGESTIONS = [
   "Top hot leads to call this week",
   "Why is Alibaba scored that way?",
   "Where's our biggest untapped market?",
+  "Move Alibaba to the next stage",
 ];
 
 /** Parse one SSE record ("event: x\ndata: {...}"). */
@@ -406,7 +407,8 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
             <div className="eyebrow mb-2">BD Copilot</div>
             <p className="text-sm text-[var(--color-ink-muted)]">
               Ask about leads, scores, the pipeline, whitespace or reminders. Answers come back as live charts, tables and
-              cards — and I can draft outreach (an admin sends it).
+              cards — and I can draft outreach (an admin sends it) or move a lead to a new pipeline stage, if your role and
+              the workflow allow it.
             </p>
             <div data-tour="copilot-suggestions" className="mt-5 flex flex-col gap-2">
               {SUGGESTIONS.map((s) => (
