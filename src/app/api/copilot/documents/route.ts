@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/authorize";
 import { isDocsConfigured, createVectorStore, uploadDocument, removeDocument } from "@/lib/copilot/documents";
 import { getDocRegistryStore } from "@/lib/store/documents";
 
@@ -12,6 +13,7 @@ const ALLOWED = /\.(pdf|docx?|txt|md|markdown|csv|json|pptx?|html?|rtf)$/i;
 export async function GET() {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await can("copilot:documents"))) return Response.json({ error: "Forbidden" }, { status: 403 });
   if (!isDocsConfigured()) return Response.json({ files: [], enabled: false });
   const reg = await getDocRegistryStore().get(user.id);
   return Response.json({ files: reg.files, enabled: true });
@@ -21,6 +23,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await can("copilot:documents"))) return Response.json({ error: "Forbidden" }, { status: 403 });
   if (!isDocsConfigured()) return Response.json({ error: "Documents not configured" }, { status: 503 });
 
   const form = await req.formData().catch(() => null);
@@ -50,6 +53,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await can("copilot:documents"))) return Response.json({ error: "Forbidden" }, { status: 403 });
   const fileId = new URL(req.url).searchParams.get("fileId");
   if (!fileId) return Response.json({ error: "Missing fileId" }, { status: 400 });
 

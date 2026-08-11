@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/authorize";
 import { transcribe, isSpeechConfigured } from "@/lib/speech/provider";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ const EXT: Record<string, string> = {
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
+  if (!(await can("copilot:use"))) return Response.json({ error: "Forbidden" }, { status: 403 });
   if (!isSpeechConfigured()) return Response.json({ error: "Voice not configured" }, { status: 503 });
 
   const contentType = (req.headers.get("content-type") || "application/octet-stream").split(";")[0].trim();

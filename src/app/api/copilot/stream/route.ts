@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/authorize";
 import { streamTurn, wantsReasoning } from "@/lib/copilot/stream";
 import { getConversationStore } from "@/lib/copilot/threads";
 import { logAudit } from "@/lib/store/audit";
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+  if (!(await can("copilot:use"))) return new Response("Forbidden", { status: 403 });
 
   let message = "";
   let reasoning = false;

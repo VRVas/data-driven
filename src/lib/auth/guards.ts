@@ -22,16 +22,5 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   };
 }
 
-/** Require any authenticated user; throws otherwise (guards server actions). */
-export async function requireUser(): Promise<SessionUser> {
-  const user = await getSessionUser();
-  if (!user) throw new Error("Unauthorized");
-  return user;
-}
-
-/** Require an admin; throws for members and anonymous callers. */
-export async function requireAdmin(): Promise<SessionUser> {
-  const user = await requireUser();
-  if (user.role !== "admin") throw new Error("Forbidden: this action is admin-only.");
-  return user;
-}
+// The old requireUser/requireAdmin guards are gone — authorization now goes
+// through requirePermission() in ./authorize so every call names a capability.

@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getSessionUser } from "@/lib/auth/guards";
+import { can } from "@/lib/auth/authorize";
 import { synthesize, isSpeechConfigured } from "@/lib/speech/provider";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +9,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const user = await getSessionUser();
   if (!user) return new Response("Unauthorized", { status: 401 });
+  if (!(await can("copilot:use"))) return new Response("Forbidden", { status: 403 });
   if (!isSpeechConfigured()) return new Response("Voice not configured", { status: 503 });
 
   let text = "";
