@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requirePermission } from "@/lib/auth/authorize";
 import { getUserStore } from "@/lib/store/users";
 import { logAudit } from "@/lib/store/audit";
 
@@ -15,7 +15,7 @@ const schema = z.object({
 
 /** Promote / demote a teammate. Admin-only; never strips the last admin. */
 export async function setUserRole(_prev: TeamActionState, formData: FormData): Promise<TeamActionState> {
-  const admin = await requireAdmin();
+  const { user: admin } = await requirePermission("profile:assign");
 
   const parsed = schema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Invalid role change." };

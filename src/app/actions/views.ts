@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/guards";
+import { requirePermission } from "@/lib/auth/authorize";
 import { getViewStore } from "@/lib/store/views";
 
 export type ViewActionState = { ok?: boolean; error?: string } | undefined;
@@ -17,7 +17,7 @@ const createSchema = z.object({
 });
 
 export async function createView(_prev: ViewActionState, formData: FormData): Promise<ViewActionState> {
-  const user = await requireUser();
+  const { user } = await requirePermission("view:create");
   const parsed = createSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form." };
   const v = parsed.data;
@@ -37,7 +37,7 @@ export async function createView(_prev: ViewActionState, formData: FormData): Pr
 }
 
 export async function deleteView(_prev: ViewActionState, formData: FormData): Promise<ViewActionState> {
-  const user = await requireUser();
+  const { user } = await requirePermission("view:delete");
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 

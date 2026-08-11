@@ -1,6 +1,6 @@
 "use server";
 
-import { requireUser } from "@/lib/auth/guards";
+import { requirePermission } from "@/lib/auth/authorize";
 import { getCopilotProvider, type AskOptions } from "@/lib/copilot/provider";
 import { runTool } from "@/lib/copilot/dispatch";
 import { wantsReasoning } from "@/lib/copilot/stream";
@@ -16,7 +16,7 @@ export interface CopilotReply {
 
 /** Ask the copilot. Acts as the signed-in user; every turn is audited. */
 export async function askCopilot(message: string, opts: AskOptions = {}): Promise<CopilotReply> {
-  const user = await requireUser();
+  const { user } = await requirePermission("copilot:use");
   const text = (message ?? "").trim();
   if (!text) return { blocks: [b.text("Ask me something about the pipeline.")], provider: "n/a", tools: [] };
   if (text.length > 1000)
@@ -56,7 +56,7 @@ const ACTIONABLE = new Set(["draft_outreach", "advance_lead_stage"]);
 
 /** Execute an interactive action block button. Role-gated + audited via the tool layer. */
 export async function runCopilotAction(tool: string, args: Record<string, unknown> = {}): Promise<ActionResult> {
-  const user = await requireUser();
+  const { user } = await requirePermission("copilot:tool:write");
   if (!ACTIONABLE.has(tool)) return { ok: false, blocks: [b.callout("That action isn't available.", "warning")], error: "not actionable" };
 
   const run = await runTool(tool, args, user);

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { randomUUID } from "node:crypto";
-import { requireUser, requireAdmin } from "@/lib/auth/guards";
+import { requirePermission } from "@/lib/auth/authorize";
+import { can } from "@/lib/auth/effective";
 import { getBrandStore } from "@/lib/store/brands";
 import { getOutreachStore, type Outreach } from "@/lib/store/outreach";
 import { getEmailProvider } from "@/lib/mail/provider";
@@ -25,7 +26,10 @@ const composeSchema = z.object({
  * it for approval. Sending happens in `sendOutreach` (admin-gated).
  */
 export async function composeOutreach(_prev: OutreachActionState, formData: FormData): Promise<OutreachActionState> {
-  const user = await requireUser();
+  const ctx = await requirePermission("outreach:compose");
+  const { user } = ctx;
+  // Whoever may approve is trusted to hold their own draft; everyone else queues for review.
+  const canApprove = can(ctx.effective, "outreach:approve");
   const parsed = composeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Check the form." };
   const input = parsed.data;
@@ -42,7 +46,7 @@ export async function composeOutreach(_prev: OutreachActionState, formData: Form
     subject: input.subject,
     body: input.body,
     templateId: input.templateId,
-    status: user.role === "admin" ? "draft" : "pending_approval",
+    status: canApprove ? "draft" : "pending_approval",
     createdById: user.id,
     createdByName: user.name,
     createdAt: now,
@@ -55,10 +59,9 @@ export async function composeOutreach(_prev: OutreachActionState, formData: Form
     action: "outreach.create",
     entity: "outreach",
     entityId: record.id,
-    summary:
-      user.role === "admin"
-        ? `Drafted outreach to ${brand.name}`
-        : `Submitted outreach to ${brand.name} for approval`,
+    summary: canApprove
+      ? `Drafted outreach to ${brand.name}`
+      : `Submitted outreach to ${brand.name} for approval`,
   });
 
   revalidatePath("/dashboard/outbox");
@@ -68,7 +71,7 @@ export async function composeOutreach(_prev: OutreachActionState, formData: Form
 
 /** Approve (if needed) and send an outreach message. Admin-only. */
 export async function sendOutreach(_prev: OutreachActionState, formData: FormData): Promise<OutreachActionState> {
-  const admin = await requireAdmin();
+  const { user: admin } = await requirePermission("outreach:send");
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
@@ -121,7 +124,8 @@ export async function sendOutreach(_prev: OutreachActionState, formData: FormDat
 
 /** Cancel a draft / pending message. Admins, or the person who created it. */
 export async function cancelOutreach(_prev: OutreachActionState, formData: FormData): Promise<OutreachActionState> {
-  const user = await requireUser();
+  const ctx = await requirePermission("outreach:cancel");
+  const { user } = ctx;
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
@@ -129,7 +133,7 @@ export async function cancelOutreach(_prev: OutreachActionState, formData: FormD
   const record = await store.get(id);
   if (!record) return { error: "That message no longer exists." };
   if (record.status === "sent") return { error: "Sent messages can't be cancelled." };
-  if (user.role !== "admin" && record.createdById !== user.id) {
+  if (!can(ctx.effective, "outreach:approve") && record.createdById !== user.id) {
     return { error: "You can only cancel your own drafts." };
   }
 

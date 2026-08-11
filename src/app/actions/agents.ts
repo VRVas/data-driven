@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { auth } from "@/auth";
+import { requirePermission } from "@/lib/auth/authorize";
 import { getAgentStore } from "@/lib/store/agents";
 import { AGENT_STATUSES, PRIORITIES } from "@/lib/vocab";
 import type { Agent } from "@/lib/types";
@@ -42,13 +42,10 @@ function slug(name: string): string {
   );
 }
 
-async function requireUser() {
-  const session = await auth();
-  if (!session?.user) throw new Error("Unauthorized");
-}
-
 export async function saveAgent(_prev: AgentActionState, formData: FormData): Promise<AgentActionState> {
-  await requireUser();
+  // Pure read of the submitted id: decides which capability the write needs.
+  const isNew = !String(formData.get("id") ?? "").trim();
+  await requirePermission(isNew ? "agent:create" : "agent:update");
 
   const parsed = agentInputSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -95,7 +92,7 @@ export async function saveAgent(_prev: AgentActionState, formData: FormData): Pr
 }
 
 export async function deleteAgent(_prev: AgentActionState, formData: FormData): Promise<AgentActionState> {
-  await requireUser();
+  await requirePermission("agent:delete");
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 

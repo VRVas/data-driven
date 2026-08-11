@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser, requireAdmin } from "@/lib/auth/guards";
+import { requirePermission } from "@/lib/auth/authorize";
 import { getBrandStore } from "@/lib/store/brands";
 import { logAudit } from "@/lib/store/audit";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
@@ -48,7 +48,9 @@ function slug(name: string): string {
 }
 
 export async function saveBrand(_prev: BrandActionState, formData: FormData): Promise<BrandActionState> {
-  const user = await requireUser();
+  // Pure read of the submitted id: decides which capability the write needs.
+  const isNew = !String(formData.get("id") ?? "").trim();
+  const { user } = await requirePermission(isNew ? "lead:create" : "lead:update");
 
   const parsed = brandInputSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -58,7 +60,6 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   const store = getBrandStore();
 
   let brand: Brand;
-  const isNew = !input.id;
   if (input.id) {
     const existing = await store.get(input.id);
     if (!existing) return { error: "That lead no longer exists." };
@@ -117,7 +118,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
 }
 
 export async function deleteBrand(_prev: BrandActionState, formData: FormData): Promise<BrandActionState> {
-  const user = await requireAdmin();
+  const { user } = await requirePermission("lead:delete");
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
@@ -148,7 +149,7 @@ export async function changeBrandStatus(
   _prev: BrandActionState,
   formData: FormData,
 ): Promise<BrandActionState> {
-  const user = await requireUser();
+  const { user } = await requirePermission("lead:stage:advance");
 
   const parsed = statusChangeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Invalid status." };

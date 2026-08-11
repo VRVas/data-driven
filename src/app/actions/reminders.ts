@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { requireUser } from "@/lib/auth/guards";
+import { requirePermission } from "@/lib/auth/authorize";
 import { getBrandStore } from "@/lib/store/brands";
 import { logAudit } from "@/lib/store/audit";
 import { addDays, todayYmd } from "@/lib/workflow";
@@ -16,7 +16,7 @@ const snoozeSchema = z.object({
 
 /** Push a lead's follow-up out by N days from today. */
 export async function snoozeFollowUp(_prev: ReminderActionState, formData: FormData): Promise<ReminderActionState> {
-  const user = await requireUser();
+  const { user } = await requirePermission("reminder:update");
   const parsed = snoozeSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Invalid snooze." };
   const { id, days } = parsed.data;
@@ -43,7 +43,7 @@ export async function snoozeFollowUp(_prev: ReminderActionState, formData: FormD
 
 /** Mark a follow-up handled: clear the date and stamp today as last contact. */
 export async function completeFollowUp(_prev: ReminderActionState, formData: FormData): Promise<ReminderActionState> {
-  const user = await requireUser();
+  const { user } = await requirePermission("reminder:complete");
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
