@@ -146,8 +146,10 @@ export async function saveProposal(_prev: CrmActionState, formData: FormData): P
     value: input.value,
     currency: "EUR",
     status,
-    // Stamp the moment a proposal leaves the building, so "waiting since" is real.
-    sentAt: input.sentAt || existing?.sentAt || (status === "sent" ? now : null),
+    // A sent proposal keeps a send date — "waiting since" depends on it — but
+    // on any other status an emptied field means the user cleared it, the way
+    // validUntil below already behaves.
+    sentAt: input.sentAt || (status === "sent" ? (existing?.sentAt ?? now) : null),
     decidedAt: decided ? (existing?.decidedAt ?? now) : null,
     validUntil: input.validUntil || null,
     notes: input.notes || null,
