@@ -25,6 +25,16 @@ export type BrandStatus =
 
 export type Valuation = "High" | "Medium" | "Low";
 
+/**
+ * Who owes the next move on a lead.
+ *
+ * The two questions the pipeline view has to answer are "are we late replying
+ * to them?" and "are we late chasing them?" — the same overdue date means
+ * opposite things depending on which side the ball is on, so it has to be
+ * recorded rather than guessed.
+ */
+export type WaitingOn = "us" | "them";
+
 export interface BrandScores {
   tempoMonths: number | null;
   tempoScore: number | null;
@@ -60,6 +70,12 @@ export interface Brand {
   followUpDate: string | null;
   closingFailed: string | null;
   notes: string | null;
+  /** Optional: records written before the field existed simply have no answer. */
+  waitingOn?: WaitingOn | null;
+  /** The next move in the team's own words — "send revised quote", "chase legal". */
+  nextStep?: string | null;
+  /** Months the deal is expected to take, estimated when it opened. */
+  expectedMonths?: number | null;
   scored: boolean;
   scores?: BrandScores;
 }
