@@ -9,7 +9,8 @@ import { answerFromDocuments } from "@/lib/copilot/documents";
 import { groundedWebAnswer, isWebGroundingConfigured } from "@/lib/copilot/websearch";
 import { getDocRegistryStore } from "@/lib/store/documents";
 import { logAudit } from "@/lib/store/audit";
-import { leadScore, quadrant, weightedValue, winProbability } from "@/lib/scoring";
+import { leadScore, weightedValue, winProbability } from "@/lib/scoring";
+import { priorityOf } from "@/lib/priority";
 import { openLeads, outcomeOf } from "@/lib/lifecycle";
 import { opportunityScore, penetration, whitespace } from "@/lib/tam";
 import { getCrmGraph, getCompanyDetail, getPipelineMoney } from "@/lib/crm/graph";
@@ -45,6 +46,7 @@ const asEnum = (v: readonly string[]) => v as unknown as [string, ...string[]];
 /** Compact, model-friendly view of a lead (no UI tokens, only facts + computed values). */
 function leadBrief(b: Brand) {
   const s = b.scores;
+  const p = priorityOf(b);
   return {
     id: b.id,
     name: b.name,
@@ -55,14 +57,18 @@ function leadBrief(b: Brand) {
     owner: b.owner,
     poc: b.poc,
     budgetEur: s?.budget ?? null,
-    leadScore: leadScore(b),
-    quadrant:
-      s?.economicalEfficiency != null && s?.easeOfAccess != null
-        ? quadrant(s.economicalEfficiency, s.easeOfAccess)
-        : null,
+    priorityScore: p?.priority ?? null,
+    grade: p?.grade ?? null,
+    quadrant: p?.quadrant ?? null,
+    opportunity: p ? Math.round(p.opportunity) : null,
+    winnability: p ? Math.round(p.winnability) : null,
+    ease: p ? Math.round(p.ease) : null,
+    expectedValueEur: p ? Math.round(p.expectedValueEur) : null,
+    // The old 0-5 average, kept for one cycle so "why did this move?" is answerable.
+    legacyLeadScore: leadScore(b),
     winProbability: winProbability(b.status),
     weightedValueEur: Math.round(weightedValue(b)),
-    followUp: b.followUpDate,
+    followUpDate: b.followUpDate,
     lastContact: b.lastContact,
   };
 }
@@ -95,7 +101,7 @@ function companyBrief(c: Company) {
 const searchLeads: CopilotTool = {
   name: "search_leads",
   description:
-    "Search and rank leads in the pipeline by any combination of status, priority, industry, owner or free text. Returns compact lead summaries with computed lead score, quadrant and weighted value. Ranks only live deals unless asked otherwise: pass outcome='won'/'lost'/'any' to include finished ones.",
+    "Search and rank leads by any combination of status, priority, industry, owner or free text. Returns compact summaries with the priority score (0-100), its A-D grade, the Pursue/Invest/Quick win/Park quadrant, and expected value in euros. Ranked by priority by default. Ranks only live deals unless asked otherwise: pass outcome='won'/'lost'/'any' to include finished ones.",
   parameters: {
     type: "object",
     properties: {
@@ -111,8 +117,8 @@ const searchLeads: CopilotTool = {
       industry: { type: "string", enum: [...INDUSTRIES] },
       owner: { type: "string" },
       scoredOnly: { type: "boolean", description: "Only leads that have been scored" },
-      minLeadScore: { type: "number", description: "Minimum composite lead score (0–5)" },
-      sortBy: { type: "string", enum: ["leadScore", "weightedValue", "budget", "name"] },
+      minPriority: { type: "number", description: "Minimum priority score (0–100). Grades: A ≥ 65, B ≥ 45, C ≥ 25." },
+      sortBy: { type: "string", enum: ["priority", "expectedValue", "weightedValue", "budget", "name"] },
       limit: { type: "integer", minimum: 1, maximum: 50 },
     },
   },
@@ -126,8 +132,8 @@ const searchLeads: CopilotTool = {
         industry: z.enum(asEnum(INDUSTRIES)).optional(),
         owner: z.string().trim().optional(),
         scoredOnly: z.boolean().optional(),
-        minLeadScore: z.number().optional(),
-        sortBy: z.enum(["leadScore", "weightedValue", "budget", "name"]).optional(),
+        minPriority: z.number().optional(),
+        sortBy: z.enum(["priority", "expectedValue", "weightedValue", "budget", "name"]).optional(),
         limit: z.number().int().min(1).max(50).optional(),
       })
       .parse(args);
@@ -148,13 +154,17 @@ const searchLeads: CopilotTool = {
     if (a.industry) brands = brands.filter((b) => b.industry === a.industry);
     if (a.owner) brands = brands.filter((b) => b.owner === a.owner);
     if (a.scoredOnly) brands = brands.filter((b) => b.scored);
-    if (a.minLeadScore != null) brands = brands.filter((b) => (leadScore(b) ?? -1) >= a.minLeadScore!);
+    if (a.minPriority != null) brands = brands.filter((b) => (priorityOf(b)?.priority ?? -1) >= a.minPriority!);
 
     const briefs = brands.map(leadBrief);
-    const sortBy = a.sortBy ?? "leadScore";
+    const sortBy = a.sortBy ?? "priority";
     briefs.sort((x, y) => {
       if (sortBy === "name") return x.name.localeCompare(y.name);
-      const key = sortBy === "budget" ? "budgetEur" : sortBy === "weightedValue" ? "weightedValueEur" : "leadScore";
+      const key =
+        sortBy === "budget" ? "budgetEur"
+        : sortBy === "weightedValue" ? "weightedValueEur"
+        : sortBy === "expectedValue" ? "expectedValueEur"
+        : "priorityScore";
       return (Number(y[key] ?? -1) || -1) - (Number(x[key] ?? -1) || -1);
     });
 
@@ -196,7 +206,7 @@ const getLead: CopilotTool = {
 const explainScore: CopilotTool = {
   name: "explain_score",
   description:
-    "Explain how a lead's score is composed: the six sub-scores, the two aggregates (economical efficiency, ease of access), the blended lead score and its quadrant.",
+    "Explain how a lead's priority is composed: the opportunity axis (budget discounted by how much evidence backs it, plus capped strategic value), the winnability axis (stage, freshness, accessibility, receptivity), the ease index that is deliberately never blended in, and the geometric mean that combines the first two. Use whenever asked why a lead ranks where it does, or why its position changed.",
   parameters: {
     type: "object",
     properties: { id: { type: "string" } },
@@ -208,6 +218,7 @@ const explainScore: CopilotTool = {
     if (!b) return { found: false, id };
     if (!b.scores) return { found: true, id, scored: false, note: "This lead has not been scored yet." };
     const s = b.scores;
+    const p = priorityOf(b);
     return {
       found: true,
       id,
@@ -223,12 +234,31 @@ const explainScore: CopilotTool = {
       },
       economicalEfficiency: s.economicalEfficiency,
       easeOfAccess: s.easeOfAccess,
-      leadScore: leadScore(b),
-      quadrant:
-        s.economicalEfficiency != null && s.easeOfAccess != null
-          ? quadrant(s.economicalEfficiency, s.easeOfAccess)
-          : null,
-      formula: "leadScore = economicalEfficiency*0.55 + easeOfAccess*0.45",
+      priorityScore: p?.priority ?? null,
+      grade: p?.grade ?? null,
+      quadrant: p?.quadrant ?? null,
+      opportunity: p
+        ? {
+            score: Math.round(p.opportunity),
+            adjustedBudgetEur: Math.round(p.adjustedBudget),
+            moneyIndex: Math.round(p.moneyIndex),
+            strategicIndex: Math.round(p.strategicIndex),
+            note: "budget × how much evidence backs it, capped at €80k; strategic value adds at most a quarter",
+          }
+        : null,
+      winnability: p
+        ? {
+            score: Math.round(p.winnability),
+            stageProbability: p.winProbability,
+            recency: Number(p.recency.toFixed(3)),
+            note: "stage 45%, freshness 25%, accessibility 15%, receptivity 15%",
+          }
+        : null,
+      ease: p ? Math.round(p.ease) : null,
+      expectedValueEur: p ? Math.round(p.expectedValueEur) : null,
+      legacyLeadScore: leadScore(b),
+      formula:
+        "priority = round(sqrt(opportunity * winnability)) — a geometric mean, so weakness on one axis cannot be averaged away by strength on the other. Ease is reported but never blended, and expected value in euros is shown separately.",
     };
   },
 };

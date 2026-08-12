@@ -16,7 +16,7 @@ export default function Home() {
 
   const features = [
     { title: "Pipeline & CRM", body: "Every lead, owner, stage and follow-up — live, filterable, editable.", tag: "Trackers" },
-    { title: "Lead scoring", body: "The workbook's hidden model, re-computed: value-efficiency × ease-of-access.", tag: "Quadrant" },
+    { title: "Lead scoring", body: "The workbook's hidden model, rebuilt: what a deal is worth against how likely it is to close.", tag: "Quadrant" },
     { title: "Industry heat-map", body: "Segment scorecards fused with the sales playbook for each vertical.", tag: "Strategy" },
     { title: "Whitespace / TAM", body: "Approached vs addressable EU market — see where the room actually is.", tag: "Opportunity" },
     { title: "Data quality", body: "Naming, dates and taxonomy fixed on import, with a full audit trail.", tag: "Console" },

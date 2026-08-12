@@ -21,13 +21,13 @@ import {
   leadScore,
   effectiveScores,
   effectiveTempoMonths,
-  quadrant,
   weightedValue,
   winProbability,
   eur,
 } from "@/lib/scoring";
 import { healthOf, WAITING_LABEL } from "@/lib/pipeline/health";
 import { budgetVariance } from "@/lib/pipeline/budget";
+import { priorityOf } from "@/lib/priority";
 import type { BrandStatus, Priority } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -77,12 +77,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
   const s = effectiveScores(brand);
   const score = leadScore(brand);
+  const p = priorityOf(brand);
   const health = healthOf(brand, crm?.proposals ?? []);
   const tempo = effectiveTempoMonths(brand);
   const variance = budgetVariance(brand);
-  const q = s?.economicalEfficiency != null && s?.easeOfAccess != null
-    ? quadrant(s.economicalEfficiency, s.easeOfAccess)
-    : null;
 
   return (
     <div className="space-y-8">
@@ -110,12 +108,22 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
 
       {/* headline metrics */}
       <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Metric label="Lead score" value={score != null ? score.toFixed(2) : "—"} accent="var(--color-brand)" />
-        <Metric label="Quadrant" value={q ?? "—"} accent="var(--color-cyan)" />
+        <Metric
+          label="Priority"
+          value={p ? `${p.priority}` : "—"}
+          hint={p ? `grade ${p.grade} · was ${score?.toFixed(2) ?? "—"}/5` : undefined}
+          accent="var(--color-brand)"
+        />
+        <Metric
+          label="Quadrant"
+          value={p?.quadrant ?? "—"}
+          hint={p ? `opportunity ${Math.round(p.opportunity)} · winnability ${Math.round(p.winnability)}` : undefined}
+          accent="var(--color-cyan)"
+        />
         <Metric label="Budget" value={s?.budget ? eur(s.budget) : "—"} accent="var(--color-amber)" />
         <Metric
-          label="Weighted value"
-          value={eur(weightedValue(brand))}
+          label="Expected value"
+          value={p ? eur(Math.round(p.expectedValueEur)) : eur(weightedValue(brand))}
           hint={`${Math.round(winProbability(brand.status) * 100)}% win prob.`}
           accent="var(--color-mint)"
         />

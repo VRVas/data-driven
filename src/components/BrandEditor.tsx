@@ -5,6 +5,7 @@ import { saveBrand, deleteBrand, type BrandActionState } from "@/app/actions/bra
 import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import type { Brand } from "@/lib/types";
+import { STRATEGIC_REASONS } from "@/lib/priority";
 
 /** Mounted only while open — remounting gives each session fresh action state. */
 export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Brand | null; onClose: () => void; canDelete?: boolean }) {
@@ -111,6 +112,25 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
               className="auth-input"
             />
           </FormField>
+
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Strategic value">
+              <select name="strategicValue" defaultValue={String(brand?.strategicValue ?? 0)} className="auth-input">
+                <option value="0">0 — none beyond the invoice</option>
+                <option value="1">1 — some</option>
+                <option value="2">2 — significant</option>
+                <option value="3">3 — flagship</option>
+              </select>
+            </FormField>
+            <FormField label="Why strategic">
+              <select name="strategicReason" defaultValue={brand?.strategicReason ?? ""} className="auth-input">
+                <option value="">— none —</option>
+                {STRATEGIC_REASONS.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
+            </FormField>
+          </div>
 
           <FormField label="Notes">
             <textarea name="notes" defaultValue={brand?.notes ?? ""} rows={4} className="auth-input resize-none" />

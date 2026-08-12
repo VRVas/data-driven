@@ -37,7 +37,14 @@ A lead (brand) has: name, status, priority, owner, point of contact (POC), email
 · Proposals are their own records (value, revision, sent/accepted/rejected), so "how much is out awaiting a decision" and the win rate are real money and real outcomes rather than inferred from a stage; only the newest sent revision of a deal counts, so a re-quote is never double counted.
 
 # SCORING MODEL (be able to explain this precisely)
-Each scored lead has six 0–5 sub-scores: Tempo (contact recency — higher = more recent), Budget (deal size, 0–80k€ mapped to 0–5), Customization/Service (5 = productised/low-effort … 1 = fully bespoke), Accessibility (ease of reaching senior decision-makers), Alignment (fit with OOVIE's message: human-centric innovation, creativity/music/film, AI, young/fast startup, out-of-the-box) and Receptivity (how easy the offer is to explain). These roll up into two aggregates: Economical Efficiency = average(Budget, Customization, Tempo); Ease of Access = average(Accessibility, Alignment, Receptivity). The overall Lead Score = Economical Efficiency × 0.55 + Ease of Access × 0.45. The priority quadrant plots Economical Efficiency (Y) against Ease of Access (X) around a midpoint of 3: Prioritize (high/high), Quick Win (low efficiency / high access), Strategic (high efficiency / low access), Deprioritize (low/low). Probability-weighted pipeline value multiplies each open deal's budget by a win-probability implied by its stage.
+Leads are ranked by PRIORITY, a 0–100 score built from two axes that are kept apart on purpose.
+OPPORTUNITY (0–100) = what the deal is worth: the budget discounted by how much evidence backs it (Confirmed 1.0, Estimated 0.6, unstated 0.4), capped at €80k, contributing 75%; plus Strategic Value (0–3: a logo, a referral source, a reference case) contributing at most the remaining 25%, so a free project can stay visible without outranking paid work.
+WINNABILITY (0–100) = whether it will actually close: stage win-probability 45%, freshness 25% (halves every six months of silence, floored at a quarter), accessibility 15%, receptivity 15%.
+PRIORITY = round(√(OPPORTUNITY × WINNABILITY)). It is a geometric mean, so weakness on one axis cannot be averaged away by strength on the other — a zero-opportunity deal scores zero however easy it is. Grades: A ≥ 65, B ≥ 45, C ≥ 25, else D.
+EASE (0–100, average of Customization, Accessibility, Receptivity and Alignment) is reported and breaks ties, but is NEVER blended into priority — letting "easy" inflate the ranking was the flaw in the previous model.
+The quadrant plots Opportunity (Y) against Winnability (X) at thresholds 35 and 45: Pursue (high/high), Invest (high opportunity, low winnability), Quick win (low opportunity, high winnability), Park (low/low).
+EXPECTED VALUE in euros = adjusted budget × stage probability × freshness. Shown beside priority, never folded into it.
+The six 0–5 sub-scores still exist as inputs: Tempo (now the deal's expected or actual DURATION, not contact recency), Budget, Customization/Service (5 = productised … 1 = bespoke), Accessibility, Alignment (fit with OOVIE's message) and Receptivity. The old 0–5 Lead Score is still returned as legacyLeadScore for comparison only — never lead with it.
 
 # SECTIONS (all under /dashboard)
 · Overview — headline KPIs (total pipeline, probability-weighted value, deals closed, % of pipeline scored), the stage funnel, the priority quadrant and the industry scorecard.
@@ -129,13 +136,18 @@ class LocalCopilotProvider implements CopilotProvider {
       const d = await run("explain_score", { id: lead.id });
       if (!d || d.scored === false) return done([b.callout(`**${lead.name}** hasn't been scored yet.`, "warning")]);
       const s = d.subScores as Record<string, number>;
+      const opp = d.opportunity as { score: number; adjustedBudgetEur: number } | null;
+      const win = d.winnability as { score: number } | null;
       return done(
         [
-          b.heading(lead.name, { eyebrow: "Score breakdown", subtitle: `Lead score ${d.leadScore} · ${d.quadrant}` }),
+          b.heading(lead.name, {
+            eyebrow: "Priority breakdown",
+            subtitle: `Priority ${d.priorityScore} · grade ${d.grade} · ${d.quadrant}`,
+          }),
           b.metrics([
-            { label: "Economical efficiency", value: Number(d.economicalEfficiency).toFixed(2), tone: "cyan" },
-            { label: "Ease of access", value: Number(d.easeOfAccess).toFixed(2), tone: "mint" },
-            { label: "Lead score", value: Number(d.leadScore).toFixed(2), tone: "brand" },
+            { label: "Opportunity", value: String(opp?.score ?? "—"), tone: "cyan" },
+            { label: "Winnability", value: String(win?.score ?? "—"), tone: "mint" },
+            { label: "Priority", value: String(d.priorityScore ?? "—"), tone: "brand" },
           ]),
           b.chart("progress", {
             title: "Six sub-scores (0–5)",
@@ -149,13 +161,15 @@ class LocalCopilotProvider implements CopilotProvider {
               { label: "Receptivity", value: s.receptivity, tone: "mint" },
             ],
           }),
-          b.text("Lead score = **economical efficiency × 0.55 + ease of access × 0.45**."),
+          b.text(
+            "Priority = **√(opportunity × winnability)**. A geometric mean, so weakness on one axis can't be averaged away by strength on the other — and ease of delivery is reported separately, never blended in.",
+          ),
           b.actions([
             { label: "Draft outreach", tool: "draft_outreach", args: { id: lead.id }, style: "primary" },
             { label: "Open lead", tool: "open_lead", args: { id: lead.id }, style: "ghost" },
           ]),
         ],
-        `Identify ${lead.name}, pull its score breakdown, then surface the two aggregates, the six sub-scores as a progress chart, and the blend formula.`,
+        `Identify ${lead.name}, pull its priority breakdown, then surface the two axes, the six sub-scores as a progress chart, and how they combine.`,
       );
     }
 
@@ -274,7 +288,7 @@ class LocalCopilotProvider implements CopilotProvider {
           b.heading(isHot ? "Top hot leads" : "Highest-scoring leads", { eyebrow: "Targets", subtitle: `${leads.length} shown` }),
           b.leadGrid(leads.map(toLeadCard)),
         ],
-        isHot ? "Filter to Hot Lead priority, sort by lead score, render as lead cards." : "Sort all leads by composite lead score, render the top as cards.",
+        isHot ? "Filter to Hot Lead priority, sort by priority score, render as lead cards." : "Sort all leads by priority score, render the top as cards.",
       );
     }
 

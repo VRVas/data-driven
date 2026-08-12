@@ -9,6 +9,7 @@ import { authorizeLead } from "@/lib/leads/visible";
 import { logAudit } from "@/lib/store/audit";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
+import { STRATEGIC_REASONS } from "@/lib/priority";
 import type { Brand, BrandStatus } from "@/lib/types";
 
 export type BrandActionState = { ok?: boolean; error?: string } | undefined;
@@ -37,6 +38,10 @@ const brandInputSchema = z.object({
   closingFailed: optionalDate,
   waitingOn: optionalEnum(["us", "them"]),
   nextStep: optionalStr,
+  // Chosen from a list rather than typed, so "strategic" cannot be argued into
+  // meaning anything a lead needs it to mean.
+  strategicValue: z.preprocess(emptyToUndef, z.coerce.number().int().min(0).max(3).optional()),
+  strategicReason: optionalEnum(STRATEGIC_REASONS as unknown as [string, ...string[]]),
   // The estimate made when the lead opened: "a slow enterprise, call it 8 months".
   expectedMonths: z.preprocess(
     emptyToUndef,
@@ -96,6 +101,8 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
       waitingOn: null,
       nextStep: null,
       expectedMonths: null,
+      strategicValue: 0,
+      strategicReason: null,
       closingFailed: null,
       notes: null,
     };
@@ -116,6 +123,8 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   brand.followUpDate = input.followUpDate ?? null;
   brand.waitingOn = (input.waitingOn as Brand["waitingOn"]) ?? null;
   brand.nextStep = input.nextStep ?? null;
+  brand.strategicValue = input.strategicValue ?? 0;
+  brand.strategicReason = input.strategicReason ?? null;
   brand.expectedMonths = input.expectedMonths ?? null;
   brand.closingFailed = input.closingFailed ?? null;
   brand.notes = input.notes ?? null;

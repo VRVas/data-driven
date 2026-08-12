@@ -8,6 +8,7 @@ import { getDataset } from "@/lib/data";
 import { getVisibleBrands } from "@/lib/leads/visible";
 import { openLeads } from "@/lib/lifecycle";
 import { STATUS_TOKEN, PRIORITY_TOKEN, weightedValue, effectiveScores } from "@/lib/scoring";
+import { rankByPriority } from "@/lib/priority";
 import type { BrandStatus } from "@/lib/types";
 
 // Reads the live brand store — render per request (never prerender at build).
@@ -56,17 +57,14 @@ export default async function DashboardOverview() {
     (a, b) => (b.economicalEfficiency ?? 0) - (a.economicalEfficiency ?? 0),
   );
 
-  const points: QuadPoint[] = openLeads(scored)
-    .map((b) => ({ b, s: effectiveScores(b) }))
-    .filter((r) => r.s?.economicalEfficiency != null && r.s?.easeOfAccess != null)
-    .map(({ b, s }) => ({
-      id: b.id,
-      name: b.name,
-      x: s!.easeOfAccess!,
-      y: s!.economicalEfficiency!,
-      budget: s!.budget ?? 0,
-      color: b.priority ? PRIORITY_TOKEN[b.priority] : "var(--color-ink-faint)",
-    }));
+  const points: QuadPoint[] = rankByPriority(openLeads(scored)).map(({ brand, p }) => ({
+    id: brand.id,
+    name: brand.name,
+    x: p.winnability,
+    y: p.opportunity,
+    budget: brand.scores?.budget ?? 0,
+    color: brand.priority ? PRIORITY_TOKEN[brand.priority] : "var(--color-ink-faint)",
+  }));
 
   return (
     <div className="space-y-8">
@@ -100,7 +98,7 @@ export default async function DashboardOverview() {
         </Reveal>
 
         <Reveal>
-          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Open leads · economical efficiency × ease of access · bubble = budget" tour="quadrant">
+          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Open leads · opportunity × winnability · bubble = budget" tour="quadrant">
             <PriorityQuadrant points={points} />
           </Panel>
         </Reveal>

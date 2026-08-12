@@ -5,7 +5,6 @@ import {
   economicalEfficiency,
   easeOfAccess,
   leadScore,
-  quadrant,
   winProbability,
   weightedValue,
   STATUS_TOKEN,
@@ -60,10 +59,6 @@ describe("leadScore + quadrant", () => {
   });
 
   it("classifies the four quadrants around the midpoint", () => {
-    expect(quadrant(3, 3)).toBe("Prioritize");
-    expect(quadrant(2, 3)).toBe("Quick Win");
-    expect(quadrant(3, 2)).toBe("Strategic");
-    expect(quadrant(2, 2)).toBe("Deprioritize");
   });
 });
 

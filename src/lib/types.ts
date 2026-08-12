@@ -78,6 +78,10 @@ export interface Brand {
   expectedMonths?: number | null;
   /** The budget we guessed before an offer was accepted, kept for comparison. */
   budgetAtOpen?: number | null;
+  /** 0–3: worth beyond the invoice. Capped in the score so it cannot outrank paid work alone. */
+  strategicValue?: number | null;
+  /** Chosen from a fixed list, so "strategic" has to mean something specific. */
+  strategicReason?: string | null;
   scored: boolean;
   scores?: BrandScores;
 }

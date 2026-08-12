@@ -90,14 +90,6 @@ export function leadScore(brand: Brand): number | null {
 
 export type Quadrant = "Prioritize" | "Quick Win" | "Strategic" | "Deprioritize";
 
-/** Classify a brand on the Economical-Efficiency × Ease-of-Access map. */
-export function quadrant(econ: number, ease: number, mid = 2.75): Quadrant {
-  if (ease >= mid && econ >= mid) return "Prioritize";
-  if (ease >= mid && econ < mid) return "Quick Win";
-  if (ease < mid && econ >= mid) return "Strategic";
-  return "Deprioritize";
-}
-
 /* ------------------------------------------------------------------ */
 /*  Pipeline weighting (heuristic win-probability per stage)           */
 /* ------------------------------------------------------------------ */

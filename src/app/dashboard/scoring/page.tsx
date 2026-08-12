@@ -1,22 +1,36 @@
 import { Reveal } from "@/components/Reveal";
+import { Badge } from "@/components/Badge";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
 import { getVisibleScoredBrands } from "@/lib/leads/visible";
 import { openLeads } from "@/lib/lifecycle";
-import { PRIORITY_TOKEN, leadScore, effectiveScores, quadrant, eur } from "@/lib/scoring";
+import { PRIORITY_TOKEN, leadScore, effectiveScores, eur } from "@/lib/scoring";
+import { rankByPriority, priorityOf, type Grade } from "@/lib/priority";
 import { ExportMenu } from "@/components/ExportMenu";
 import type { Column } from "@/lib/export";
 
 export const dynamic = "force-dynamic";
 
+const GRADE_TOKEN: Record<Grade, string> = {
+  A: "var(--color-mint)",
+  B: "var(--color-cyan)",
+  C: "var(--color-amber)",
+  D: "var(--color-ink-faint)",
+};
+
 const SCORE_COLS: Column[] = [
   { key: "name", label: "Brand" },
   { key: "industry", label: "Industry" },
-  { key: "leadScore", label: "Lead score" },
-  { key: "economicalEfficiency", label: "Econ. efficiency" },
-  { key: "easeOfAccess", label: "Ease of access" },
+  { key: "priority", label: "Priority" },
+  { key: "grade", label: "Grade" },
+  { key: "quadrant", label: "Quadrant" },
+  { key: "opportunity", label: "Opportunity" },
+  { key: "winnability", label: "Winnability" },
+  { key: "ease", label: "Ease" },
+  { key: "expectedValueEur", label: "Expected value (EUR)" },
   { key: "budget", label: "Budget (EUR)" },
-  { key: "tempo", label: "Tempo" },
-  { key: "budgetScore", label: "Budget score" },
+  { key: "adjustedBudget", label: "Budget × confidence (EUR)" },
+  { key: "strategicValue", label: "Strategic value" },
+  { key: "leadScore", label: "Old lead score" },
   { key: "customization", label: "Customization" },
   { key: "accessibility", label: "Accessibility" },
   { key: "receptivity", label: "Receptivity" },
@@ -24,48 +38,47 @@ const SCORE_COLS: Column[] = [
 ];
 
 const MODEL = [
-  { name: "Tempo", desc: "Freshness — months since last contact, inverted. Recent = high.", range: "0–5" },
-  { name: "Budget", desc: "Client budget per event, €0–80k mapped onto the scale.", range: "0–5" },
-  { name: "Customization", desc: "Tailoring effort required (catalog = easy, bespoke = hard).", range: "1–5" },
-  { name: "Accessibility", desc: "How reachable senior decision-makers are.", range: "1–5" },
-  { name: "Receptivity", desc: "How easily the concept is understood.", range: "1–5" },
-  { name: "Alignment", desc: "Fit with OOVIE's five core messages (1 pt each).", range: "1–5" },
+  { name: "Opportunity", desc: "What it is worth: budget × how much evidence backs it, capped at €80k, plus strategic value (max a quarter of the axis).", range: "0–100" },
+  { name: "Winnability", desc: "Whether it closes: stage 45%, freshness 25%, reachable decision-makers 15%, receptivity 15%.", range: "0–100" },
+  { name: "Priority", desc: "√(Opportunity × Winnability). A geometric mean, so weakness on one axis cannot be averaged away by strength on the other.", range: "0–100" },
+  { name: "Ease", desc: "What it costs to run — customization, accessibility, receptivity, alignment. Reported and used to break ties, never blended into priority.", range: "0–100" },
+  { name: "Expected value", desc: "Adjusted budget × stage probability × freshness. Shown in euros beside the priority, never folded into it.", range: "€" },
+  { name: "Strategic value", desc: "0–3 for worth beyond the invoice — a logo, a referral source, a reference case. Capped so it cannot outrank paid work alone.", range: "0–3" },
 ];
 
 export default async function ScoringPage() {
   const scored = await getVisibleScoredBrands();
   // Targeting views rank where to spend effort next, so finished deals are out.
   const live = openLeads(scored);
-  const points: QuadPoint[] = live
-    .map((b) => ({ b, s: effectiveScores(b) }))
-    .filter((r) => r.s?.economicalEfficiency != null && r.s?.easeOfAccess != null)
-    .map(({ b, s }) => ({
-      id: b.id,
-      name: b.name,
-      x: s!.easeOfAccess!,
-      y: s!.economicalEfficiency!,
-      budget: s!.budget ?? 0,
-      color: b.priority ? PRIORITY_TOKEN[b.priority] : "var(--color-ink-faint)",
-    }));
-
-  const ranked = [...live]
-    .map((b) => ({ b, score: leadScore(b) }))
-    .filter((r) => r.score != null)
-    .sort((a, b) => (b.score! - a.score!))
-    .slice(0, 12);
+  const ranked = rankByPriority(live);
+  const points: QuadPoint[] = ranked.map(({ brand, p }) => ({
+    id: brand.id,
+    name: brand.name,
+    x: p.winnability,
+    y: p.opportunity,
+    budget: brand.scores?.budget ?? 0,
+    color: brand.priority ? PRIORITY_TOKEN[brand.priority] : "var(--color-ink-faint)",
+  }));
 
   const scoreRowsFrom = (list: typeof scored): Record<string, unknown>[] =>
     list.map((b) => {
       const s = effectiveScores(b);
+      const p = priorityOf(b);
       return {
         name: b.name,
         industry: b.industry,
-        leadScore: leadScore(b),
-        economicalEfficiency: s?.economicalEfficiency ?? null,
-        easeOfAccess: s?.easeOfAccess ?? null,
+        priority: p?.priority ?? null,
+        grade: p?.grade ?? null,
+        quadrant: p?.quadrant ?? null,
+        opportunity: p ? Math.round(p.opportunity) : null,
+        winnability: p ? Math.round(p.winnability) : null,
+        ease: p ? Math.round(p.ease) : null,
+        expectedValueEur: p ? Math.round(p.expectedValueEur) : null,
         budget: s?.budget ?? null,
-        tempo: s?.tempoScore ?? null,
-        budgetScore: s?.budgetScore ?? null,
+        adjustedBudget: p ? Math.round(p.adjustedBudget) : null,
+        strategicValue: b.strategicValue ?? 0,
+        // Kept for one cycle so the team can see what moved and why.
+        leadScore: leadScore(b),
         customization: s?.customizationScore ?? null,
         accessibility: s?.accessibilityScore ?? null,
         receptivity: s?.receptivityScore ?? null,
@@ -81,8 +94,9 @@ export default async function ScoringPage() {
             <div className="eyebrow mb-2">Model</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Scoring model</h1>
             <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
-              Six sub-scores roll up into <strong>Economical Efficiency</strong> (budget · customization ·
-              tempo) and <strong>Ease of Access</strong> (accessibility · alignment · receptivity).
+              Leads are ranked by <strong>Priority</strong> — what a deal is worth against how likely it is to
+              close. The two are combined with a geometric mean, so being easy can no longer make up for
+              being worthless.
             </p>
           </div>
           <ExportMenu
@@ -124,19 +138,20 @@ export default async function ScoringPage() {
               Where to spend effort next · won and lost deals are excluded
             </p>
             <ol className="space-y-1.5">
-              {ranked.map((r, i) => {
-                const s = effectiveScores(r.b);
-                const q = quadrant(s!.economicalEfficiency!, s!.easeOfAccess!);
-                return (
-                  <li key={r.b.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-[var(--color-surface)]">
-                    <span className="w-5 text-right text-sm text-[var(--color-ink-faint)]">{i + 1}</span>
-                    <span className="flex-1 font-medium">{r.b.name}</span>
-                    <span className="text-xs text-[var(--color-ink-muted)]">{q}</span>
-                    <span className="w-16 text-right text-sm text-[var(--color-ink-muted)]">{r.b.scores?.budget ? eur(r.b.scores.budget) : "—"}</span>
-                    <span className="w-10 text-right font-display font-semibold text-[var(--color-brand-bright)]">{r.score!.toFixed(2)}</span>
-                  </li>
-                );
-              })}
+              {ranked.slice(0, 12).map(({ brand, p }, i) => (
+                <li key={brand.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-[var(--color-surface)]">
+                  <span className="w-5 text-right text-sm text-[var(--color-ink-faint)]">{i + 1}</span>
+                  <span className="flex-1 font-medium">{brand.name}</span>
+                  <span className="text-xs text-[var(--color-ink-muted)]">{p.quadrant}</span>
+                  <span className="w-16 text-right text-sm text-[var(--color-ink-muted)]">
+                    {brand.scores?.budget ? eur(brand.scores.budget) : "—"}
+                  </span>
+                  <Badge color={GRADE_TOKEN[p.grade]}>{p.grade}</Badge>
+                  <span className="w-10 text-right font-display font-semibold tabular-nums text-[var(--color-brand-bright)]">
+                    {p.priority}
+                  </span>
+                </li>
+              ))}
             </ol>
           </div>
         </Reveal>
