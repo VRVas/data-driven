@@ -12,10 +12,21 @@ import type { SavedView } from "@/lib/store/views";
 import { createView, deleteView, type ViewActionState } from "@/app/actions/views";
 import { ExportMenu } from "@/components/ExportMenu";
 import type { Column } from "@/lib/export";
+import type { LeadHealth } from "@/lib/pipeline/health";
 import { useActionState } from "react";
 
 type SortKey = "name" | "status" | "owner" | "industry" | "budget" | "lastContact";
 const SORT_KEYS: SortKey[] = ["name", "status", "owner", "industry", "budget", "lastContact"];
+
+/** The pipeline questions, as filters. */
+const HEALTH_FILTERS = [
+  { key: "all", label: "All" },
+  { key: "lateOnUs", label: "Late on us" },
+  { key: "lateOnThem", label: "Late on them" },
+  { key: "untriaged", label: "Needs an owner" },
+  { key: "stale", label: "Gone quiet" },
+] as const;
+type HealthFilter = (typeof HEALTH_FILTERS)[number]["key"];
 
 const PIPE_COLS: Column[] = [
   { key: "name", label: "Brand" },
@@ -29,6 +40,8 @@ const PIPE_COLS: Column[] = [
   { key: "initialContact", label: "Initial contact" },
   { key: "lastContact", label: "Last contact" },
   { key: "followUpDate", label: "Follow up" },
+  { key: "waitingOn", label: "Waiting on" },
+  { key: "nextStep", label: "Next step" },
   { key: "notes", label: "Notes" },
 ];
 const pipeRows = (list: Brand[]): Record<string, unknown>[] =>
@@ -43,22 +56,27 @@ const pipeRows = (list: Brand[]): Record<string, unknown>[] =>
     budget: b.scores?.budget ?? null,
     initialContact: b.initialContact,
     lastContact: b.lastContact,
-    followUp: b.followUpDate,
+    followUpDate: b.followUpDate,
+    waitingOn: b.waitingOn ?? null,
+    nextStep: b.nextStep ?? null,
     notes: b.notes,
   }));
 
 export function BrandTable({
   brands,
+  health = {},
   canDelete = false,
   views = [],
 }: {
   brands: Brand[];
+  health?: Record<string, LeadHealth>;
   canDelete?: boolean;
   views?: SavedView[];
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("All");
   const [owner, setOwner] = useState<string>("All");
+  const [healthFilter, setHealthFilter] = useState<HealthFilter>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "name", dir: 1 });
   // undefined = closed · null = creating · Brand = editing
   const [editing, setEditing] = useState<Brand | null | undefined>(undefined);
@@ -75,10 +93,12 @@ export function BrandTable({
   const rows = useMemo(() => {
     let r = brands.filter((b) => {
       const hay = `${b.name} ${b.poc ?? ""} ${b.notes ?? ""} ${b.industry ?? ""}`.toLowerCase();
+      const h = health[b.id];
       return (
         hay.includes(q.toLowerCase()) &&
         (status === "All" || b.status === status) &&
-        (owner === "All" || b.owner === owner)
+        (owner === "All" || b.owner === owner) &&
+        (healthFilter === "all" || !!h?.[healthFilter])
       );
     });
     r = [...r].sort((a, b) => {
@@ -93,7 +113,7 @@ export function BrandTable({
       return (av < bv ? -1 : av > bv ? 1 : 0) * sort.dir;
     });
     return r;
-  }, [brands, q, status, owner, sort]);
+  }, [brands, health, q, status, owner, healthFilter, sort]);
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => ({ key, dir: s.key === key && s.dir === 1 ? -1 : 1 }));
@@ -139,6 +159,32 @@ export function BrandTable({
         <SaveViewForm q={q} status={status} owner={owner} sortKey={sort.key} sortDir={sort.dir} />
       </div>
 
+      {/* health filters — the two questions the pipeline view exists to answer */}
+      <div data-tour="pipe-health" className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Health</span>
+        {HEALTH_FILTERS.map((f) => {
+          const count =
+            f.key === "all" ? brands.length : brands.filter((b) => health[b.id]?.[f.key]).length;
+          const active = healthFilter === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setHealthFilter(f.key)}
+              className={clsx(
+                "rounded-full border px-3 py-0.5 text-xs transition-colors",
+                active
+                  ? "border-[var(--color-brand)] bg-[var(--color-brand)]/10 text-[var(--color-ink)]"
+                  : "border-[var(--color-border-strong)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",
+              )}
+            >
+              {f.label} <span className="tabular-nums text-[var(--color-ink-faint)]">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* controls */}
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <input
@@ -169,6 +215,7 @@ export function BrandTable({
             <tr>
               {th("name", "Brand")}
               {th("status", "Status")}
+              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Waiting on</th>
               <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] sm:table-cell">Priority</th>
               {th("owner", "Owner", "hidden lg:table-cell")}
               {th("industry", "Industry", "hidden md:table-cell")}
@@ -180,7 +227,7 @@ export function BrandTable({
           <tbody>
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-12 text-center">
+                <td colSpan={9} className="px-3 py-12 text-center">
                   <p className="text-sm text-[var(--color-ink-muted)]">
                     {brands.length === 0
                       ? "No leads yet — add your first one to start building the pipeline."
@@ -207,6 +254,9 @@ export function BrandTable({
                 </td>
                 <td className="px-3 py-2">
                   {b.status && <Badge color={STATUS_TOKEN[b.status as BrandStatus]}>{b.status}</Badge>}
+                </td>
+                <td className="whitespace-nowrap px-3 py-2">
+                  <WaitingCell health={health[b.id]} />
                 </td>
                 <td className="hidden px-3 py-2 sm:table-cell">
                   {b.priority && <Badge color={PRIORITY_TOKEN[b.priority as Priority]}>{b.priority.replace(" Lead", "")}</Badge>}
@@ -239,8 +289,34 @@ export function BrandTable({
   );
 }
 
-function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {
+/**
+ * Who owes the next move, and how late they are.
+ *
+ * "Waiting" and "late" are shown as one cell because the side alone is not
+ * actionable — it is the overdue days that turn it into a to-do.
+ */
+function WaitingCell({ health }: { health?: LeadHealth }) {
+  if (!health || !health.waitingOn) {
+    return <span className="text-xs text-[var(--color-ink-faint)]">—</span>;
+  }
+  const onUs = health.waitingOn === "us";
+  const late = health.daysLate > 0;
   return (
+    <span className="inline-flex items-center gap-1.5">
+      <Badge color={onUs ? "var(--color-brand)" : "var(--color-ink-faint)"}>{onUs ? "Us" : "Them"}</Badge>
+      {late && (
+        <span
+          className="text-xs font-medium tabular-nums"
+          style={{ color: onUs ? "var(--color-rose)" : "var(--color-amber)" }}
+        >
+          {health.daysLate}d late
+        </span>
+      )}
+    </span>
+  );
+}
+
+function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {  return (
     <label className="flex items-center gap-2 text-sm text-[var(--color-ink-muted)]">
       {label}
       <select

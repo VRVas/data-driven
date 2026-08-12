@@ -110,15 +110,29 @@ describe("healthOf — the two questions the pipeline has to answer", () => {
   });
 
   it("never marks a finished deal late or stale", () => {
-    // A won or lost deal owes nobody anything, however old its dates are.
+    // A won or lost deal owes nobody anything, however old its dates are — and
+    // that includes having no side at all, not just no overdue flag. The
+    // pipeline table renders waitingOn directly, so leaving it set showed a
+    // closed deal as still waiting on us.
     for (const status of ["Deal Closed", "Did not work out"] as const) {
       const h = healthOf(
         lead({ status, waitingOn: "us", followUpDate: ago(200), lastContact: ago(400) }),
         [],
         NOW,
       );
-      expect(h, status).toMatchObject({ lateOnUs: false, lateOnThem: false, stale: false, untriaged: false });
+      expect(h, status).toMatchObject({
+        waitingOn: null,
+        lateOnUs: false,
+        lateOnThem: false,
+        stale: false,
+        untriaged: false,
+      });
     }
+  });
+
+  it("gives a closed deal no side even when a proposal is still out", () => {
+    const h = healthOf(lead({ status: "Deal Closed" }), [proposal({ status: "sent" })], NOW);
+    expect(h.waitingOn).toBeNull();
   });
 
   it("counts an open lead nobody owns as untriaged, not as on us", () => {

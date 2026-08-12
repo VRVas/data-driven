@@ -43,7 +43,13 @@ test.describe("saved views", () => {
     await page.getByRole("button", { name: /save view/i }).click();
     await page.getByPlaceholder("View name").fill("E2E view");
     await page.getByRole("button", { name: /^save$/i }).click();
-    await expect(page.getByRole("button", { name: "E2E view" }).first()).toBeVisible();
+    const chip = page.getByRole("button", { name: "E2E view" }).first();
+    await expect(chip).toBeVisible();
+
+    // Saved views persist per user, so without this every run left another
+    // chip behind and the pipeline header filled up with test debris.
+    await chip.locator("xpath=following-sibling::*[1]").click();
+    await expect(page.getByRole("button", { name: "E2E view" })).toHaveCount(0);
   });
 });
 

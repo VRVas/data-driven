@@ -66,7 +66,12 @@ export function nextActionFor(
 
 export function healthOf(brand: Brand, proposals: Proposal[] = [], now: Date = new Date()): LeadHealth {
   const closed = outcomeOf(brand.status) !== "open";
-  const { waitingOn, dueDate, source } = nextActionFor(brand, proposals);
+  const next = nextActionFor(brand, proposals);
+  // A finished deal owes nobody anything, so it has no side, cannot be late
+  // and cannot go stale — whatever dates it is still carrying.
+  const { waitingOn, dueDate, source } = closed
+    ? { waitingOn: null, dueDate: next.dueDate, source: next.source }
+    : next;
 
   const contactDays = brand.lastContact ? daysUntil(brand.lastContact, now) : Number.NaN;
   const daysSinceContact = Number.isNaN(contactDays) ? null : -contactDays;
@@ -80,7 +85,6 @@ export function healthOf(brand: Brand, proposals: Proposal[] = [], now: Date = n
     dueDate,
     source,
     daysLate,
-    // A finished deal owes nobody anything, so it can never be late or stale.
     lateOnUs: late && waitingOn === "us",
     lateOnThem: late && waitingOn === "them",
     untriaged: !closed && waitingOn === null,
