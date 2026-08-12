@@ -36,8 +36,15 @@ param principalId string = ''
 @description('Chat model to deploy in Azure AI Foundry.')
 param chatModelName string = 'gpt-5.4-mini'
 
-@description('Deployment used when the user turns on "Think deeply". Empty reuses the chat model without reasoning_effort.')
-param reasoningModelName string = ''
+@description('reasoning_effort for "Think deeply". Ordinary asks always send "low".')
+@allowed([
+  'low'
+  'medium'
+  'high'
+  'xhigh'
+  'max'
+])
+param reasoningEffort string = 'high'
 
 @description('Name of the Foundry prompt agent created at deploy time.')
 param agentName string = 'data-driven-copilot'
@@ -64,7 +71,7 @@ module resources 'resources.bicep' = {
     tags: tags
     deployEmail: deployEmail
     chatModelName: chatModelName
-    reasoningModelName: reasoningModelName
+    reasoningEffort: reasoningEffort
     agentName: agentName
     authSecret: authSecret
     deployerPrincipalId: principalId

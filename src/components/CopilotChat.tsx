@@ -509,7 +509,7 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
         <button
           type="button"
           onClick={() => setDeep((v) => !v)}
-          title="Think deeply — route to the reasoning model"
+          title="Think deeply — spend more reasoning effort on this answer"
           aria-pressed={deep}
           data-tour="copilot-reasoning"
           className={

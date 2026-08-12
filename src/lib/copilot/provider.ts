@@ -90,7 +90,7 @@ You reply as live, generative UI — charts, tables, lead cards, callouts — gr
   advance_lead_stage, draft_outreach (drafts only — a human sends).
 · Rankings cover live deals only — won and lost are excluded from "top leads" answers. Say so when it matters, and use pipeline_summary's open* figures for live pipeline.
 · Every tool runs as the person asking. If one comes back saying they lack permission, tell them plainly which capability is missing; do not try another route to the same data.
-Around the chat the user can also: toggle "Think deeply" (routes tough questions to a reasoning model and shows its thinking), tap the mic to ask out loud, press "Listen" to hear answers read aloud (the Luca voice), attach a document to chat with it, and keep conversation history (New chat / resume past chats).
+Around the chat the user can also: toggle "Think deeply" (spends more reasoning effort on the same model and shows its thinking), tap the mic to ask out loud, press "Listen" to hear answers read aloud (the Luca voice), attach a document to chat with it, and keep conversation history (New chat / resume past chats).
 
 # HOW YOU ANSWER
 · Ground every data answer in tool results — never invent leads, numbers, scores, dates or sources. If tools return nothing relevant, say so and suggest the next step.
@@ -537,11 +537,51 @@ class LocalCopilotProvider implements CopilotProvider {
 
 // ---------------------------------------------------------------------------
 // Foundry provider — structured-output blocks via an OpenAI-compatible model,
+// ---------------------------------------------------------------------------
+// Reasoning effort
+//
+// One model, always: COPILOT_MODEL (gpt-5.4-mini). "Think deeply" does not
+// swap models — it raises reasoning_effort on the same deployment, which is
+// all that switch ever meant.
+// ---------------------------------------------------------------------------
+
+/** Documented values; anything else is a typo we should not forward. */
+const EFFORT_VALUES = ["none", "minimal", "low", "medium", "high", "xhigh", "max"] as const;
+export type ReasoningEffort = (typeof EFFORT_VALUES)[number];
+
+/**
+ * Effort for an ordinary ask. Deliberately `low` rather than `minimal`:
+ * minimal disables parallel tool calls, and this copilot is a tool-calling
+ * loop, so it would quietly make every answer slower and worse.
+ */
+export const EFFORT_NORMAL: ReasoningEffort = "low";
+
+/** Effort when the user turns "Think deeply" on. */
+export function deepEffort(): ReasoningEffort {
+  const raw = process.env.COPILOT_REASONING_EFFORT?.trim().toLowerCase();
+  return (EFFORT_VALUES as readonly string[]).includes(raw ?? "") ? (raw as ReasoningEffort) : "high";
+}
+
+export function effortFor(deep: boolean | undefined): ReasoningEffort {
+  return deep ? deepEffort() : EFFORT_NORMAL;
+}
+
+export const copilotModel = () => process.env.COPILOT_MODEL ?? "gpt-5.4-mini";
+
+// ---------------------------------------------------------------------------
 // with a function-calling loop. Activates when COPILOT_CHAT_ENDPOINT is set
 // (keyless via managed identity, or COPILOT_API_KEY). Wired for deploy.
 // ---------------------------------------------------------------------------
 class FoundryCopilotProvider implements CopilotProvider {
   readonly name = "foundry";
+
+  /**
+   * Flipped off for the process if the deployment rejects reasoning_effort.
+   * Some models (gpt-5-chat) answer "Unrecognized request argument" — and since
+   * the parameter now rides on EVERY call, not just deep ones, treating that as
+   * fatal would take the whole copilot down rather than one toggle.
+   */
+  private static effortSupported = true;
 
   private async authHeader(): Promise<Record<string, string>> {
     if (process.env.COPILOT_API_KEY) return { "api-key": process.env.COPILOT_API_KEY };
@@ -550,11 +590,25 @@ class FoundryCopilotProvider implements CopilotProvider {
     return { Authorization: `Bearer ${token?.token ?? ""}` };
   }
 
+  private async post(endpoint: string, headers: Record<string, string>, body: Record<string, unknown>): Promise<Response> {
+    const send = (payload: Record<string, unknown>) =>
+      fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
+
+    const res = await send(body);
+    if (res.ok || res.status !== 400 || !("reasoning_effort" in body)) return res;
+
+    // Only retry for the one error this can cause, so a genuine 400 still surfaces.
+    const detail = await res.clone().text();
+    if (!/reasoning_effort/i.test(detail)) return res;
+
+    FoundryCopilotProvider.effortSupported = false;
+    const { reasoning_effort: _dropped, ...rest } = body;
+    return send(rest);
+  }
+
   async ask(message: string, user: SessionUser, opts: AskOptions = {}): Promise<CopilotTurn> {
     const endpoint = process.env.COPILOT_CHAT_ENDPOINT!;
-    const model = opts.reasoning
-      ? process.env.COPILOT_REASONING_MODEL ?? process.env.COPILOT_MODEL ?? "gpt-5.4-mini"
-      : process.env.COPILOT_MODEL ?? "gpt-5.4-mini";
+    const model = copilotModel();
     const headers = { "content-type": "application/json", ...(await this.authHeader()) };
     const messages: Record<string, unknown>[] = [
       { role: "system", content: SYSTEM_PROMPT },
@@ -570,9 +624,9 @@ class FoundryCopilotProvider implements CopilotProvider {
         tool_choice: "auto",
         response_format: { type: "json_schema", json_schema: blocksResponseSchema() },
       };
-      if (opts.reasoning && process.env.COPILOT_REASONING_MODEL) body.reasoning_effort = "medium";
+      if (FoundryCopilotProvider.effortSupported) body.reasoning_effort = effortFor(opts.reasoning);
 
-      const res = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(body) });
+      const res = await this.post(endpoint, headers, body);
       if (!res.ok) throw new Error(`Foundry model call failed: ${res.status}`);
       const json = (await res.json()) as { choices: { message: Record<string, unknown> }[] };
       const msg = json.choices[0]?.message ?? {};

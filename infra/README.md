@@ -127,8 +127,8 @@ three marked *optional*; they are `azd env set` overrides.
 | Variable | Purpose |
 | --- | --- |
 | `COPILOT_CHAT_ENDPOINT` | OpenAI-compatible chat-completions URL of the deployed model (function-calling + structured-output loop). Unset → local preview. |
-| `COPILOT_MODEL` | Model deployment name (e.g. `gpt-5.4-mini`). |
-| `COPILOT_REASONING_MODEL` | *Optional, off by default.* Set `REASONING_MODEL_NAME` to a deployment that accepts `reasoning_effort`. Leaving it empty means "Think deeply" reuses the chat model **without** `reasoning_effort` — deliberate, because sending that parameter to a model which rejects it fails every deep-think request. |
+| `COPILOT_MODEL` | Model deployment name. Always `gpt-5.4-mini` — there is only ever one model. |
+| `COPILOT_REASONING_EFFORT` | `reasoning_effort` sent when the user turns on **Think deeply** (default `high`, override with `REASONING_EFFORT`). Ordinary asks always send `low`. Never `minimal`: that disables parallel tool calls, and the copilot is a tool-calling loop. If a deployment rejects the parameter outright, the provider drops it and retries once rather than failing the request. |
 | `FOUNDRY_MEMORY_STORE_ID` | *Optional.* Foundry Agent Service **Memory Store** (preview) id for long-term memory. Unset → no long-term memory (threads still persist). |
 | `APP_URL` | Public app URL — the `servers` entry in the OpenAPI doc. Set from the Container Apps environment domain. |
 | `COPILOT_API_KEY` | *Optional.* Only if you register the OpenAPI tool with `x-api-key` auth. **Reads only** — write tools require an in-app user session. Prefer managed identity. |

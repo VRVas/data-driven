@@ -192,7 +192,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard/copilot",
     selector: '[data-tour="copilot-reasoning"]',
     title: "Deep reasoning",
-    body: "Toggle “Think deeply” for tougher questions — the Copilot routes to a reasoning model and shows its step-by-step thinking.",
+    body: "Toggle “Think deeply” for tougher questions — the Copilot spends more reasoning effort and shows its step-by-step thinking.",
     placement: "top",
   },
   {

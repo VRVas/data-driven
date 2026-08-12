@@ -19,11 +19,18 @@ param tags object
 @description('Container image for the web app. azd overrides this after the first build.')
 param webImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
 
-@description('Chat model to deploy in Azure AI Foundry.')
+@description('Chat model to deploy in Azure AI Foundry. One model serves both ordinary and deep asks.')
 param chatModelName string = 'gpt-5.4-mini'
 
-@description('Model used when the user turns on "Think deeply". Leave empty to reuse the chat model WITHOUT reasoning_effort; set it only to a deployment that accepts reasoning_effort, or every deep-think request will fail.')
-param reasoningModelName string = ''
+@description('reasoning_effort sent when the user turns on "Think deeply". Ordinary asks always send "low". Not "minimal" — that disables parallel tool calls, and the copilot is a tool-calling loop.')
+@allowed([
+  'low'
+  'medium'
+  'high'
+  'xhigh'
+  'max'
+])
+param reasoningEffort string = 'high'
 
 @description('Chat model version.')
 param chatModelVersion string = '2026-03-17'
@@ -839,9 +846,7 @@ var emailEnv = deployEmail
     ]
   : []
 
-var reasoningEnv = empty(reasoningModelName)
-  ? []
-  : [ { name: 'COPILOT_REASONING_MODEL', value: reasoningModelName } ]
+var reasoningEnv = [ { name: 'COPILOT_REASONING_EFFORT', value: reasoningEffort } ]
 
 var baseEnv = [
   { name: 'PORT', value: '3000' }
