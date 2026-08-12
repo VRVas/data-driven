@@ -21,6 +21,19 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   experimental: {
     optimizePackageImports: ["gsap"],
+    // Server Actions compare the `origin` header against `x-forwarded-host` to
+    // block CSRF. A dev tunnel (Codespaces, VS Code port forwarding) rewrites
+    // the host, so the two legitimately disagree and every action 500s with
+    // "Invalid Server Actions request". DEV ONLY — in Container Apps the two
+    // already agree, so production keeps the check exactly as it was.
+    ...(process.env.NODE_ENV === "production"
+      ? {}
+      : {
+          serverActions: {
+            // Matched against `new URL(origin).host`, so the port belongs here.
+            allowedOrigins: ["localhost:3000", "127.0.0.1:3000", "*.app.github.dev", "*.githubpreview.dev"],
+          },
+        }),
   },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
