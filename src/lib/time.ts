@@ -28,3 +28,21 @@ export function daysUntil(dateYmd: string, now: Date = new Date()): number {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
   return Math.round((target - today) / 86_400_000);
 }
+
+const MS_PER_MONTH = 30.44 * 86_400_000;
+
+/**
+ * Months between two dates, or null when that cannot be answered honestly.
+ *
+ * A backwards span is rejected rather than returned negative: the sheet has a
+ * lead that closes eleven months before it opens, and feeding that through the
+ * tempo formula clamps to a *perfect* score. A typo should not look like the
+ * fastest deal we ever ran.
+ */
+export function monthsBetween(fromYmd: string | null, toYmd: string | null): number | null {
+  if (!fromYmd || !toYmd) return null;
+  const from = Date.parse(fromYmd);
+  const to = Date.parse(toYmd);
+  if (Number.isNaN(from) || Number.isNaN(to) || to < from) return null;
+  return (to - from) / MS_PER_MONTH;
+}

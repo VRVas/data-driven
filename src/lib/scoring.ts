@@ -1,4 +1,6 @@
-import type { Brand, BrandStatus, Priority, Valuation } from "./types";
+import type { Brand, BrandScores, BrandStatus, Priority, Valuation } from "./types";
+import { outcomeOf } from "./lifecycle";
+import { monthsBetween } from "./time";
 
 /* ------------------------------------------------------------------ */
 /*  Scoring model — reverse-engineered from the workbook's formulas    */
@@ -37,9 +39,51 @@ export function easeOfAccess(s: {
   return v.every((x) => x != null) ? (v as number[]).reduce((a, b) => a + b, 0) / 3 : null;
 }
 
+/**
+ * How long the deal takes — estimated while it runs, measured once it ends.
+ *
+ * Tempo used to mean "months since last contact", which conflated how long a
+ * deal takes with how long we have ignored it. It now means duration: the
+ * estimate someone made when the lead opened ("a slow enterprise, call it
+ * eight months"), replaced by the real elapsed time once the deal closes.
+ * Going cold is a separate signal and lives in pipeline/health.
+ *
+ * The sheet's own `tempoMonths` is the fallback estimate, so a lead nobody has
+ * re-estimated keeps exactly the number it has today.
+ */
+export function effectiveTempoMonths(brand: Brand): { months: number | null; basis: "actual" | "expected" | "none" } {
+  const actual =
+    outcomeOf(brand.status) === "open" ? null : monthsBetween(brand.initialContact, brand.closingFailed);
+  if (actual != null) return { months: actual, basis: "actual" };
+
+  const expected = brand.expectedMonths ?? brand.scores?.tempoMonths ?? null;
+  return expected == null ? { months: null, basis: "none" } : { months: expected, basis: "expected" };
+}
+
+/**
+ * The lead's scores with tempo brought up to date.
+ *
+ * Everything downstream reads through here so there is one score, not a
+ * "sheet score" and a "real score" disagreeing on two pages.
+ */
+export function effectiveScores(brand: Brand): BrandScores | undefined {
+  const s = brand.scores;
+  if (!s) return undefined;
+
+  const { months } = effectiveTempoMonths(brand);
+  if (months == null) return s;
+
+  const tempo = tempoScore(months);
+  if (tempo === s.tempoScore && months === s.tempoMonths) return s;
+
+  const next: BrandScores = { ...s, tempoMonths: months, tempoScore: tempo };
+  next.economicalEfficiency = economicalEfficiency(next) ?? s.economicalEfficiency;
+  return next;
+}
+
 /** Composite lead score (0–5) blending value-efficiency and access. */
 export function leadScore(brand: Brand): number | null {
-  const s = brand.scores;
+  const s = effectiveScores(brand);
   if (!s || s.economicalEfficiency == null || s.easeOfAccess == null) return null;
   return Number((s.economicalEfficiency * 0.55 + s.easeOfAccess * 0.45).toFixed(3));
 }

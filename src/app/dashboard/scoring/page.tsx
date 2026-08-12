@@ -2,7 +2,7 @@ import { Reveal } from "@/components/Reveal";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
 import { getVisibleScoredBrands } from "@/lib/leads/visible";
 import { openLeads } from "@/lib/lifecycle";
-import { PRIORITY_TOKEN, leadScore, quadrant, eur } from "@/lib/scoring";
+import { PRIORITY_TOKEN, leadScore, effectiveScores, quadrant, eur } from "@/lib/scoring";
 import { ExportMenu } from "@/components/ExportMenu";
 import type { Column } from "@/lib/export";
 
@@ -37,13 +37,14 @@ export default async function ScoringPage() {
   // Targeting views rank where to spend effort next, so finished deals are out.
   const live = openLeads(scored);
   const points: QuadPoint[] = live
-    .filter((b) => b.scores?.economicalEfficiency != null && b.scores?.easeOfAccess != null)
-    .map((b) => ({
+    .map((b) => ({ b, s: effectiveScores(b) }))
+    .filter((r) => r.s?.economicalEfficiency != null && r.s?.easeOfAccess != null)
+    .map(({ b, s }) => ({
       id: b.id,
       name: b.name,
-      x: b.scores!.easeOfAccess!,
-      y: b.scores!.economicalEfficiency!,
-      budget: b.scores!.budget ?? 0,
+      x: s!.easeOfAccess!,
+      y: s!.economicalEfficiency!,
+      budget: s!.budget ?? 0,
       color: b.priority ? PRIORITY_TOKEN[b.priority] : "var(--color-ink-faint)",
     }));
 
@@ -54,20 +55,23 @@ export default async function ScoringPage() {
     .slice(0, 12);
 
   const scoreRowsFrom = (list: typeof scored): Record<string, unknown>[] =>
-    list.map((b) => ({
-      name: b.name,
-      industry: b.industry,
-      leadScore: leadScore(b),
-      economicalEfficiency: b.scores?.economicalEfficiency ?? null,
-      easeOfAccess: b.scores?.easeOfAccess ?? null,
-      budget: b.scores?.budget ?? null,
-      tempo: b.scores?.tempoScore ?? null,
-      budgetScore: b.scores?.budgetScore ?? null,
-      customization: b.scores?.customizationScore ?? null,
-      accessibility: b.scores?.accessibilityScore ?? null,
-      receptivity: b.scores?.receptivityScore ?? null,
-      alignment: b.scores?.alignmentScore ?? null,
-    }));
+    list.map((b) => {
+      const s = effectiveScores(b);
+      return {
+        name: b.name,
+        industry: b.industry,
+        leadScore: leadScore(b),
+        economicalEfficiency: s?.economicalEfficiency ?? null,
+        easeOfAccess: s?.easeOfAccess ?? null,
+        budget: s?.budget ?? null,
+        tempo: s?.tempoScore ?? null,
+        budgetScore: s?.budgetScore ?? null,
+        customization: s?.customizationScore ?? null,
+        accessibility: s?.accessibilityScore ?? null,
+        receptivity: s?.receptivityScore ?? null,
+        alignment: s?.alignmentScore ?? null,
+      };
+    });
 
   return (
     <div className="space-y-8">
@@ -121,7 +125,8 @@ export default async function ScoringPage() {
             </p>
             <ol className="space-y-1.5">
               {ranked.map((r, i) => {
-                const q = quadrant(r.b.scores!.economicalEfficiency!, r.b.scores!.easeOfAccess!);
+                const s = effectiveScores(r.b);
+                const q = quadrant(s!.economicalEfficiency!, s!.easeOfAccess!);
                 return (
                   <li key={r.b.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-[var(--color-surface)]">
                     <span className="w-5 text-right text-sm text-[var(--color-ink-faint)]">{i + 1}</span>

@@ -3,11 +3,13 @@
 import { useState } from "react";
 import type { Brand } from "@/lib/types";
 import { toJson, stampName } from "@/lib/export";
+import { effectiveScores } from "@/lib/scoring";
 import { downloadFile, copyText, MIME } from "@/lib/download";
 import { useToast } from "@/components/ui/Toast";
 
 function leadSummaryMarkdown(b: Brand): string {
   const eur = (n: number) => new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+  const scores = effectiveScores(b);
   const rows: (string | null)[] = [
     `# ${b.name}`,
     "",
@@ -18,8 +20,8 @@ function leadSummaryMarkdown(b: Brand): string {
     b.poc ? `- **Point of contact:** ${b.poc}` : null,
     b.email ? `- **Email:** ${b.email}` : null,
     b.scores?.budget != null ? `- **Budget:** ${eur(b.scores.budget)}` : null,
-    b.scores?.economicalEfficiency != null ? `- **Economical efficiency:** ${b.scores.economicalEfficiency}` : null,
-    b.scores?.easeOfAccess != null ? `- **Ease of access:** ${b.scores.easeOfAccess}` : null,
+    scores?.economicalEfficiency != null ? `- **Economical efficiency:** ${scores.economicalEfficiency}` : null,
+    scores?.easeOfAccess != null ? `- **Ease of access:** ${scores.easeOfAccess}` : null,
     b.lastContact ? `- **Last contact:** ${b.lastContact}` : null,
     b.followUpDate ? `- **Follow up:** ${b.followUpDate}` : null,
     b.notes ? `\n**Notes:** ${b.notes}` : null,

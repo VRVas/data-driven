@@ -7,7 +7,7 @@ import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadr
 import { getDataset } from "@/lib/data";
 import { getVisibleBrands } from "@/lib/leads/visible";
 import { openLeads } from "@/lib/lifecycle";
-import { STATUS_TOKEN, PRIORITY_TOKEN, weightedValue } from "@/lib/scoring";
+import { STATUS_TOKEN, PRIORITY_TOKEN, weightedValue, effectiveScores } from "@/lib/scoring";
 import type { BrandStatus } from "@/lib/types";
 
 // Reads the live brand store — render per request (never prerender at build).
@@ -57,13 +57,14 @@ export default async function DashboardOverview() {
   );
 
   const points: QuadPoint[] = openLeads(scored)
-    .filter((b) => b.scores?.economicalEfficiency != null && b.scores?.easeOfAccess != null)
-    .map((b) => ({
+    .map((b) => ({ b, s: effectiveScores(b) }))
+    .filter((r) => r.s?.economicalEfficiency != null && r.s?.easeOfAccess != null)
+    .map(({ b, s }) => ({
       id: b.id,
       name: b.name,
-      x: b.scores!.easeOfAccess!,
-      y: b.scores!.economicalEfficiency!,
-      budget: b.scores!.budget ?? 0,
+      x: s!.easeOfAccess!,
+      y: s!.economicalEfficiency!,
+      budget: s!.budget ?? 0,
       color: b.priority ? PRIORITY_TOKEN[b.priority] : "var(--color-ink-faint)",
     }));
 
