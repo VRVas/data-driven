@@ -18,6 +18,13 @@ services:
 # azd exposes the infra outputs (AZURE_AI_PROJECT_ENDPOINT, AZURE_AI_AGENT_NAME,
 # AZURE_OPENAI_DEPLOYMENT) as environment variables to the hook.
 hooks:
+  # Generates AUTH_SECRET on first provision so `azd up` needs no prep. Not
+  # continueOnError: without a session secret the deployment is not worth doing.
+  preprovision:
+    shell: sh
+    run: ./scripts/preprovision.sh
+    interactive: false
+    continueOnError: false
   postprovision:
     shell: sh
     run: ./scripts/create-agent.sh; ./scripts/create-web-knowledge.sh
