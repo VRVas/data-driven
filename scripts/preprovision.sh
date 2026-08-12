@@ -9,10 +9,22 @@
 #
 # Only ever generated when ABSENT: rotating it would invalidate every existing
 # session on the next deploy.
+#
+# Reads the azd store rather than the ambient environment, because that is what
+# main.parameters.json substitutes ${AUTH_SECRET} from — a stray system variable
+# of the same name would otherwise make this skip generation and leave the
+# parameter empty.
+#
+# Docs: https://learn.microsoft.com/azure/developer/azure-developer-cli/custom-prompts
 # ---------------------------------------------------------------------------
 set -eu
 
-if [ -n "${AUTH_SECRET:-}" ]; then
+existing=""
+if azd env get-value AUTH_SECRET >/dev/null 2>&1; then
+  existing=$(azd env get-value AUTH_SECRET 2>/dev/null || true)
+fi
+
+if [ -n "$existing" ]; then
   echo "AUTH_SECRET already set for this environment — leaving it untouched."
   exit 0
 fi
