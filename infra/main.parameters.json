@@ -25,6 +25,9 @@
     },
     "chatModelName": {
       "value": "${CHAT_MODEL_NAME=gpt-5.4-mini}"
+    },
+    "reasoningModelName": {
+      "value": "${REASONING_MODEL_NAME=}"
     }
   }
 }
