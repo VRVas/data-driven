@@ -49,8 +49,16 @@ test.describe("landing", () => {
 
   test("CTA is gated behind auth when logged out", async ({ page }) => {
     await page.goto("/");
-    await page.getByRole("link", { name: /enter the platform/i }).click();
-    await expect(page).toHaveURL(/\/login/);
+    const cta = page.getByRole("link", { name: /enter the platform/i });
+    // Wait for the link to settle before clicking: the hero animates it in, and
+    // a click dispatched mid-hydration lands on a node React is still swapping.
+    await expect(cta).toBeVisible();
+    await cta.click();
+    // This is a client-side navigation to /dashboard that middleware bounces to
+    // /login, so the URL stays on "/" for the whole round trip. Under a full
+    // suite run that round trip has exceeded the 10s default — the assertion is
+    // unchanged, only the patience.
+    await page.waitForURL(/\/login/, { timeout: 30_000 });
   });
 
   test("has a document title", async ({ page }) => {
