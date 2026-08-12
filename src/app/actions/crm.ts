@@ -6,6 +6,8 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/auth/authorize";
 import { authorizeLead } from "@/lib/leads/visible";
 import { getCrmOverlayStore } from "@/lib/store/crm";
+import { getBrandStore } from "@/lib/store/brands";
+import { confirmBudget } from "@/lib/pipeline/budget";
 import { getCrmGraph } from "@/lib/crm/graph";
 import { logAudit } from "@/lib/store/audit";
 import type { Proposal, ProposalStatus } from "@/lib/crm/types";
@@ -177,6 +179,25 @@ export async function saveProposal(_prev: CrmActionState, formData: FormData): P
     entityId: proposal.id,
     summary: `${existing ? "Updated" : "Added"} proposal for ${deal.name} — €${proposal.value.toLocaleString()} (${status})`,
   });
+
+  // An accepted offer is no longer a guess, so it becomes the lead's confirmed
+  // budget and the estimate is kept alongside it for comparison.
+  if (status === "accepted") {
+    const lead = await getBrandStore().get(input.dealId);
+    const confirmed = lead ? confirmBudget(lead, proposal.value) : null;
+    if (lead && confirmed && confirmed !== lead) {
+      await getBrandStore().save(confirmed);
+      await logAudit({
+        actorId: user.id,
+        actorName: user.name,
+        action: "brand.budget.confirmed",
+        entity: "brand",
+        entityId: lead.id,
+        summary: `Budget for ${lead.name} confirmed at €${proposal.value.toLocaleString()} by an accepted proposal (estimated €${(confirmed.budgetAtOpen ?? 0).toLocaleString()})`,
+      });
+      revalidatePath("/dashboard/scoring");
+    }
+  }
 
   revalidatePath(`/dashboard/pipeline/${input.dealId}`);
   revalidatePath("/dashboard/companies");

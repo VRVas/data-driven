@@ -19,11 +19,15 @@ import {
   STATUS_TOKEN,
   PRIORITY_TOKEN,
   leadScore,
+  effectiveScores,
+  effectiveTempoMonths,
   quadrant,
   weightedValue,
   winProbability,
   eur,
 } from "@/lib/scoring";
+import { healthOf, WAITING_LABEL } from "@/lib/pipeline/health";
+import { budgetVariance } from "@/lib/pipeline/budget";
 import type { BrandStatus, Priority } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -71,8 +75,11 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     dealCount: dealsPerCompany.get(c.id) ?? 0,
   }));
 
-  const s = brand.scores;
+  const s = effectiveScores(brand);
   const score = leadScore(brand);
+  const health = healthOf(brand, crm?.proposals ?? []);
+  const tempo = effectiveTempoMonths(brand);
+  const variance = budgetVariance(brand);
   const q = s?.economicalEfficiency != null && s?.easeOfAccess != null
     ? quadrant(s.economicalEfficiency, s.easeOfAccess)
     : null;
@@ -117,6 +124,79 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <section className="glass p-5">
           <div className="eyebrow mb-2">Pipeline stage</div>
           <QuickStatus brandId={brand.id} current={brand.status} allowed={allowedTransitions(brand.status)} />
+        </section>
+      </Reveal>
+
+      <Reveal>
+        <section className="glass p-6">
+          <div className="eyebrow mb-3">Next move &amp; pace</div>
+          <dl className="grid gap-5 sm:grid-cols-3">
+            <div>
+              <dt className="text-sm text-[var(--color-ink-muted)]">Waiting on</dt>
+              <dd className="mt-1 flex flex-wrap items-center gap-2">
+                {health.waitingOn ? (
+                  <>
+                    <Badge color={health.waitingOn === "us" ? "var(--color-brand)" : "var(--color-ink-faint)"}>
+                      {WAITING_LABEL[health.waitingOn]}
+                    </Badge>
+                    {health.daysLate > 0 && (
+                      <span
+                        className="text-sm font-medium tabular-nums"
+                        style={{ color: health.waitingOn === "us" ? "var(--color-rose)" : "var(--color-amber)" }}
+                      >
+                        {health.daysLate}d late
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-[var(--color-ink-faint)]">nobody yet</span>
+                )}
+              </dd>
+              {brand.nextStep && (
+                <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{brand.nextStep}</p>
+              )}
+            </div>
+
+            <div>
+              <dt className="text-sm text-[var(--color-ink-muted)]">
+                {tempo.basis === "actual" ? "Took" : "Expected to take"}
+              </dt>
+              <dd className="mt-1 font-display text-xl font-semibold tabular-nums">
+                {tempo.months == null ? "—" : `${tempo.months.toFixed(1)} months`}
+              </dd>
+              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+                {tempo.basis === "actual"
+                  ? "measured from first contact to close"
+                  : tempo.months == null
+                    ? "no estimate yet"
+                    : "estimated at open"}
+              </p>
+            </div>
+
+            <div>
+              <dt className="text-sm text-[var(--color-ink-muted)]">Budget</dt>
+              <dd className="mt-1 font-display text-xl font-semibold tabular-nums">
+                {s?.budget == null ? "—" : eur(s.budget)}
+              </dd>
+              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+                {variance ? (
+                  <>
+                    accepted vs {eur(variance.estimated)} estimated{" "}
+                    <span style={{ color: variance.deltaEur >= 0 ? "var(--color-mint)" : "var(--color-rose)" }}>
+                      ({variance.deltaEur >= 0 ? "+" : ""}
+                      {variance.deltaPct == null ? eur(variance.deltaEur) : `${Math.round(variance.deltaPct)}%`})
+                    </span>
+                  </>
+                ) : s?.budget == null ? (
+                  "not set yet"
+                ) : s.assumption === "Confirmed" ? (
+                  "confirmed"
+                ) : (
+                  "estimated at open"
+                )}
+              </p>
+            </div>
+          </dl>
         </section>
       </Reveal>
       {crm && (

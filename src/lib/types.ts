@@ -76,6 +76,8 @@ export interface Brand {
   nextStep?: string | null;
   /** Months the deal is expected to take, estimated when it opened. */
   expectedMonths?: number | null;
+  /** The budget we guessed before an offer was accepted, kept for comparison. */
+  budgetAtOpen?: number | null;
   scored: boolean;
   scores?: BrandScores;
 }

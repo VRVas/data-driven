@@ -98,3 +98,35 @@ test.describe("next move and expected duration", () => {
     await expect(page.locator("input[name='nextStep']")).toHaveValue("Chase legal for sign-off");
   });
 });
+
+test.describe("lead detail — next move and pace", () => {
+  test("shows who owes the move, how long it takes and the budget basis", async ({ page }) => {
+    await page.goto("/dashboard/pipeline/alibaba");
+    const panel = page.locator("section").filter({ hasText: "Next move & pace" }).first();
+    await expect(panel).toBeVisible();
+    await expect(panel.getByText("Waiting on")).toBeVisible();
+    await expect(panel.getByText(/Expected to take|^Took$/)).toBeVisible();
+    await expect(panel.getByText("Budget", { exact: true })).toBeVisible();
+    await page.screenshot({ path: "e2e-artifacts/screens/42-lead-pace.png" });
+  });
+
+  test("an accepted proposal becomes the confirmed budget and keeps the estimate", async ({ page }) => {
+    // Wave 5: the number typed at open is a hypothesis; the accepted offer is
+    // the fact that replaces it.
+    await page.goto("/dashboard/pipeline/alleanza");
+    const panel = page.locator("section").filter({ hasText: "Next move & pace" }).first();
+    await expect(panel).toContainText("estimated");
+
+    await page.goto("/dashboard/companies/co-alleanza");
+    await page.getByRole("button", { name: "New proposal" }).click();
+    await page.locator("input[name='value']").fill("52000");
+    await page.locator("select[name='status']").selectOption("accepted");
+    await page.getByRole("button", { name: "Add proposal" }).click();
+    await expect(page.locator("input[name='value']")).toHaveCount(0);
+
+    await page.goto("/dashboard/pipeline/alleanza");
+    const after = page.locator("section").filter({ hasText: "Next move & pace" }).first();
+    await expect(after).toContainText("accepted vs");
+    await expect(after).toContainText("€52,000");
+  });
+});
