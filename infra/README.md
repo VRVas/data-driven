@@ -225,7 +225,7 @@ credential and populates most variables/secrets), then add the app-specific valu
 | variable | `AZURE_ENV_NAME` / `AZURE_LOCATION` | azd environment + app-tier region (set by `azd pipeline config`) |
 | variable | `AI_LOCATION` | *optional* — AI Foundry region (default `swedencentral`) |
 | variable | `BUDGET_CONTACT_EMAIL` | *optional* — enables the monthly cost alert |
-| secret | `AUTH_SECRET` | Auth.js session secret (`openssl rand -base64 32`) |
+| secret | `AUTH_SECRET` | Auth.js session secret. Locally the preprovision hook generates one; **set it here anyway** — a CI runner starts from a clean checkout, so a generated secret is not carried between runs and every deploy would sign all users out. |
 
 - azd GitHub Actions pipeline: <https://learn.microsoft.com/azure/developer/azure-developer-cli/pipeline-github-actions>
 - OIDC / federated login: <https://learn.microsoft.com/azure/developer/github/connect-from-azure-openid-connect>

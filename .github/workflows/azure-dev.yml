@@ -9,7 +9,12 @@ name: Deploy
 # One-time setup: run `azd pipeline config` locally. It creates the service
 # principal + federated credential and populates most of the GitHub variables
 # and secrets referenced below. Then add these app-specific values yourself:
-#   - secret  AUTH_SECRET            Auth.js session secret (`openssl rand -base64 32`)
+#   - secret  AUTH_SECRET            Auth.js session secret. STRONGLY recommended
+#                                    here even though the preprovision hook can
+#                                    generate one: a CI runner starts from a clean
+#                                    checkout, so a generated secret is not carried
+#                                    between runs and every deploy would sign all
+#                                    users out. Set it once and it is left alone.
 #   - variable BUDGET_CONTACT_EMAIL  optional; enables the monthly cost alert
 #   - variable AI_LOCATION           optional; region for AI Foundry (default swedencentral)
 #
