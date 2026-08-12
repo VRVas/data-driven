@@ -24,11 +24,11 @@ export function bucketFor(days: number): ReminderBucket {
 export function remindersFrom(brands: Brand[], now: Date = new Date(), horizon = 30): Reminder[] {
   const out: Reminder[] = [];
   for (const b of brands) {
-    if (!b.followUp) continue;
+    if (!b.followUpDate) continue;
     if (b.status === "Deal Closed" || b.status === "Did not work out") continue;
-    const days = daysUntil(b.followUp, now);
+    const days = daysUntil(b.followUpDate, now);
     if (Number.isNaN(days) || days > horizon) continue;
-    out.push({ brand: b, date: b.followUp, days, bucket: bucketFor(days) });
+    out.push({ brand: b, date: b.followUpDate, days, bucket: bucketFor(days) });
   }
   return out.sort((a, b) => a.days - b.days);
 }

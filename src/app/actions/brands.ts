@@ -33,7 +33,7 @@ const brandInputSchema = z.object({
   email: z.preprocess(emptyToUndef, z.string().trim().email("Enter a valid email").optional()),
   initialContact: optionalDate,
   lastContact: optionalDate,
-  followUp: optionalDate,
+  followUpDate: optionalDate,
   closingFailed: optionalDate,
   notes: optionalStr,
 });
@@ -85,7 +85,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
       industryRaw: null,
       initialContact: null,
       lastContact: null,
-      followUp: null,
+      followUpDate: null,
       closingFailed: null,
       notes: null,
     };
@@ -103,7 +103,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   brand.email = input.email ?? null;
   brand.initialContact = input.initialContact ?? null;
   brand.lastContact = input.lastContact ?? null;
-  brand.followUp = input.followUp ?? null;
+  brand.followUpDate = input.followUpDate ?? null;
   brand.closingFailed = input.closingFailed ?? null;
   brand.notes = input.notes ?? null;
 

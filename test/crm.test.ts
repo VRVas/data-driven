@@ -264,7 +264,7 @@ describe("timestamp normalisation", () => {
   const lead = (over: Partial<Brand>): Brand => ({
     id: "x", name: "X", aliases: [], scored: false, status: null, priority: null,
     owner: null, poc: null, email: null, industry: null, industryRaw: null,
-    initialContact: null, lastContact: null, followUp: null, closingFailed: null, notes: null,
+    initialContact: null, lastContact: null, followUpDate: null, closingFailed: null, notes: null,
     ...over,
   });
 

@@ -12,7 +12,7 @@ function brand(
   return {
     id, name, aliases: [], scored: scores != null, status,
     priority: null, owner: null, poc: null, email: null, industry: null, industryRaw: null,
-    initialContact: null, lastContact: null, followUp: null, closingFailed: null, notes: null,
+    initialContact: null, lastContact: null, followUpDate: null, closingFailed: null, notes: null,
     scores: scores
       ? {
           tempoMonths: null, tempoScore: null, closing: null, process: null, dealsClosed: null,

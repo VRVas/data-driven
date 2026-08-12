@@ -47,18 +47,18 @@ export function addDays(ymd: string, days: number): string {
  *  - entering "Follow Up" seeds a follow-up a week out when none exists.
  */
 export function statusSideEffects(
-  brand: Pick<Brand, "followUp" | "closingFailed">,
+  brand: Pick<Brand, "followUpDate" | "closingFailed">,
   to: BrandStatus,
   today: string,
-): Partial<Pick<Brand, "lastContact" | "followUp" | "closingFailed">> {
-  const patch: Partial<Pick<Brand, "lastContact" | "followUp" | "closingFailed">> = {
+): Partial<Pick<Brand, "lastContact" | "followUpDate" | "closingFailed">> {
+  const patch: Partial<Pick<Brand, "lastContact" | "followUpDate" | "closingFailed">> = {
     lastContact: today,
   };
   if (to === "Deal Closed" || to === "Did not work out") {
     patch.closingFailed = brand.closingFailed ?? today;
   }
-  if (to === "Follow Up" && !brand.followUp) {
-    patch.followUp = addDays(today, 7);
+  if (to === "Follow Up" && !brand.followUpDate) {
+    patch.followUpDate = addDays(today, 7);
   }
   return patch;
 }

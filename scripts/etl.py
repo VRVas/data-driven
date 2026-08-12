@@ -115,7 +115,7 @@ for r in range(2, op.max_row + 1):
         "industryRaw": clean_str(op.cell(r, 6).value),
         "initialContact": iso(op.cell(r, 7).value, name, "initialContact"),
         "lastContact": iso(op.cell(r, 8).value, name, "lastContact"),
-        "followUp": iso(op.cell(r, 9).value, name, "followUp"),
+        "followUpDate": iso(op.cell(r, 9).value, name, "followUpDate"),
         "closingFailed": iso(op.cell(r, 10).value, name, "closingFailed"),
         "notes": clean_str(op.cell(r, 11).value),
     })

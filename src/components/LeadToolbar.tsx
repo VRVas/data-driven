@@ -21,7 +21,7 @@ function leadSummaryMarkdown(b: Brand): string {
     b.scores?.economicalEfficiency != null ? `- **Economical efficiency:** ${b.scores.economicalEfficiency}` : null,
     b.scores?.easeOfAccess != null ? `- **Ease of access:** ${b.scores.easeOfAccess}` : null,
     b.lastContact ? `- **Last contact:** ${b.lastContact}` : null,
-    b.followUp ? `- **Follow up:** ${b.followUp}` : null,
+    b.followUpDate ? `- **Follow up:** ${b.followUpDate}` : null,
     b.notes ? `\n**Notes:** ${b.notes}` : null,
   ];
   return rows.filter((r) => r !== null).join("\n");

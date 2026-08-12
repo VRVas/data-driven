@@ -29,7 +29,7 @@ export async function snoozeFollowUp(_prev: ReminderActionState, formData: FormD
   await authorizeLead(auth, brand);
 
   const next = addDays(todayYmd(), days);
-  await store.save({ ...brand, followUp: next });
+  await store.save({ ...brand, followUpDate: next });
   await logAudit({
     actorId: user.id,
     actorName: user.name,
@@ -58,7 +58,7 @@ export async function completeFollowUp(_prev: ReminderActionState, formData: For
   if (!brand) return { error: "That lead no longer exists." };
   await authorizeLead(auth, brand);
 
-  await store.save({ ...brand, followUp: null, lastContact: todayYmd() });
+  await store.save({ ...brand, followUpDate: null, lastContact: todayYmd() });
   await logAudit({
     actorId: user.id,
     actorName: user.name,

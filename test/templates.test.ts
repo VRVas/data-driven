@@ -16,7 +16,7 @@ function brand(o: Partial<Brand> = {}): Brand {
     industryRaw: "Tech/Telecom",
     initialContact: null,
     lastContact: null,
-    followUp: null,
+    followUpDate: null,
     closingFailed: null,
     notes: null,
     scored: false,

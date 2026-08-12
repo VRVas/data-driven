@@ -74,7 +74,7 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
               <input type="date" name="lastContact" defaultValue={brand?.lastContact ?? ""} className="auth-input" />
             </FormField>
             <FormField label="Follow up">
-              <input type="date" name="followUp" defaultValue={brand?.followUp ?? ""} className="auth-input" />
+              <input type="date" name="followUpDate" defaultValue={brand?.followUpDate ?? ""} className="auth-input" />
             </FormField>
             <FormField label="Closing / failed">
               <input type="date" name="closingFailed" defaultValue={brand?.closingFailed ?? ""} className="auth-input" />

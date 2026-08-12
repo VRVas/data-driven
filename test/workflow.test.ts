@@ -28,7 +28,7 @@ describe("workflow transitions", () => {
 });
 
 describe("status side effects", () => {
-  const clean = { followUp: null, closingFailed: null };
+  const clean = { followUpDate: null, closingFailed: null };
 
   it("stamps lastContact on any move", () => {
     expect(statusSideEffects(clean, "Early", "2026-07-10").lastContact).toBe("2026-07-10");
@@ -37,13 +37,13 @@ describe("status side effects", () => {
   it("stamps closingFailed when closing or losing, only if empty", () => {
     expect(statusSideEffects(clean, "Deal Closed", "2026-07-10").closingFailed).toBe("2026-07-10");
     expect(
-      statusSideEffects({ followUp: null, closingFailed: "2026-01-01" }, "Did not work out", "2026-07-10").closingFailed,
+      statusSideEffects({ followUpDate: null, closingFailed: "2026-01-01" }, "Did not work out", "2026-07-10").closingFailed,
     ).toBe("2026-01-01");
   });
 
   it("seeds a follow-up a week out when entering Follow Up without one", () => {
-    expect(statusSideEffects(clean, "Follow Up", "2026-07-10").followUp).toBe("2026-07-17");
-    expect(statusSideEffects({ followUp: "2026-08-01", closingFailed: null }, "Follow Up", "2026-07-10").followUp).toBeUndefined();
+    expect(statusSideEffects(clean, "Follow Up", "2026-07-10").followUpDate).toBe("2026-07-17");
+    expect(statusSideEffects({ followUpDate: "2026-08-01", closingFailed: null }, "Follow Up", "2026-07-10").followUpDate).toBeUndefined();
   });
 });
 

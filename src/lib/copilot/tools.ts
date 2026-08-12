@@ -61,7 +61,7 @@ function leadBrief(b: Brand) {
         : null,
     winProbability: winProbability(b.status),
     weightedValueEur: Math.round(weightedValue(b)),
-    followUp: b.followUp,
+    followUp: b.followUpDate,
     lastContact: b.lastContact,
   };
 }
@@ -183,7 +183,7 @@ const getLead: CopilotTool = {
       timeline: {
         initialContact: b.initialContact,
         lastContact: b.lastContact,
-        followUp: b.followUp,
+        followUp: b.followUpDate,
         closingFailed: b.closingFailed,
       },
       scores: b.scores ?? null,
@@ -299,7 +299,7 @@ const listReminders: CopilotTool = {
       reminders: reminders.map((r) => ({
         id: r.brand.id,
         name: r.brand.name,
-        followUp: r.date,
+        followUpDate: r.date,
         days: r.days,
         bucket: r.bucket,
         owner: r.brand.owner,

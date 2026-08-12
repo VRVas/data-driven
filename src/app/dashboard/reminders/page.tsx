@@ -36,12 +36,12 @@ export default async function RemindersPage() {
               filename="reminders"
               columns={[
                 { key: "name", label: "Lead" },
-                { key: "followUp", label: "Follow up" },
+                { key: "followUpDate", label: "Follow up" },
                 { key: "bucket", label: "Bucket" },
                 { key: "days", label: "Days" },
                 { key: "owner", label: "Owner" },
               ]}
-              rows={reminders.map((r) => ({ name: r.brand.name, followUp: r.date, bucket: r.bucket, days: r.days, owner: r.brand.owner }))}
+              rows={reminders.map((r) => ({ name: r.brand.name, followUpDate: r.date, bucket: r.bucket, days: r.days, owner: r.brand.owner }))}
             />
           )}
         </div>

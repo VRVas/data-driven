@@ -30,7 +30,7 @@ function newBrand(id: string): Brand {
   return {
     id, name: id.toUpperCase(), aliases: [], scored: false,
     status: null, priority: null, owner: null, poc: null, email: null, industry: null, industryRaw: null,
-    initialContact: null, lastContact: null, followUp: null, closingFailed: null, notes: null,
+    initialContact: null, lastContact: null, followUpDate: null, closingFailed: null, notes: null,
   };
 }
 
@@ -81,5 +81,34 @@ describe("user store (file)", () => {
     const u = await store.create({ email: "Test@OOVIE.com", name: "T", passwordHash: "h" });
     expect(u.email).toBe("test@oovie.com");
     expect((await store.findByEmail("test@oovie.com"))!.id).toBe(u.id);
+  });
+});
+
+describe("brand legacy-key normalisation", () => {
+  it("carries a pre-rename followUp across to followUpDate", async () => {
+    const { normaliseBrand } = await import("@/lib/store/brands");
+    const legacy = { id: "x", name: "X", followUp: "2026-09-01" } as unknown as Brand;
+    const fixed = normaliseBrand(legacy);
+    expect(fixed.followUpDate).toBe("2026-09-01");
+    // Dropped, so the next save heals the record rather than keeping both.
+    expect("followUp" in fixed).toBe(false);
+  });
+
+  it("does not overwrite a value already written under the new key", async () => {
+    const { normaliseBrand } = await import("@/lib/store/brands");
+    const both = { id: "x", name: "X", followUp: "2026-01-01", followUpDate: "2026-09-01" } as unknown as Brand;
+    expect(normaliseBrand(both).followUpDate).toBe("2026-09-01");
+  });
+
+  it("leaves an already-migrated record untouched", async () => {
+    const { normaliseBrand } = await import("@/lib/store/brands");
+    const current = { id: "x", name: "X", followUpDate: "2026-09-01" } as unknown as Brand;
+    expect(normaliseBrand(current)).toBe(current);
+  });
+
+  it("turns a legacy null into an explicit null rather than dropping the field", async () => {
+    const { normaliseBrand } = await import("@/lib/store/brands");
+    const legacy = { id: "x", name: "X", followUp: null } as unknown as Brand;
+    expect(normaliseBrand(legacy).followUpDate).toBeNull();
   });
 });

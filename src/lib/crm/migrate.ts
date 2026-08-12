@@ -99,7 +99,7 @@ export function migrateBrands(
       email: brand.email,
       initialContact: brand.initialContact,
       lastContact: brand.lastContact,
-      followUpDate: brand.followUp,
+      followUpDate: brand.followUpDate,
       closingFailed: brand.closingFailed,
       notes: brand.notes,
       scored: brand.scored,

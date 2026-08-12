@@ -28,7 +28,7 @@ const PIPE_COLS: Column[] = [
   { key: "budget", label: "Budget (EUR)" },
   { key: "initialContact", label: "Initial contact" },
   { key: "lastContact", label: "Last contact" },
-  { key: "followUp", label: "Follow up" },
+  { key: "followUpDate", label: "Follow up" },
   { key: "notes", label: "Notes" },
 ];
 const pipeRows = (list: Brand[]): Record<string, unknown>[] =>
@@ -43,7 +43,7 @@ const pipeRows = (list: Brand[]): Record<string, unknown>[] =>
     budget: b.scores?.budget ?? null,
     initialContact: b.initialContact,
     lastContact: b.lastContact,
-    followUp: b.followUp,
+    followUp: b.followUpDate,
     notes: b.notes,
   }));
 

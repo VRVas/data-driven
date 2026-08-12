@@ -7,6 +7,21 @@ import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 const SEED = (datasetJson as unknown as Dataset).brands;
 
+/**
+ * Records written before `followUp` became `followUpDate` still carry the old
+ * key. Reading through this is what stops a rename silently dropping every
+ * follow-up date already in Cosmos; the old key is discarded so the next save
+ * heals the record.
+ */
+export function normaliseBrand(raw: Brand): Brand {
+  const legacy = raw as Brand & { followUp?: string | null };
+  if (legacy.followUp === undefined) return raw;
+  const { followUp, ...rest } = legacy;
+  return { ...rest, followUpDate: rest.followUpDate ?? followUp ?? null };
+}
+
+const normaliseAll = (rows: Brand[]): Brand[] => rows.map(normaliseBrand);
+
 export interface BrandStore {
   list(): Promise<Brand[]>;
   get(id: string): Promise<Brand | null>;
@@ -23,7 +38,7 @@ const BRANDS_FILE = path.join(DATA_DIR, "brands.json");
 class LocalBrandStore implements BrandStore {
   private async readAll(): Promise<Brand[]> {
     try {
-      return JSON.parse(await fs.readFile(BRANDS_FILE, "utf8")) as Brand[];
+      return normaliseAll(JSON.parse(await fs.readFile(BRANDS_FILE, "utf8")) as Brand[]);
     } catch {
       await this.writeAll(SEED); // first run: seed from the cleaned dataset
       return SEED;
@@ -38,8 +53,7 @@ class LocalBrandStore implements BrandStore {
   }
   async get(id: string): Promise<Brand | null> {
     return (await this.readAll()).find((b) => b.id === id) ?? null;
-  }
-  async save(brand: Brand): Promise<Brand> {
+  }  async save(brand: Brand): Promise<Brand> {
     const all = await this.readAll();
     const i = all.findIndex((b) => b.id === brand.id);
     if (i >= 0) all[i] = brand;
@@ -70,7 +84,7 @@ class CosmosBrandStore implements BrandStore {
     // cleaned dataset so production matches dev. Cosmos is private (VNet-only),
     // so seeding through the app is the only way to populate it. Upsert by id
     // makes this idempotent and safe across concurrent replicas.
-    if (resources.length > 0 || CosmosBrandStore.seeded) return resources;
+    if (resources.length > 0 || CosmosBrandStore.seeded) return normaliseAll(resources);
     CosmosBrandStore.seeded = true;
     await Promise.all(SEED.map((b) => c.items.upsert<Brand>(b)));
     return SEED;
@@ -78,7 +92,7 @@ class CosmosBrandStore implements BrandStore {
   async get(id: string): Promise<Brand | null> {
     try {
       const { resource } = await this.container().item(id, id).read<Brand>();
-      return resource ?? null;
+      return resource ? normaliseBrand(resource) : null;
     } catch {
       return null;
     }

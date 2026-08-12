@@ -43,7 +43,7 @@ function brand(partial: Partial<Brand["scores"]> & { status?: Brand["status"] } 
   return {
     id: "x", name: "X", aliases: [], scored: true, status,
     priority: null, owner: null, poc: null, email: null, industry: null, industryRaw: null,
-    initialContact: null, lastContact: null, followUp: null, closingFailed: null, notes: null,
+    initialContact: null, lastContact: null, followUpDate: null, closingFailed: null, notes: null,
     scores: {
       tempoMonths: null, tempoScore: null, closing: null, process: null, dealsClosed: null,
       budget: null, assumption: null, budgetScore: null, customizationScore: null,

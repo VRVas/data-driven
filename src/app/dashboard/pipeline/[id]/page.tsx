@@ -37,10 +37,10 @@ const SUB_SCORES: { key: keyof NonNullable<import("@/lib/types").Brand["scores"]
   { key: "alignmentScore", label: "Alignment" },
 ];
 
-const TIMELINE: { key: "initialContact" | "lastContact" | "followUp" | "closingFailed"; label: string }[] = [
+const TIMELINE: { key: "initialContact" | "lastContact" | "followUpDate" | "closingFailed"; label: string }[] = [
   { key: "initialContact", label: "Initial contact" },
   { key: "lastContact", label: "Last contact" },
-  { key: "followUp", label: "Follow up" },
+  { key: "followUpDate", label: "Follow up" },
   { key: "closingFailed", label: "Closing / failed" },
 ];
 

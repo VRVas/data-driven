@@ -57,7 +57,7 @@ export interface Brand {
   industryRaw: string | null;
   initialContact: string | null;
   lastContact: string | null;
-  followUp: string | null;
+  followUpDate: string | null;
   closingFailed: string | null;
   notes: string | null;
   scored: boolean;
