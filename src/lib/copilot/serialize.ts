@@ -52,6 +52,26 @@ function blockToMarkdown(block: Block): string {
       return block.leads
         .map((l) => `- **${l.name}** — ${[l.status, l.score != null ? `score ${l.score}` : null].filter(Boolean).join(", ")}`)
         .join("\n");
+    case "companyCard":
+      return `- **${block.name}** — ${[
+        block.industry,
+        block.openDealCount != null ? `${block.openDealCount} open` : null,
+        block.lifetimeValueEur != null ? `lifetime ${eur(block.lifetimeValueEur)}` : null,
+        block.repeatValueEur ? `repeat ${eur(block.repeatValueEur)}` : null,
+      ]
+        .filter(Boolean)
+        .join(", ")}`;
+    case "scoreBreakdown":
+      return [
+        `**${block.name} — priority ${block.priority}${block.grade ? ` (${block.grade})` : ""}**`,
+        `- Opportunity: ${Math.round(block.opportunity)}`,
+        `- Winnability: ${Math.round(block.winnability)}`,
+        `- √(${Math.round(block.opportunity)} × ${Math.round(block.winnability)}) = ${block.priority}`,
+        block.ease != null ? `- Ease: ${Math.round(block.ease)} (reported, never blended in)` : null,
+        ...(block.drivers ?? []).map((d) => `- ${d.label}: ${d.detail}`),
+      ]
+        .filter(Boolean)
+        .join("\n");
     case "comparison":
       return block.items
         .map((it) => `**${it.title}**\n${it.metrics.map((m) => `- ${m.label}: ${m.value}`).join("\n")}`)
@@ -109,6 +129,14 @@ export function blocksToSpeech(blocks: Block[]): string {
         break;
       case "leadGrid":
         parts.push(block.leads.map((l) => l.name).join(", "));
+        break;
+      case "companyCard":
+        parts.push(`${block.name}${block.openDealCount != null ? `, ${block.openDealCount} open deals` : ""}`);
+        break;
+      case "scoreBreakdown":
+        parts.push(
+          `${block.name} scores ${block.priority}, from opportunity ${Math.round(block.opportunity)} and winnability ${Math.round(block.winnability)}.`,
+        );
         break;
       case "recommendation":
         parts.push(`Recommendation: ${block.title}. ${block.rationale}`);

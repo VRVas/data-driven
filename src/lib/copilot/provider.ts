@@ -32,9 +32,13 @@ A lead (brand) has: name, status, priority, owner, point of contact (POC), email
 · Statuses (pipeline stages): Still to open → Early → Follow Up → Advanced → Deal Closed, plus Recurring, Back to Attack and Did not work out.
 · Priorities: Hot, Warm, Cold.
 · Industries: Financial/Finance, FMCG, Fashion, Tech/Telecom, Automotive, Consultancy/Professional Services, Fair, Other.
+· NEXT MOVE: every lead records waitingOn — 'us' (we owe them a reply: a proposal, an answer) or 'them' (they owe us: feedback, a decision, and the date is when we should chase) — plus nextStep in plain words. Where nobody has said, it is INFERRED: a proposal out for decision means them, a lone follow-up date means us, and neither means UNTRIAGED, which is reported as its own number rather than guessed. Late on us is a backlog; late on them is a chase list; they are different work and must never be merged into one "overdue" figure.
+· PACE: expectedMonths is how long someone thought the deal would take when it opened; once it closes the real elapsed time replaces it. That is what "tempo" means — duration, NOT how long since we last spoke. Going quiet is a separate signal (freshness / stale).
+· BUDGET: the figure typed at the start is a hypothesis. Accepting a proposal writes that offer onto the lead as a Confirmed budget and keeps the original estimate in budgetAtOpen, so estimate-versus-accepted can be compared.
+· STRATEGIC VALUE: 0–3 for worth beyond the invoice (a logo, a referral source, a reference case), with the reason chosen from a fixed list. Capped at a quarter of the opportunity axis so a free project stays visible without outranking paid work.
 · Above the leads sits a company → deal → proposal model: a lead IS a deal (one engagement), and a company can have several deals with us over time, so the client relationship is tracked separately from any single engagement.
 · A company rolls up lifetime value (everything ever won) and repeatValue — what the relationship earned beyond its first win, i.e. genuine repeat business.
-· Proposals are their own records (value, revision, sent/accepted/rejected), so "how much is out awaiting a decision" and the win rate are real money and real outcomes rather than inferred from a stage; only the newest sent revision of a deal counts, so a re-quote is never double counted.
+· Proposals are their own records (value, revision, sent/accepted/rejected), so "how much is out awaiting a decision" and the win rate are real money and real outcomes rather than inferred from a stage; only the newest revision of a deal counts, so a re-quote is never double counted.
 
 # SCORING MODEL (be able to explain this precisely)
 Leads are ranked by PRIORITY, a 0–100 score built from two axes that are kept apart on purpose.
@@ -48,15 +52,17 @@ The six 0–5 sub-scores still exist as inputs: Tempo (now the deal's expected o
 
 # SECTIONS (all under /dashboard)
 · Overview — headline KPIs (total pipeline, probability-weighted value, deals closed, % of pipeline scored), the stage funnel, the priority quadrant and the industry scorecard.
-· Pipeline — the full, editable lead list (the Brands Operative tab, live). Search by brand/POC/notes; filter by status and owner; add or edit leads; save named views; export; click a brand to open its detail page (full score breakdown, activity/audit, outreach history and one-click status transitions).
-· Scoring — the transparent weighted model above, explained.
+· Pipeline — the full, editable lead list, led by four health headlines: Late on us, Late on them, € Awaiting greenlight, and how many open leads nobody owns. Each is also a filter, and a Waiting-on column shows the side and how many days overdue. Search by brand/POC/notes; filter by status and owner; add or edit leads; save named views; export; click a brand for its detail page (priority breakdown, next move & pace, company card, activity, outreach history, one-click stage transitions).
+· Companies — the client relationship: every deal ever run with a company, repeat revenue, proposals, and a possible-duplicates card for human review.
+· Scoring — the two-axis priority model above, explained in full.
 · Industries — per-segment analysis plus the Sales Strategy playbook (what each industry needs and how to pitch it).
 · Whitespace — market penetration vs. total addressable market, an opportunity map and market sizing, to show where to expand.
-· Data Quality — continuous checks that flag missing fields, unscored leads and stale contacts.
+· Data Quality — continuous checks that flag missing fields, unscored leads, stale contacts and rows whose imported outcome contradicts their stage.
+· Reminders, Outbox, Activity, Team, Access — reached from the top bar.
 · Copilot — this chat.
 
 # FEATURES & HOW TO USE THEM
-· Roles: admins vs members. The first registered user becomes admin. Admins approve and send outreach, delete leads, and see the Team page and Activity (audit trail); members can edit leads and draft outreach. Roles are managed on the Team page (top-bar people icon, admins only).
+· Permissions: access is granular, not just admin-vs-member. There are ~44 permissions across ten categories (leads, proposals, outreach, reminders, analysis, audit, team, access, copilot, export), each either a simple on/off or scoped to none / own / team / all. They are bundled into PROFILES — Administrator, Sales manager, Sales rep, Operations & analysis, Read only — which an admin assigns on the Access page, with per-user grants or denials on top; a denial always wins. Someone can hold "see every lead" alongside "change only mine", and both the screens and these tools honour that. If a user asks why they cannot do something, the answer is which permission or scope they lack — never suggest a workaround.
 · Reminders: follow-up dates become reminders — a bell in the top bar counts what's due today; the Reminders inbox lists everything with snooze and done.
 · Outreach & Outbox: on a lead, "Reach out" composes an email from a template; a member's message becomes "pending approval"; an admin reviews and sends it from the Outbox (top-bar envelope). Nothing is sent without approval.
 · Audit trail: every change is logged with who/what/when on the Activity page (admins only).
@@ -66,14 +72,20 @@ The six 0–5 sub-scores still exist as inputs: Tempo (now the deal's expected o
 · Guided tour: the "?" button in the top bar replays the interactive product tour.
 
 # YOUR CAPABILITIES (the Copilot)
-You reply as live, generative UI — charts, tables, lead cards, callouts — grounded in real data via tools:
-· Reads: search_leads, get_lead, explain_score, pipeline_summary, top_opportunities, list_reminders, search_companies, get_company, proposal_pipeline.
-· Leads/deals are individual engagements (search_leads, get_lead); companies are the client relationship and its repeat business (search_companies, get_company — which also accepts a lead id). Money sent out and proposal win rates come from proposal_pipeline.
-· Rankings cover live deals only — won and lost leads are excluded from "top leads" style answers. Say so when it matters, and use pipeline_summary's open* figures when describing live pipeline.
-· Writes (role-gated, always logged, surfaced as buttons — never silent): advance_lead_stage; draft_outreach (drafts only — an admin sends).
-· search_documents — answer from files the user has uploaded to this chat.
-· web_search — live public web (Grounding with Bing) for market/industry/company research and current events.
-Around the chat the user can also: toggle "Think deeply" (routes tough questions to a reasoning model and shows its thinking), tap the mic to ask out loud (speech-to-text) and press "Listen" to hear answers read aloud (the Luca voice), attach a document to chat with it, and keep conversation history (New chat / resume past chats).
+You reply as live, generative UI — charts, tables, lead cards, callouts — grounded in real data via tools. Never guess a number a tool can give you.
+· Leads: search_leads (ranked by priority), get_lead (full detail: priority breakdown, next move, pace, budget outlook, company), explain_score (why it ranks there), pipeline_summary.
+· Triage: pipeline_health — who owes the next move and who is late; ask it for 'us' when someone says "what do I owe?", 'them' for a chase list, 'untriaged' for leads nobody owns, 'stale' for gone quiet.
+· Money: proposal_pipeline (totals and the real proposal win rate), money_at_risk (the queue of sent proposals going cold, oldest first), budget_accuracy (what we guessed vs what was accepted).
+· Relationships: search_companies, get_company (accepts a lead id too), duplicate_companies (suggestions for human review, never act on them alone).
+· Pace and hygiene: tempo_report (estimated vs actual deal duration), data_quality (what is missing or contradictory), lead_history (audit trail for one lead), outreach_status (the outbox).
+· Market: top_opportunities (industry whitespace), search_documents (files the user attached), web_search (live public web via Grounding with Bing).
+· Writes — permission-checked, record-scoped, always logged, and surfaced as buttons rather than done silently:
+  set_next_move (who owes what, by when), complete_follow_up, snooze_follow_up,
+  record_proposal (adds a revision; accepting one confirms the lead's budget),
+  set_strategic_value, link_deal_to_company, advance_lead_stage, draft_outreach (drafts only — a human sends).
+· Rankings cover live deals only — won and lost are excluded from "top leads" answers. Say so when it matters, and use pipeline_summary's open* figures for live pipeline.
+· Every tool runs as the person asking. If one comes back saying they lack permission, tell them plainly which capability is missing; do not try another route to the same data.
+Around the chat the user can also: toggle "Think deeply" (routes tough questions to a reasoning model and shows its thinking), tap the mic to ask out loud, press "Listen" to hear answers read aloud (the Luca voice), attach a document to chat with it, and keep conversation history (New chat / resume past chats).
 
 # HOW YOU ANSWER
 · Ground every data answer in tool results — never invent leads, numbers, scores, dates or sources. If tools return nothing relevant, say so and suggest the next step.
@@ -81,7 +93,9 @@ Around the chat the user can also: toggle "Think deeply" (routes tough questions
 · For questions about the platform itself — what it is, how to use it, its features, the scoring methodology, or where to find something — answer directly and accurately from the overview above; you do not need a tool for those.
 · When you use web_search, base the answer on its result and always finish with a \`sources\` block (title + url), keeping any inline [n] markers aligned to it.
 · You act as the signed-in user and respect their permissions. You may DRAFT outreach but never send it. Surface write actions as buttons; never perform them silently.
-· Compose every answer as an ordered array of typed UI blocks (heading, text, metrics, chart, table, leadCard/leadGrid, callout, recommendation, list, timeline, sources, actions) — not plain prose. Be concise, concrete and decision-oriented: lead with the answer, then the evidence.`;
+· Compose every answer as an ordered array of typed UI blocks (heading, text, metrics, chart, table, leadCard/leadGrid, companyCard, scoreBreakdown, callout, recommendation, list, timeline, sources, actions) — not plain prose. Be concise, concrete and decision-oriented: lead with the answer, then the evidence.
+· Pick the block that fits the question: scoreBreakdown whenever you explain why a lead ranks where it does (it shows both axes and that ease is excluded); companyCard for a client relationship rather than a single deal; table for a work queue; actions to offer a write rather than describing one.
+· When a write would answer the request, offer it as an actions block instead of doing it silently — the user presses the button.`;
 
 const eur = (n: number) => new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
@@ -136,19 +150,25 @@ class LocalCopilotProvider implements CopilotProvider {
       const d = await run("explain_score", { id: lead.id });
       if (!d || d.scored === false) return done([b.callout(`**${lead.name}** hasn't been scored yet.`, "warning")]);
       const s = d.subScores as Record<string, number>;
-      const opp = d.opportunity as { score: number; adjustedBudgetEur: number } | null;
-      const win = d.winnability as { score: number } | null;
+      const opp = d.opportunity as { score: number; adjustedBudgetEur: number; note: string } | null;
+      const win = d.winnability as { score: number; note: string } | null;
       return done(
         [
-          b.heading(lead.name, {
-            eyebrow: "Priority breakdown",
-            subtitle: `Priority ${d.priorityScore} · grade ${d.grade} · ${d.quadrant}`,
+          b.scoreBreakdown({
+            id: lead.id,
+            name: lead.name,
+            priority: Number(d.priorityScore ?? 0),
+            grade: (d.grade as string) ?? null,
+            quadrant: (d.quadrant as string) ?? null,
+            opportunity: opp?.score ?? 0,
+            winnability: win?.score ?? 0,
+            ease: (d.ease as number) ?? null,
+            expectedValueEur: (d.expectedValueEur as number) ?? null,
+            drivers: [
+              opp ? { label: "Opportunity", detail: opp.note } : null,
+              win ? { label: "Winnability", detail: win.note } : null,
+            ].filter((x): x is { label: string; detail: string } => x !== null),
           }),
-          b.metrics([
-            { label: "Opportunity", value: String(opp?.score ?? "—"), tone: "cyan" },
-            { label: "Winnability", value: String(win?.score ?? "—"), tone: "mint" },
-            { label: "Priority", value: String(d.priorityScore ?? "—"), tone: "brand" },
-          ]),
           b.chart("progress", {
             title: "Six sub-scores (0–5)",
             max: 5,
@@ -272,6 +292,82 @@ class LocalCopilotProvider implements CopilotProvider {
           ),
         ],
         "Rank industries by opportunity score, chart them, table approached vs untapped, then recommend the leader.",
+      );
+    }
+
+    // who owes the next move / what am I late on
+    if (/(late|overdue|owe|chase|waiting on|behind|to.?do|my work|triage|gone (quiet|cold)|stale)/.test(m)) {
+      const side = /(chase|waiting on them|they owe|remind them)/.test(m)
+        ? "them"
+        : /(untriaged|no owner|nobody)/.test(m)
+          ? "untriaged"
+          : /(gone (quiet|cold)|stale)/.test(m)
+            ? "stale"
+            : /(i owe|we owe|on us|reply|respond|my work|to.?do)/.test(m)
+              ? "us"
+              : undefined;
+      const d = await run("pipeline_health", side ? { side } : {});
+      if (!d) return done([b.callout("Couldn't read pipeline health.", "warning")]);
+      const leads = (d.leads ?? []) as Record<string, unknown>[];
+      return done(
+        [
+          b.heading("Pipeline health", { eyebrow: "Triage", subtitle: `${d.openLeads} open leads` }),
+          b.metrics([
+            { label: "Late on us", value: String(d.lateOnUs), tone: "rose" },
+            { label: "Late on them", value: String(d.lateOnThem), tone: "amber" },
+            { label: "Awaiting greenlight", value: `€${Number(d.awaitingGreenlightEur).toLocaleString()}`, tone: "cyan" },
+            { label: "Needs an owner", value: String(d.untriaged) },
+          ]),
+          leads.length
+            ? b.table(
+                [
+                  { key: "name", label: "Lead" },
+                  { key: "waitingOn", label: "Owes" },
+                  { key: "daysLate", label: "Days late", align: "right", kind: "number" },
+                  { key: "nextStep", label: "Next step" },
+                ],
+                leads.map((l) => ({
+                  name: String(l.name ?? ""),
+                  waitingOn: l.waitingOn === "us" ? "us" : l.waitingOn === "them" ? "them" : "—",
+                  daysLate: Number(l.daysLate ?? 0),
+                  nextStep: String(l.nextStep ?? "—"),
+                })),
+              )
+            : b.callout("Nothing is overdue on that filter.", "success"),
+        ],
+        "Read pipeline health, separate what we owe from what they owe, then list the overdue queue.",
+      );
+    }
+
+    // money sitting with clients
+    if (/(awaiting|greenlight|green light|sent.*(proposal|quote)|proposal.*(out|sent)|at risk|money.*(wait|out))/.test(m)) {
+      const d = await run("money_at_risk", {});
+      if (!d) return done([b.callout("Couldn't read the proposal queue.", "warning")]);
+      const rows = (d.proposals ?? []) as Record<string, unknown>[];
+      return done(
+        [
+          b.heading("Awaiting a greenlight", {
+            eyebrow: "Money",
+            subtitle: `${d.count} proposals · €${Number(d.totalEur).toLocaleString()}`,
+          }),
+          rows.length
+            ? b.table(
+                [
+                  { key: "name", label: "Lead" },
+                  { key: "valueEur", label: "Value", align: "right", kind: "currency" },
+                  { key: "daysWaiting", label: "Waiting", align: "right", kind: "number" },
+                  { key: "sentAt", label: "Sent" },
+                ],
+                rows.map((r) => ({
+                  name: String(r.name ?? ""),
+                  valueEur: Number(r.valueEur ?? 0),
+                  daysWaiting: Number(r.daysWaiting ?? 0),
+                  sentAt: String(r.sentAt ?? "—"),
+                })),
+              )
+            : b.callout("Nothing is sitting with a client unanswered.", "success"),
+        ],
+        "Pull the queue of sent proposals with no answer, oldest first.",
       );
     }
 

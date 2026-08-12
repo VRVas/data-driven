@@ -14,6 +14,8 @@ export function blocksResponseSchema() {
       "metrics{items:[{label,value,unit?,delta?,tone?}]} · table{columns:[{key,label,align?,kind?}],rows:[{}]} · " +
       "chart{variant(bar|donut|scatter|line|progress),title?,series?:[{label,value,tone?}],points?:[{x,y,label?,size?,tone?}],max?} · " +
       "leadCard/leadGrid{leads:[{id,name,status?,score?,budgetEur?,quadrant?}]} · " +
+      "companyCard{id,name,industry?,owner?,openDealCount?,wonDealCount?,lifetimeValueEur?,repeatValueEur?} · " +
+      "scoreBreakdown{name,priority,grade?,quadrant?,opportunity,winnability,ease?,expectedValueEur?,drivers?:[{label,detail}]} · " +
       "recommendation{title,rationale,confidence?} · list{style,items} · timeline{events:[{date?,label,done?}]} · " +
       "sources{title?,items:[{n?,title,url}]} · " +
       "actions{actions:[{label,tool,args?,style?}]}",
@@ -23,6 +25,7 @@ export function blocksResponseSchema() {
         enum: [
           "heading", "text", "reasoning", "callout", "divider", "metrics", "table",
           "keyValue", "list", "badges", "chart", "leadCard", "leadGrid",
+          "companyCard", "scoreBreakdown",
           "comparison", "recommendation", "timeline", "actions", "sources",
         ],
       },
@@ -52,6 +55,17 @@ export function blocksResponseSchema() {
       score: { type: "number" },
       budgetEur: { type: "number" },
       quadrant: { type: "string" },
+      grade: { type: "string" },
+      opportunity: { type: "number" },
+      winnability: { type: "number" },
+      ease: { type: "number" },
+      expectedValueEur: { type: "number" },
+      drivers: { type: "array" },
+      owner: { type: "string" },
+      openDealCount: { type: "number" },
+      wonDealCount: { type: "number" },
+      lifetimeValueEur: { type: "number" },
+      repeatValueEur: { type: "number" },
     },
     required: ["type"],
     additionalProperties: true,

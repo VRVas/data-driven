@@ -7,6 +7,7 @@ import { getBrandStore } from "@/lib/store/brands";
 import { authorizeLead } from "@/lib/leads/visible";
 import { logAudit } from "@/lib/store/audit";
 import { addDays, todayYmd } from "@/lib/workflow";
+import { completeFollowUp as complete, snoozeFollowUp as snooze } from "@/lib/leads/followups";
 
 export type ReminderActionState = { ok?: boolean; error?: string } | undefined;
 
@@ -29,7 +30,7 @@ export async function snoozeFollowUp(_prev: ReminderActionState, formData: FormD
   await authorizeLead(auth, brand);
 
   const next = addDays(todayYmd(), days);
-  await store.save({ ...brand, followUpDate: next });
+  await store.save(snooze(brand, days));
   await logAudit({
     actorId: user.id,
     actorName: user.name,
@@ -58,7 +59,7 @@ export async function completeFollowUp(_prev: ReminderActionState, formData: For
   if (!brand) return { error: "That lead no longer exists." };
   await authorizeLead(auth, brand);
 
-  await store.save({ ...brand, followUpDate: null, lastContact: todayYmd() });
+  await store.save(complete(brand));
   await logAudit({
     actorId: user.id,
     actorName: user.name,

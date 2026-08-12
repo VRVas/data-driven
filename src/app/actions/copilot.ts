@@ -3,6 +3,7 @@
 import { requirePermission } from "@/lib/auth/authorize";
 import { getCopilotProvider, type AskOptions } from "@/lib/copilot/provider";
 import { runTool } from "@/lib/copilot/dispatch";
+import { COPILOT_TOOLS } from "@/lib/copilot/tools";
 import { wantsReasoning } from "@/lib/copilot/stream";
 import { logAudit } from "@/lib/store/audit";
 import { b, type Block } from "@/lib/copilot/blocks";
@@ -52,12 +53,17 @@ export interface ActionResult {
 
 // Only mutating tools may be triggered from an action button (navigation
 // pseudo-tools like open_lead/open_outbox are handled client-side).
-const ACTIONABLE = new Set(["draft_outreach", "advance_lead_stage"]);
+/**
+ * Any write tool can back an action button. Derived from the registry rather
+ * than listed here, so a new write tool is not silently unclickable — its own
+ * permission and record scope are enforced inside runTool either way.
+ */
+const isActionable = (tool: string) => COPILOT_TOOLS.some((t) => t.name === tool && t.write);
 
-/** Execute an interactive action block button. Role-gated + audited via the tool layer. */
+/** Execute an interactive action block button. Permission-gated + audited via the tool layer. */
 export async function runCopilotAction(tool: string, args: Record<string, unknown> = {}): Promise<ActionResult> {
   const { user } = await requirePermission("copilot:tool:write");
-  if (!ACTIONABLE.has(tool)) return { ok: false, blocks: [b.callout("That action isn't available.", "warning")], error: "not actionable" };
+  if (!isActionable(tool)) return { ok: false, blocks: [b.callout("That action isn't available.", "warning")], error: "not actionable" };
 
   const run = await runTool(tool, args, user);
   const d = run.data as Record<string, unknown> | undefined;
@@ -78,6 +84,35 @@ export async function runCopilotAction(tool: string, args: Record<string, unknow
   }
   if (tool === "advance_lead_stage") {
     return { ok: true, blocks: [b.callout(`Moved to ${d?.status}.`, "success")] };
+  }
+  if (tool === "set_next_move") {
+    const owed = d?.waitingOn === "us" ? "us" : d?.waitingOn === "them" ? "them" : "nobody";
+    return { ok: true, blocks: [b.callout(`Next move on ${d?.name}: ${owed}${d?.followUpDate ? ` by ${d.followUpDate}` : ""}.`, "success")] };
+  }
+  if (tool === "record_proposal") {
+    const confirmed = d?.confirmedBudget as { accepted: number } | null | undefined;
+    return {
+      ok: true,
+      blocks: [
+        b.callout(
+          `Recorded revision ${d?.revision} for ${d?.name} — €${Number(d?.valueEur ?? 0).toLocaleString()} (${d?.status})${confirmed ? `. Budget confirmed at €${confirmed.accepted.toLocaleString()}.` : ""}`,
+          "success",
+          "Proposal recorded",
+        ),
+      ],
+    };
+  }
+  if (tool === "complete_follow_up") {
+    return { ok: true, blocks: [b.callout(`Follow-up for ${d?.name} marked done.`, "success")] };
+  }
+  if (tool === "snooze_follow_up") {
+    return { ok: true, blocks: [b.callout(`${d?.name} will come back on ${d?.followUpDate}.`, "success")] };
+  }
+  if (tool === "set_strategic_value") {
+    return { ok: true, blocks: [b.callout(`Strategic value for ${d?.name} set to ${d?.strategicValue}.`, "success")] };
+  }
+  if (tool === "link_deal_to_company") {
+    return { ok: true, blocks: [b.callout(`Linked to ${d?.companyName}.`, "success")] };
   }
   return { ok: true, blocks: [b.callout("Done.", "success")] };
 }

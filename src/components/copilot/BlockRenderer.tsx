@@ -96,6 +96,10 @@ function BlockView({
           ))}
         </div>
       );
+    case "companyCard":
+      return <CompanyCard company={block} />;
+    case "scoreBreakdown":
+      return <ScoreBreakdown block={block} />;
     case "comparison":
       return <Comparison items={block.items} />;
     case "recommendation":
@@ -335,8 +339,112 @@ function LeadCard({ lead }: { lead: LeadCardData }) {
   );
 }
 
-function Comparison({ items }: { items: Extract<Block, { type: "comparison" }>["items"] }) {
+const eur0 = (n: number) =>
+  new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
+
+/**
+ * A client relationship, not an engagement. Repeat revenue leads because it is
+ * the number a single deal card can never show.
+ */
+function CompanyCard({ company }: { company: Extract<Block, { type: "companyCard" }> }) {
+  const stat = (label: string, value: string) => (
+    <div>
+      <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">{label}</div>
+      <div className="mt-0.5 tabular-nums text-[var(--color-ink)]">{value}</div>
+    </div>
+  );
   return (
+    <Link
+      href={`/dashboard/companies/${company.id}`}
+      className="block rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 transition-colors hover:border-[var(--color-brand)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="truncate font-medium">{company.name}</div>
+          <div className="mt-0.5 truncate text-xs text-[var(--color-ink-muted)]">
+            {[company.industry, company.owner].filter(Boolean).join(" · ") || "—"}
+          </div>
+        </div>
+        {company.repeatValueEur != null && company.repeatValueEur > 0 && (
+          <span className="shrink-0 rounded-full border border-[var(--color-mint)] px-2 py-0.5 text-[10px] text-[var(--color-mint)]">
+            repeat client
+          </span>
+        )}
+      </div>
+      <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+        {stat("Open deals", String(company.openDealCount ?? 0))}
+        {stat("Won", String(company.wonDealCount ?? 0))}
+        {stat("Lifetime", company.lifetimeValueEur != null ? eur0(company.lifetimeValueEur) : "—")}
+        {stat("Repeat", company.repeatValueEur != null ? eur0(company.repeatValueEur) : "—")}
+      </div>
+    </Link>
+  );
+}
+
+/**
+ * How a priority was arrived at. The two axes are shown side by side with the
+ * ease index visibly outside the calculation, because "easy" inflating the
+ * ranking is the exact flaw this model replaced.
+ */
+function ScoreBreakdown({ block }: { block: Extract<Block, { type: "scoreBreakdown" }> }) {
+  const axis = (label: string, value: number, tone: string) => (
+    <div>
+      <div className="flex items-baseline justify-between">
+        <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">{label}</span>
+        <span className="tabular-nums text-sm" style={{ color: tone }}>{Math.round(value)}</span>
+      </div>
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-[var(--color-border)]">
+        <div className="h-full rounded-full" style={{ width: `${Math.max(0, Math.min(100, value))}%`, background: tone }} />
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="font-medium">{block.name}</div>
+          <div className="mt-0.5 text-xs text-[var(--color-ink-muted)]">
+            {[block.grade ? `grade ${block.grade}` : null, block.quadrant].filter(Boolean).join(" · ")}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="font-display text-2xl font-semibold tabular-nums text-[var(--color-brand-bright)]">
+            {block.priority}
+          </div>
+          <div className="font-mono text-[10px] uppercase tracking-[0.12em] text-[var(--color-ink-faint)]">priority</div>
+        </div>
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {axis("Opportunity", block.opportunity, "var(--color-amber)")}
+        {axis("Winnability", block.winnability, "var(--color-cyan)")}
+      </div>
+      <p className="mt-2 text-xs text-[var(--color-ink-muted)]">
+        √({Math.round(block.opportunity)} × {Math.round(block.winnability)}) = {block.priority}
+      </p>
+
+      {(block.ease != null || block.expectedValueEur != null) && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-ink-muted)]">
+          {block.ease != null && <span>Ease {Math.round(block.ease)} — reported, never blended in</span>}
+          {block.expectedValueEur != null && <span className="tabular-nums">Expected value {eur0(block.expectedValueEur)}</span>}
+        </div>
+      )}
+
+      {block.drivers && block.drivers.length > 0 && (
+        <ul className="mt-3 space-y-1 text-xs text-[var(--color-ink-muted)]">
+          {block.drivers.map((d, i) => (
+            <li key={i}>
+              <span className="text-[var(--color-ink)]">{d.label}</span> — {d.detail}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function Comparison({ items }: { items: Extract<Block, { type: "comparison" }>["items"] }) {  return (
     <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
       {items.map((it, i) => (
         <div key={i} className="glass p-4">

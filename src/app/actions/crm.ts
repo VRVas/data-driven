@@ -1,16 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { requirePermission } from "@/lib/auth/authorize";
 import { authorizeLead } from "@/lib/leads/visible";
 import { getCrmOverlayStore } from "@/lib/store/crm";
-import { getBrandStore } from "@/lib/store/brands";
-import { confirmBudget } from "@/lib/pipeline/budget";
 import { getCrmGraph } from "@/lib/crm/graph";
+import { recordProposal } from "@/lib/crm/proposals";
 import { logAudit } from "@/lib/store/audit";
-import type { Proposal, ProposalStatus } from "@/lib/crm/types";
+import type { ProposalStatus } from "@/lib/crm/types";
 
 export type CrmActionState = { ok?: boolean; error?: string } | undefined;
 
@@ -137,66 +135,41 @@ export async function saveProposal(_prev: CrmActionState, formData: FormData): P
   // A proposal belongs to a deal, so the deal's owner decides who may write it.
   await authorizeLead(auth, deal);
 
-  const existing = input.id ? graph.proposals.find((p) => p.id === input.id) : null;
-  if (input.id && !existing) return { error: "That proposal no longer exists." };
+  const wasEdit = !!input.id;
+  const result = await recordProposal(
+    {
+      id: input.id,
+      dealId: input.dealId,
+      value: input.value,
+      status: input.status as ProposalStatus,
+      sentAt: input.sentAt,
+      validUntil: input.validUntil,
+      notes: input.notes,
+    },
+    user,
+  );
+  if ("error" in result) return { error: result.error };
+  const { proposal, confirmedBudget } = result;
 
-  const status = input.status as ProposalStatus;
-  const now = todayIso();
-  const decided = status === "accepted" || status === "rejected" || status === "expired";
-  const revision =
-    existing?.revision ??
-    graph.proposals.filter((p) => p.dealId === input.dealId).reduce((max, p) => Math.max(max, p.revision), 0) + 1;
-
-  const proposal: Proposal = {
-    id: existing?.id ?? `pr-${input.dealId}-${randomUUID().slice(0, 8)}`,
-    type: "proposal",
-    companyId: deal.companyId,
-    schemaVersion: 2,
-    createdAt: existing?.createdAt ?? now,
-    updatedAt: now,
-    dealId: input.dealId,
-    revision,
-    value: input.value,
-    currency: "EUR",
-    status,
-    // A sent proposal keeps a send date — "waiting since" depends on it — but
-    // on any other status an emptied field means the user cleared it, the way
-    // validUntil below already behaves.
-    sentAt: input.sentAt || (status === "sent" ? (existing?.sentAt ?? now) : null),
-    decidedAt: decided ? (existing?.decidedAt ?? now) : null,
-    validUntil: input.validUntil || null,
-    notes: input.notes || null,
-    createdById: existing?.createdById ?? user.id,
-    createdByName: existing?.createdByName ?? user.name,
-  };
-
-  await getCrmOverlayStore().saveProposal(proposal);
   await logAudit({
     actorId: user.id,
     actorName: user.name,
-    action: existing ? "proposal.update" : "proposal.create",
+    action: wasEdit ? "proposal.update" : "proposal.create",
     entity: "proposal",
     entityId: proposal.id,
-    summary: `${existing ? "Updated" : "Added"} proposal for ${deal.name} — €${proposal.value.toLocaleString()} (${status})`,
+    summary: `${wasEdit ? "Updated" : "Added"} proposal for ${deal.name} — €${proposal.value.toLocaleString()} (${proposal.status})`,
   });
 
-  // An accepted offer is no longer a guess, so it becomes the lead's confirmed
-  // budget and the estimate is kept alongside it for comparison.
-  if (status === "accepted") {
-    const lead = await getBrandStore().get(input.dealId);
-    const confirmed = lead ? confirmBudget(lead, proposal.value) : null;
-    if (lead && confirmed && confirmed !== lead) {
-      await getBrandStore().save(confirmed);
-      await logAudit({
-        actorId: user.id,
-        actorName: user.name,
-        action: "brand.budget.confirmed",
-        entity: "brand",
-        entityId: lead.id,
-        summary: `Budget for ${lead.name} confirmed at €${proposal.value.toLocaleString()} by an accepted proposal (estimated €${(confirmed.budgetAtOpen ?? 0).toLocaleString()})`,
-      });
-      revalidatePath("/dashboard/scoring");
-    }
+  if (confirmedBudget) {
+    await logAudit({
+      actorId: user.id,
+      actorName: user.name,
+      action: "brand.budget.confirmed",
+      entity: "brand",
+      entityId: input.dealId,
+      summary: `Budget for ${deal.name} confirmed at €${confirmedBudget.accepted.toLocaleString()} by an accepted proposal (estimated €${(confirmedBudget.estimated ?? 0).toLocaleString()})`,
+    });
+    revalidatePath("/dashboard/scoring");
   }
 
   revalidatePath(`/dashboard/pipeline/${input.dealId}`);

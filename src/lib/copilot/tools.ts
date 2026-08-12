@@ -9,13 +9,14 @@ import { answerFromDocuments } from "@/lib/copilot/documents";
 import { groundedWebAnswer, isWebGroundingConfigured } from "@/lib/copilot/websearch";
 import { getDocRegistryStore } from "@/lib/store/documents";
 import { logAudit } from "@/lib/store/audit";
-import { leadScore, weightedValue, winProbability } from "@/lib/scoring";
+import { leadScore, weightedValue, winProbability, effectiveTempoMonths } from "@/lib/scoring";
 import { priorityOf } from "@/lib/priority";
 import { openLeads, outcomeOf } from "@/lib/lifecycle";
 import { opportunityScore, penetration, whitespace } from "@/lib/tam";
-import { getCrmGraph, getCompanyDetail, getPipelineMoney } from "@/lib/crm/graph";
+import { getCrmGraph, getCompanyDetail, getDealWithCompany, getPipelineMoney } from "@/lib/crm/graph";
 import { proposalsWithStatus, currentProposals } from "@/lib/crm/logic";
-import { pipelineHealth, withHealth } from "@/lib/pipeline/health";
+import { pipelineHealth, withHealth, healthOf } from "@/lib/pipeline/health";
+import { budgetVariance } from "@/lib/pipeline/budget";
 import { can } from "@/lib/auth/authorize";
 import type { PermissionKey } from "@/lib/auth/catalogue";
 import type { Company } from "@/lib/crm/types";
@@ -25,6 +26,7 @@ import { renderTemplate, DEFAULT_TEMPLATE_ID, OUTREACH_TEMPLATES } from "@/lib/m
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import type { Brand, BrandStatus } from "@/lib/types";
 import type { SessionUser } from "@/lib/auth/guards";
+import { EXTRA_TOOLS } from "./tools-extra";
 
 export interface ToolContext {
   user: SessionUser;
@@ -75,8 +77,11 @@ function leadBrief(b: Brand) {
     expectedValueEur: p ? Math.round(p.expectedValueEur) : null,
     // The old 0-5 average, kept for one cycle so "why did this move?" is answerable.
     legacyLeadScore: leadScore(b),
+    strategicValue: b.strategicValue ?? 0,
     winProbability: winProbability(b.status),
     weightedValueEur: Math.round(weightedValue(b)),
+    waitingOn: b.waitingOn ?? null,
+    nextStep: b.nextStep ?? null,
     followUpDate: b.followUpDate,
     lastContact: b.lastContact,
   };
@@ -185,7 +190,8 @@ const searchLeads: CopilotTool = {
 const getLead: CopilotTool = {
   name: "get_lead",
   permission: "lead:read",
-  description: "Get the full detail of a single lead by id, including scores, timeline and outreach count.",
+  description:
+    "Full detail of one lead: priority breakdown, who owes the next move and how overdue it is, expected or measured deal duration, estimated versus accepted budget, the company it belongs to, timeline, scores and outreach count.",
   parameters: {
     type: "object",
     properties: { id: { type: "string", description: "Lead id (slug), e.g. 'alibaba'" } },
@@ -195,17 +201,51 @@ const getLead: CopilotTool = {
     const { id } = z.object({ id: z.string().min(1) }).parse(args);
     const b = await visibleLead(id);
     if (!b) return { found: false, id };
-    const outreach = await getOutreachStore().listForBrand(id);
+    const [outreach, crm] = await Promise.all([
+      getOutreachStore().listForBrand(id),
+      getDealWithCompany(id),
+    ]);
+    const health = healthOf(b, crm?.proposals ?? []);
+    const tempo = effectiveTempoMonths(b);
+    const variance = budgetVariance(b);
     return {
       found: true,
       ...leadBrief(b),
       aliases: b.aliases,
       notes: b.notes,
       email: b.email,
+      strategicReason: b.strategicReason ?? null,
+      nextMove: {
+        waitingOn: health.waitingOn,
+        basis: health.source,
+        dueDate: health.dueDate,
+        daysLate: health.daysLate,
+        lateOnUs: health.lateOnUs,
+        lateOnThem: health.lateOnThem,
+        daysSinceContact: health.daysSinceContact,
+        goneQuiet: health.stale,
+      },
+      pace: {
+        months: tempo.months == null ? null : Number(tempo.months.toFixed(1)),
+        basis: tempo.basis,
+        note:
+          tempo.basis === "actual"
+            ? "measured from first contact to close"
+            : "estimated when the lead opened",
+      },
+      budgetOutlook: variance
+        ? {
+            estimatedEur: variance.estimated,
+            acceptedEur: variance.actual,
+            deltaEur: variance.deltaEur,
+            deltaPct: variance.deltaPct == null ? null : Math.round(variance.deltaPct),
+          }
+        : { estimatedEur: b.scores?.budget ?? null, acceptedEur: null, deltaEur: null, deltaPct: null },
+      company: crm ? { id: crm.company.id, name: crm.company.name, dealCount: crm.company.rollup.openDealCount } : null,
       timeline: {
         initialContact: b.initialContact,
         lastContact: b.lastContact,
-        followUp: b.followUpDate,
+        followUpDate: b.followUpDate,
         closingFailed: b.closingFailed,
       },
       scores: b.scores ?? null,
@@ -684,6 +724,7 @@ const webSearch: CopilotTool = {
 };
 
 export const COPILOT_TOOLS: CopilotTool[] = [
+  ...EXTRA_TOOLS,
   searchLeads,
   getLead,
   explainScore,

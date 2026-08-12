@@ -47,6 +47,23 @@ const leadShape = z.object({
 });
 export type LeadCardData = z.infer<typeof leadShape>;
 
+/** A client relationship, which is a different shape from a single engagement. */
+const companyShape = z.object({
+  id: z.string(),
+  name: z.string(),
+  industry: z.string().nullish(),
+  owner: z.string().nullish(),
+  openDealCount: z.number().nullish(),
+  wonDealCount: z.number().nullish(),
+  openPipelineEur: z.number().nullish(),
+  lifetimeValueEur: z.number().nullish(),
+  /** Won beyond the first deal — the number that shows a relationship compounding. */
+  repeatValueEur: z.number().nullish(),
+  dealWinRate: z.number().nullish(),
+  lastContact: z.string().nullish(),
+});
+export type CompanyCardData = z.infer<typeof companyShape>;
+
 // --- Block variants -------------------------------------------------------
 const headingBlock = z.object({
   type: z.literal("heading"),
@@ -149,6 +166,30 @@ const leadGridBlock = z.object({
   leads: z.array(leadShape).max(9),
 });
 
+const companyCardBlock = companyShape.extend({ type: z.literal("companyCard") });
+
+/**
+ * Why a lead ranks where it does.
+ *
+ * Priority is a geometric mean of two axes with a third deliberately left out,
+ * which a bare number cannot convey — and "we need to understand how the
+ * scoring works" was the original complaint.
+ */
+const scoreBreakdownBlock = z.object({
+  type: z.literal("scoreBreakdown"),
+  id: z.string().nullish(),
+  name: z.string(),
+  priority: z.number(),
+  grade: z.string().nullish(),
+  quadrant: z.string().nullish(),
+  opportunity: z.number(),
+  winnability: z.number(),
+  /** Reported beside the axes, never folded into the score. */
+  ease: z.number().nullish(),
+  expectedValueEur: z.number().nullish(),
+  drivers: z.array(z.object({ label: z.string(), detail: z.string() })).max(6).nullish(),
+});
+
 const comparisonBlock = z.object({
   type: z.literal("comparison"),
   items: z
@@ -214,6 +255,8 @@ export const BlockSchema = z.discriminatedUnion("type", [
   chartBlock,
   leadCardBlock,
   leadGridBlock,
+  companyCardBlock,
+  scoreBreakdownBlock,
   comparisonBlock,
   recommendationBlock,
   timelineBlock,
@@ -277,6 +320,11 @@ export const b = {
   }),
   leadCard: (lead: LeadCardData): Block => ({ type: "leadCard", ...lead }),
   leadGrid: (leads: LeadCardData[]): Block => ({ type: "leadGrid", leads }),
+  companyCard: (company: CompanyCardData): Block => ({ type: "companyCard", ...company }),
+  scoreBreakdown: (input: Omit<Extract<Block, { type: "scoreBreakdown" }>, "type">): Block => ({
+    type: "scoreBreakdown",
+    ...input,
+  }),
   comparison: (items: z.infer<typeof comparisonBlock>["items"]): Block => ({ type: "comparison", items }),
   recommendation: (title: string, rationale: string, confidence?: number): Block => ({
     type: "recommendation",
