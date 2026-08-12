@@ -300,6 +300,41 @@ class LocalCopilotProvider implements CopilotProvider {
       );
     }
 
+    // "what am I allowed to do" — must precede the triage route below, whose
+    // `to.?do` pattern otherwise swallows "allowed TO DO".
+    if (/(what (can|am) i|allowed to|permission|my access|why can'?t i|am i able)/.test(m)) {
+      const d = await run("what_can_i_do", {});
+      if (!d) return done([b.callout("Couldn't read your permissions.", "warning")]);
+      const byCategory = (d.byCategory ?? {}) as Record<string, Array<{ label: string; scope: string }>>;
+      const rows = Object.entries(byCategory).flatMap(([category, items]) =>
+        items.map((i) => ({ category, capability: i.label, over: i.scope })),
+      );
+      return done(
+        [
+          b.heading("What you can do", {
+            eyebrow: "Permissions",
+            subtitle: d.superuser ? "Superuser — everything" : `${d.grantedCount} of ${d.totalCount} permissions`,
+          }),
+          b.keyValue([
+            { label: "Signed in as", value: String(d.user ?? "—") },
+            { label: "Profiles", value: (d.profiles as string[])?.join(", ") || "none" },
+          ]),
+          rows.length
+            ? b.table(
+                [
+                  { key: "category", label: "Area" },
+                  { key: "capability", label: "You can" },
+                  { key: "over", label: "Over" },
+                ],
+                rows,
+              )
+            : b.callout("No permissions granted — ask an admin to assign you a profile.", "warning"),
+          b.callout(String(d.note ?? ""), "insight"),
+        ],
+        "Report the caller's own permissions and where they come from, rather than the catalogue in the abstract.",
+      );
+    }
+
     // "what should I do today" — the queue, not the diagnosis
     if (/(what should i|what do i|where do i start|my day|today|priorit(y|ies) today|work queue|next actions?)/.test(m)) {
       const d = await run("my_work_queue", {});

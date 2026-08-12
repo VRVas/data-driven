@@ -246,6 +246,31 @@ test.describe("copilot planning tools", () => {
   });
 });
 
+/**
+ * The starter prompts are the first thing anyone clicks, so each one has to
+ * reach the tool it advertises. Intent routing is regex-ordered and the
+ * patterns overlap — "allowed TO DO" was being captured by the triage route's
+ * `to.?do` before the permissions route existed.
+ */
+test.describe("copilot starter prompts route to the right tool", () => {
+  const cases: Array<{ prompt: string; tool: string }> = [
+    { prompt: "What should I do today?", tool: "my_work_queue" },
+    { prompt: "What am I allowed to do?", tool: "what_can_i_do" },
+    { prompt: "What's at risk of going cold?", tool: "money_at_risk" },
+    { prompt: "Summarise the pipeline", tool: "pipeline_summary" },
+  ];
+
+  for (const { prompt, tool } of cases) {
+    test(`"${prompt}" runs ${tool}`, async ({ page }) => {
+      await page.goto("/dashboard/copilot");
+      await page.getByPlaceholder("Ask about the pipeline…").fill(prompt);
+      await page.getByRole("button", { name: "Ask" }).click();
+      // The chat names the tool it ran, so this asserts the route, not the prose.
+      await expect(page.getByText(tool).first()).toBeVisible({ timeout: 20_000 });
+    });
+  }
+});
+
 test.describe("copilot tool gating", () => {
   test("an unknown tool is a 404, not a silent success", async ({ request }) => {
     const res = await request.post("/api/copilot/tools/no_such_tool", { data: {} });

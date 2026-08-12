@@ -21,10 +21,11 @@ interface Msg {
 }
 
 const SUGGESTIONS = [
+  "What should I do today?",
   "Summarise the pipeline",
-  "Top hot leads to call this week",
+  "What's at risk of going cold?",
   "Why is Alibaba scored that way?",
-  "Where's our biggest untapped market?",
+  "What am I allowed to do?",
   "Move Alibaba to the next stage",
 ];
 

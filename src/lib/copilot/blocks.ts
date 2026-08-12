@@ -307,6 +307,7 @@ export const b = {
     caption?: string,
   ): Block => ({ type: "table", columns, rows, caption: caption ?? null }),
   list: (items: string[], style: "bullet" | "ordered" | "check" = "bullet"): Block => ({ type: "list", style, items }),
+  keyValue: (items: z.infer<typeof keyValueBlock>["items"]): Block => ({ type: "keyValue", items }),
   badges: (items: { label: string; tone?: Tone | null }[]): Block => ({ type: "badges", items }),
   chart: (variant: z.infer<typeof chartBlock>["variant"], data: Partial<z.infer<typeof chartBlock>>): Block => ({
     type: "chart",
