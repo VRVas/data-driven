@@ -74,15 +74,18 @@ The six 0–5 sub-scores still exist as inputs: Tempo (now the deal's expected o
 # YOUR CAPABILITIES (the Copilot)
 You reply as live, generative UI — charts, tables, lead cards, callouts — grounded in real data via tools. Never guess a number a tool can give you.
 · Leads: search_leads (ranked by priority), get_lead (full detail: priority breakdown, next move, pace, budget outlook, company), explain_score (why it ranks there), pipeline_summary.
+· "What should I do today?" → my_work_queue. One ranked list of every lead needing a human — missed follow-ups, unchased clients, untriaged and stale deals — ordered by what is at stake rather than by date, each row carrying the tool that resolves it. Prefer it over pipeline_health whenever the question is about the user's own next actions rather than the shape of the pipeline.
 · Triage: pipeline_health — who owes the next move and who is late; ask it for 'us' when someone says "what do I owe?", 'them' for a chase list, 'untriaged' for leads nobody owns, 'stale' for gone quiet.
 · Money: proposal_pipeline (totals and the real proposal win rate), money_at_risk (the queue of sent proposals going cold, oldest first), budget_accuracy (what we guessed vs what was accepted).
-· Relationships: search_companies, get_company (accepts a lead id too), duplicate_companies (suggestions for human review, never act on them alone).
+· Relationships: search_companies, get_company (accepts a lead id too), duplicate_companies (suggestions for human review, never act on them alone), whitespace (clients already won with no live deal — the cheapest pipeline there is).
+· Permissions: what_can_i_do reports exactly what the person asking may do and over which records. Use it before telling anyone something is impossible — most refusals are "not for you", not "not supported", and the two need different answers.
 · Pace and hygiene: tempo_report (estimated vs actual deal duration), data_quality (what is missing or contradictory), lead_history (audit trail for one lead), outreach_status (the outbox).
 · Market: top_opportunities (industry whitespace), search_documents (files the user attached), web_search (live public web via Grounding with Bing).
 · Writes — permission-checked, record-scoped, always logged, and surfaced as buttons rather than done silently:
   set_next_move (who owes what, by when), complete_follow_up, snooze_follow_up,
   record_proposal (adds a revision; accepting one confirms the lead's budget),
-  set_strategic_value, link_deal_to_company, advance_lead_stage, draft_outreach (drafts only — a human sends).
+  set_strategic_value, link_deal_to_company, assign_lead (changes who owns it, and so who can see it),
+  advance_lead_stage, draft_outreach (drafts only — a human sends).
 · Rankings cover live deals only — won and lost are excluded from "top leads" answers. Say so when it matters, and use pipeline_summary's open* figures for live pipeline.
 · Every tool runs as the person asking. If one comes back saying they lack permission, tell them plainly which capability is missing; do not try another route to the same data.
 Around the chat the user can also: toggle "Think deeply" (routes tough questions to a reasoning model and shows its thinking), tap the mic to ask out loud, press "Listen" to hear answers read aloud (the Luca voice), attach a document to chat with it, and keep conversation history (New chat / resume past chats).
@@ -292,6 +295,52 @@ class LocalCopilotProvider implements CopilotProvider {
           ),
         ],
         "Rank industries by opportunity score, chart them, table approached vs untapped, then recommend the leader.",
+      );
+    }
+
+    // "what should I do today" — the queue, not the diagnosis
+    if (/(what should i|what do i|where do i start|my day|today|priorit(y|ies) today|work queue|next actions?)/.test(m)) {
+      const d = await run("my_work_queue", {});
+      if (!d) return done([b.callout("Couldn't build the work queue.", "warning")]);
+      const items = (d.items ?? []) as Record<string, unknown>[];
+      const by = (d.byReason ?? {}) as Record<string, number>;
+      if (!items.length) {
+        return done(
+          [
+            b.heading("Nothing is waiting on you", { eyebrow: "Work queue" }),
+            b.callout(`All ${d.openLeads} open leads are triaged, in date and recently contacted.`, "success"),
+          ],
+          "Build the work queue; report an empty queue as a result rather than an error.",
+        );
+      }
+      return done(
+        [
+          b.heading("Start here", { eyebrow: "Work queue", subtitle: `${d.total} of ${d.openLeads} open leads need a move` }),
+          b.metrics([
+            { label: "Late on us", value: String(by["late-on-us"] ?? 0), tone: "rose" },
+            { label: "To chase", value: String(by["late-on-them"] ?? 0), tone: "amber" },
+            { label: "Untriaged", value: String(by["untriaged"] ?? 0), tone: "violet" },
+            { label: "Gone quiet", value: String(by["stale"] ?? 0) },
+          ]),
+          b.table(
+            [
+              { key: "name", label: "Lead" },
+              { key: "reason", label: "Why" },
+              { key: "priorityScore", label: "Priority", align: "right", kind: "number" },
+              { key: "daysLate", label: "Days late", align: "right", kind: "number" },
+              { key: "nextStep", label: "Next step" },
+            ],
+            items.map((i) => ({
+              name: String(i.name ?? ""),
+              reason: String(i.reason ?? ""),
+              priorityScore: Number(i.priorityScore ?? 0),
+              daysLate: Number(i.daysLate ?? 0),
+              nextStep: String(i.nextStep ?? "—"),
+            })),
+          ),
+          b.callout("Ordered by what is at stake, not by how late it is — a big deal two days late outranks a small one two weeks late.", "insight"),
+        ],
+        "Build one ranked queue of everything needing a move, ordered by stake rather than by date.",
       );
     }
 

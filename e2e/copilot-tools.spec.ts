@@ -179,6 +179,73 @@ test.describe("copilot write tools", () => {
   });
 });
 
+test.describe("copilot planning tools", () => {
+  test("my_work_queue ranks by stake and names the tool that resolves each row", async ({ request }) => {
+    const { body } = await callTool(request, "my_work_queue");
+    expect(body.ok).toBe(true);
+    const d = body.data!;
+    expect(typeof d.total).toBe("number");
+    expect(Number(d.openLeads)).toBeGreaterThan(0);
+
+    const items = d.items as Array<Record<string, unknown>>;
+    expect(Array.isArray(items)).toBe(true);
+
+    // Every row must carry a reason and a way to act on it, or the queue is
+    // just another list to read.
+    const reasons = new Set(["late-on-us", "late-on-them", "untriaged", "stale"]);
+    for (const i of items) {
+      expect(reasons.has(String(i.reason))).toBe(true);
+      expect(String(i.suggestedTool).length).toBeGreaterThan(0);
+    }
+
+    // Ranked by priority, descending — the whole point over a date sort.
+    const scores = items.map((i) => Number(i.priorityScore ?? 0));
+    expect([...scores].sort((a, z) => z - a)).toEqual(scores);
+
+    // A lead appears once, under its worst reason.
+    const ids = items.map((i) => String(i.id));
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  test("whitespace finds won clients with nothing live", async ({ request }) => {
+    const { body } = await callTool(request, "whitespace");
+    expect(body.ok).toBe(true);
+    const companies = body.data!.companies as Array<Record<string, unknown>>;
+    expect(Array.isArray(companies)).toBe(true);
+    for (const c of companies) {
+      expect(Number(c.wonDeals)).toBeGreaterThan(0);
+    }
+  });
+
+  test("what_can_i_do answers for the caller, not in the abstract", async ({ request }) => {
+    const { body } = await callTool(request, "what_can_i_do");
+    expect(body.ok).toBe(true);
+    const d = body.data!;
+    expect(Number(d.totalCount)).toBeGreaterThanOrEqual(44);
+    // The seeded account is the founding administrator.
+    expect(Number(d.grantedCount)).toBeGreaterThan(0);
+    expect(typeof d.byCategory).toBe("object");
+
+    const filtered = await callTool(request, "what_can_i_do", { about: "proposal" });
+    const cats = Object.keys(filtered.body.data!.byCategory as Record<string, unknown>);
+    expect(cats.length).toBeGreaterThan(0);
+    expect(cats.length).toBeLessThanOrEqual(Object.keys(d.byCategory as Record<string, unknown>).length);
+  });
+
+  test("assign_lead moves ownership and reports the previous owner", async ({ request }) => {
+    const before = await callTool(request, "get_lead", { id: "alleanza" });
+    const original = before.body.data!.owner as string | null;
+
+    const moved = await callTool(request, "assign_lead", { id: "alleanza", owner: "E2E Owner" });
+    expect(moved.body.data!.ok).toBe(true);
+    expect(moved.body.data!.owner).toBe("E2E Owner");
+
+    // Put it back, so the run leaves the pipeline as it found it.
+    const restored = await callTool(request, "assign_lead", { id: "alleanza", owner: original ?? "unassigned" });
+    expect(restored.body.data!.owner).toBe(original);
+  });
+});
+
 test.describe("copilot tool gating", () => {
   test("an unknown tool is a 404, not a silent success", async ({ request }) => {
     const res = await request.post("/api/copilot/tools/no_such_tool", { data: {} });
@@ -189,8 +256,9 @@ test.describe("copilot tool gating", () => {
     const res = await request.get("/api/copilot/openapi");
     expect(res.status()).toBe(200);
     const doc = (await res.json()) as { paths: Record<string, unknown> };
-    expect(Object.keys(doc.paths).length).toBeGreaterThanOrEqual(27);
+    expect(Object.keys(doc.paths).length).toBeGreaterThanOrEqual(31);
     expect(doc.paths["/api/copilot/tools/set_next_move"]).toBeTruthy();
+    expect(doc.paths["/api/copilot/tools/my_work_queue"]).toBeTruthy();
     expect(doc.paths["/api/copilot/tools/pipeline_health"]).toBeTruthy();
   });
 });

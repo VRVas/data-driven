@@ -111,6 +111,20 @@ export async function runCopilotAction(tool: string, args: Record<string, unknow
   if (tool === "set_strategic_value") {
     return { ok: true, blocks: [b.callout(`Strategic value for ${d?.name} set to ${d?.strategicValue}.`, "success")] };
   }
+  if (tool === "assign_lead") {
+    // Worth naming the side effect: under an "own records" profile this is the
+    // difference between the new owner seeing the lead and not.
+    return {
+      ok: true,
+      blocks: [
+        b.callout(
+          `${d?.name} is now owned by ${d?.owner ?? "nobody"}${d?.previousOwner ? ` (was ${d.previousOwner})` : ""}.`,
+          "success",
+          "Owner changed",
+        ),
+      ],
+    };
+  }
   if (tool === "link_deal_to_company") {
     return { ok: true, blocks: [b.callout(`Linked to ${d?.companyName}.`, "success")] };
   }

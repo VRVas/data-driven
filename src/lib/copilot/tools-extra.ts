@@ -11,8 +11,13 @@ import { recordProposal } from "@/lib/crm/proposals";
 import { duplicateCandidates, currentProposals } from "@/lib/crm/logic";
 import { completeFollowUp, snoozeFollowUp } from "@/lib/leads/followups";
 import { budgetVariance } from "@/lib/pipeline/budget";
+import { withHealth } from "@/lib/pipeline/health";
 import { effectiveTempoMonths } from "@/lib/scoring";
-import { STRATEGIC_REASONS } from "@/lib/priority";
+import { STRATEGIC_REASONS, priorityOf } from "@/lib/priority";
+import { getAuthzContext } from "@/lib/auth/resolve";
+import { scopeFor } from "@/lib/auth/effective";
+import { PERMISSIONS, type PermissionDef, type PermissionKey } from "@/lib/auth/catalogue";
+import { getProfileStore } from "@/lib/store/profiles";
 import { outcomeConflicts, openLeads, outcomeOf } from "@/lib/lifecycle";
 import { logAudit } from "@/lib/store/audit";
 import { todayYmd } from "@/lib/workflow";
@@ -535,6 +540,203 @@ const moneyAtRisk: CopilotTool = {
   },
 };
 
+const assignLead: CopilotTool = {
+  name: "assign_lead",
+  permission: "lead:assign",
+  write: true,
+  description:
+    "Hand a lead to someone else. Use for 'give Moncler to Sara' or 'take Poste off me'. Changing the owner changes who can see it under an 'own records' profile, so it is a permission change as much as an admin one.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Lead id" },
+      owner: { type: "string", description: "The new owner's name, or 'unassigned' to clear it" },
+    },
+    required: ["id", "owner"],
+  },
+  async execute(args, ctx) {
+    const a = z.object({ id: z.string().min(1), owner: z.string().min(1).max(80) }).parse(args);
+
+    const brand = await writableLead(a.id, "lead:assign");
+    if (!brand) return { ok: false, error: "Lead not found." };
+
+    const previous = brand.owner ?? null;
+    const owner = a.owner.trim().toLowerCase() === "unassigned" ? null : a.owner.trim();
+    if (previous === owner) return { ok: true, id: brand.id, name: brand.name, owner, unchanged: true };
+
+    await getBrandStore().save({ ...brand, owner });
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "lead.assign",
+      entity: "brand",
+      entityId: brand.id,
+      summary: `${brand.name} reassigned from ${previous ?? "nobody"} to ${owner ?? "nobody"}`,
+    });
+
+    return { ok: true, id: brand.id, name: brand.name, previousOwner: previous, owner };
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Reads
+// ---------------------------------------------------------------------------
+
+const myWorkQueue: CopilotTool = {
+  name: "my_work_queue",
+  permission: "lead:read",
+  description:
+    "The answer to 'what should I do today?'. One ranked list of everything that actually needs a human: follow-ups we have missed, clients we have not chased, deals nobody has triaged, deals gone quiet, and proposals sitting unanswered. Ordered by how much is at stake, not by date, so a big deal two days late outranks a small one two weeks late.",
+  parameters: {
+    type: "object",
+    properties: {
+      owner: { type: "string", description: "Limit to one person's leads; omit for everything you can see" },
+      limit: { type: "integer", minimum: 1, maximum: 25 },
+    },
+  },
+  async execute(args) {
+    const a = z.object({ owner: z.string().optional(), limit: z.number().int().min(1).max(25).optional() }).parse(args);
+
+    const [brands, graph] = await Promise.all([getVisibleBrands(), getCrmGraph()]);
+    const mine = a.owner ? brands.filter((b) => (b.owner ?? "").toLowerCase() === a.owner!.toLowerCase()) : brands;
+    const rows = withHealth(mine, graph.proposals).filter((r) => outcomeOf(r.brand.status) === "open");
+
+    // One lead can be late AND stale. It appears once, under its worst reason,
+    // because a queue that lists the same client twice gets ignored.
+    const reasonOf = (h: (typeof rows)[number]["health"]) =>
+      h.lateOnUs ? "late-on-us" : h.lateOnThem ? "late-on-them" : h.untriaged ? "untriaged" : h.stale ? "stale" : null;
+
+    const items = rows
+      .map((r) => {
+        const reason = reasonOf(r.health);
+        if (!reason) return null;
+        const p = priorityOf(r.brand);
+        return {
+          id: r.brand.id,
+          name: r.brand.name,
+          owner: r.brand.owner ?? null,
+          reason,
+          waitingOn: r.health.waitingOn,
+          daysLate: r.health.daysLate,
+          daysSinceContact: r.health.daysSinceContact,
+          dueDate: r.health.dueDate,
+          nextStep: r.brand.nextStep ?? null,
+          priorityScore: p?.priority ?? null,
+          grade: p?.grade ?? null,
+          valueEur: r.brand.scores?.budget ?? null,
+          // What to actually do, so the model does not have to invent it.
+          suggestedTool:
+            reason === "untriaged" ? "set_next_move" : reason === "late-on-us" ? "draft_outreach" : "complete_follow_up",
+        };
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null)
+      // Stake first, lateness as the tie-break: priority already folds in money,
+      // win odds and strategic value, which a due date knows nothing about.
+      .sort((x, y) => (y.priorityScore ?? 0) - (x.priorityScore ?? 0) || y.daysLate - x.daysLate);
+
+    const byReason: Record<string, number> = {};
+    for (const i of items) byReason[i.reason] = (byReason[i.reason] ?? 0) + 1;
+
+    return {
+      total: items.length,
+      byReason,
+      openLeads: rows.length,
+      items: items.slice(0, a.limit ?? 10),
+      note: items.length === 0 ? "Nothing is overdue, untriaged or stale — the queue is genuinely empty." : undefined,
+    };
+  },
+};
+
+const whitespace: CopilotTool = {
+  name: "whitespace",
+  permission: "lead:read",
+  description:
+    "Clients we have already won who have no live deal — the cheapest pipeline there is, because the relationship is paid for. Ranked by what they have spent with us. Use for 'who should we go back to?' or 'where is the repeat business?'.",
+  parameters: { type: "object", properties: { limit: { type: "integer", minimum: 1, maximum: 25 } } },
+  async execute(args) {
+    const { limit } = z.object({ limit: z.number().int().min(1).max(25).optional() }).parse(args);
+
+    const [graph, brands] = await Promise.all([getCrmGraph(), getVisibleBrands()]);
+    // Companies are only as visible as the deals underneath them.
+    const visibleLeads = new Set(brands.map((b) => b.id));
+    const visibleCompanies = new Set(graph.deals.filter((d) => visibleLeads.has(d.id)).map((d) => d.companyId));
+
+    const dormant = graph.companies
+      .filter((c) => visibleCompanies.has(c.id))
+      .filter((c) => c.rollup.wonDealCount > 0 && c.rollup.openDealCount === 0)
+      .map((c) => ({
+        id: c.id,
+        name: c.name,
+        industry: c.industry ?? null,
+        owner: c.owner ?? null,
+        wonDeals: c.rollup.wonDealCount,
+        lifetimeValueEur: Math.round(c.rollup.lifetimeValue),
+        repeatValueEur: Math.round(c.rollup.repeatValue),
+        lastContact: c.rollup.lastContact,
+      }))
+      .sort((a, b) => b.lifetimeValueEur - a.lifetimeValueEur);
+
+    return {
+      count: dormant.length,
+      totalLifetimeValueEur: dormant.reduce((s, c) => s + c.lifetimeValueEur, 0),
+      companies: dormant.slice(0, limit ?? 10),
+      note: "A won client with no open deal is dormant, not lost — the next deal starts from a reference, not a cold call.",
+    };
+  },
+};
+
+const whatCanIDo: CopilotTool = {
+  name: "what_can_i_do",
+  // Gated on copilot:use rather than left open: anyone who can reach the chat
+  // at all already holds it, so this refuses nobody who could have asked — and
+  // the "every tool declares a permission" invariant survives intact.
+  permission: "copilot:use",
+  description:
+    "What the person asking is allowed to do, and over which records. Use whenever someone asks 'can I…', 'why can't I…', 'what am I allowed to see' — and before telling them something is impossible, since it is usually permitted for someone and not for them.",
+  parameters: { type: "object", properties: { about: { type: "string", description: "Optional filter, e.g. 'leads', 'proposals', 'export'" } } },
+  async execute(args) {
+    const { about } = z.object({ about: z.string().optional() }).parse(args);
+
+    const authz = await getAuthzContext();
+    if (!authz) return { ok: false, error: "No signed-in caller." };
+
+    const profiles = await getProfileStore().list();
+    const held = (PERMISSIONS as readonly PermissionDef[])
+      .map((def) => ({ def, scope: scopeFor(authz.effective, def.key as PermissionKey) }))
+      .filter((p) => p.scope !== "none");
+
+    const needle = about?.trim().toLowerCase();
+    const matches = needle
+      ? held.filter((p) => `${p.def.key} ${p.def.label} ${p.def.category}`.toLowerCase().includes(needle))
+      : held;
+
+    const byCategory: Record<string, Array<{ key: string; label: string; scope: string; risk?: string }>> = {};
+    for (const { def, scope } of matches) {
+      (byCategory[def.category] ??= []).push({
+        key: def.key,
+        label: def.label,
+        // A boolean permission has no "over which records", so saying "all" invites
+        // the model to describe an on/off switch as unlimited reach.
+        scope: def.scoped ? scope : "yes",
+        risk: def.risk,
+      });
+    }
+
+    return {
+      user: authz.user.name,
+      superuser: authz.superuser,
+      profiles: authz.profileIds.map((id) => profiles.find((p) => p.id === id)?.name ?? id),
+      grantedCount: held.length,
+      totalCount: PERMISSIONS.length,
+      byCategory,
+      scopeMeaning: { own: "only records you own", team: "your team's records", all: "every record", yes: "held (not record-scoped)" },
+      note: authz.superuser
+        ? "Superuser: every permission, over every record."
+        : "Anything not listed is denied. Permissions come from profiles an admin assigns — say who to ask rather than suggesting a workaround.",
+    };
+  },
+};
+
 export const EXTRA_TOOLS: CopilotTool[] = [
   setNextMove,
   completeFollowUpTool,
@@ -542,6 +744,7 @@ export const EXTRA_TOOLS: CopilotTool[] = [
   recordProposalTool,
   setStrategicValue,
   linkCompany,
+  assignLead,
   dataQuality,
   leadHistory,
   tempoReport,
@@ -549,4 +752,7 @@ export const EXTRA_TOOLS: CopilotTool[] = [
   duplicateCompanies,
   outreachStatus,
   moneyAtRisk,
+  myWorkQueue,
+  whitespace,
+  whatCanIDo,
 ];
