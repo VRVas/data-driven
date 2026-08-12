@@ -35,6 +35,13 @@ const brandInputSchema = z.object({
   lastContact: optionalDate,
   followUpDate: optionalDate,
   closingFailed: optionalDate,
+  waitingOn: optionalEnum(["us", "them"]),
+  nextStep: optionalStr,
+  // The estimate made when the lead opened: "a slow enterprise, call it 8 months".
+  expectedMonths: z.preprocess(
+    emptyToUndef,
+    z.coerce.number().min(0, "Months cannot be negative").max(60, "That is over five years").optional(),
+  ),
   notes: optionalStr,
 });
 
@@ -86,6 +93,9 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
       initialContact: null,
       lastContact: null,
       followUpDate: null,
+      waitingOn: null,
+      nextStep: null,
+      expectedMonths: null,
       closingFailed: null,
       notes: null,
     };
@@ -104,6 +114,9 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   brand.initialContact = input.initialContact ?? null;
   brand.lastContact = input.lastContact ?? null;
   brand.followUpDate = input.followUpDate ?? null;
+  brand.waitingOn = (input.waitingOn as Brand["waitingOn"]) ?? null;
+  brand.nextStep = input.nextStep ?? null;
+  brand.expectedMonths = input.expectedMonths ?? null;
   brand.closingFailed = input.closingFailed ?? null;
   brand.notes = input.notes ?? null;
 

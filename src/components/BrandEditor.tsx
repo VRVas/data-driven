@@ -81,6 +81,37 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
             </FormField>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Waiting on">
+              <select name="waitingOn" defaultValue={brand?.waitingOn ?? ""} className="auth-input">
+                <option value="">— not decided —</option>
+                <option value="us">Us — we owe the next move</option>
+                <option value="them">Them — we are waiting</option>
+              </select>
+            </FormField>
+            <FormField label="Expected duration (months)">
+              <input
+                type="number"
+                name="expectedMonths"
+                min={0}
+                max={60}
+                step={0.5}
+                defaultValue={brand?.expectedMonths ?? ""}
+                placeholder="e.g. 8"
+                className="auth-input"
+              />
+            </FormField>
+          </div>
+
+          <FormField label="Next step">
+            <input
+              name="nextStep"
+              defaultValue={brand?.nextStep ?? ""}
+              placeholder="Send revised quote / chase legal"
+              className="auth-input"
+            />
+          </FormField>
+
           <FormField label="Notes">
             <textarea name="notes" defaultValue={brand?.notes ?? ""} rows={4} className="auth-input resize-none" />
           </FormField>
