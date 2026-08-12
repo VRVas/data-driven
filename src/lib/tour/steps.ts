@@ -17,6 +17,8 @@ export interface TourStep {
   body: string;
   /** How this maps back to the source sheet. */
   sheet?: string;
+  /** Badged "New in v1.1" so returning users can see what changed. */
+  isNew?: boolean;
   placement?: TourPlacement;
   optional?: boolean;
 }
@@ -26,7 +28,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "welcome",
     route: "/dashboard",
     title: "Welcome to BD Intelligence",
-    body: "This is your Client Segmentation sheet, turned into a live, scored, searchable workspace. Let's walk through everything — it takes about a minute.",
+    body: "This is your Client Segmentation sheet, turned into a live, scored, searchable workspace. Let's walk through everything — it takes about a minute. Steps badged “New in v1.1” are what changed since you last looked.",
     sheet: "Everything here is built from the 6 tabs of the workbook.",
     placement: "center",
   },
@@ -126,6 +128,16 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "bottom",
   },
   {
+    id: "pipe-health",
+    route: "/dashboard/pipeline",
+    selector: '[data-tour="pipe-health"]',
+    title: "Who owes the next move",
+    body: "New. Four headlines answer the question the sheet never could: how many leads are late because WE owe them something, how many because they owe US, how much money is sitting in proposals awaiting a greenlight, and how many nobody has triaged at all. Each headline is a filter \u2014 click it and the table below drops to just those leads. The Waiting-on column shows the side and how many days overdue.",
+    sheet: "Inferred where you have not said: a proposal out for decision means the ball is with them; a lone follow-up date means it is with us. Neither, and the lead is reported as untriaged rather than quietly filed under one side.",
+    isNew: true,
+    placement: "bottom",
+  },
+  {
     id: "pipe-edit",
     route: "/dashboard/pipeline",
     selector: '[data-tour="pipe-edit"]',
@@ -135,12 +147,34 @@ export const TOUR_STEPS: TourStep[] = [
     optional: true,
   },
   {
+    id: "lead-detail",
+    route: "/dashboard/pipeline",
+    selector: '[data-tour="pipe-edit"]',
+    title: "What a lead page now holds",
+    body: "New on every lead: who owes the next move and by when, how long the deal is actually taking versus what you expected, and the budget shown as a guess or a fact \u2014 accepting a proposal writes the real number in and keeps the original estimate so you can see how good the guess was. Plus a strategic value, which is how a cheap or free project can still rank: a logo you can name, a referral source, a reference case.",
+    sheet: "Deleting a lead lives at the bottom of that same edit dialog, behind a confirm. It is permanent and needs the delete permission.",
+    isNew: true,
+    placement: "left",
+    optional: true,
+  },
+  {
     id: "scoring",
     route: "/dashboard/scoring",
     selector: '[data-tour="nav"]',
     title: "Scoring model",
-    body: "The transparent, weighted model behind every lead's rank. Adjust your mental model of what a good lead looks like.",
-    sheet: "Brand Data: tempo, closing likelihood, budget, customization, accessibility and receptivity → one weighted score.",
+    body: "Rebuilt. Every lead now sits on two axes: Opportunity (what it is worth, discounted by how sure we are of the budget, plus its strategic value) and Winnability (how likely we are to land it). They are combined with a geometric mean, so a lead has to be decent on BOTH — a huge deal we will never win no longer outranks a winnable one. You get a 0–100 priority, an A–D grade and a quadrant: Pursue, Invest, Quick win or Park.",
+    sheet: "Brand Data, re-weighted. Ease of delivery is still reported — but it is no longer blended in, because being easy is not a reason to want a deal.",
+    isNew: true,
+    placement: "bottom",
+  },
+  {
+    id: "companies",
+    route: "/dashboard/companies",
+    selector: '[data-tour="nav"]',
+    title: "Companies — the relationship, not the deal",
+    body: "New. A client is no longer one row. Fastweb can have three deals across two years and you see them together: every deal ever run, what the relationship has earned in total, and how much of that was repeat business after the first win. There is also a possible-duplicates card — deliberately over-inclusive, because missing a real duplicate costs more than dismissing a wrong guess. It never merges anything on its own.",
+    sheet: "Projected from Brands Operative on every read, so a company can never fall out of step with an edit to one of its deals.",
+    isNew: true,
     placement: "bottom",
   },
   {
@@ -183,7 +217,18 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard/copilot",
     selector: '[data-tour="copilot-suggestions"]',
     title: "Ask anything",
-    body: "Start with a suggestion or ask your own: “Summarise the pipeline”, “Why is Alibaba scored that way?”, “Top opportunities in Finance”, “What follow-ups are due?”.",
+    body: "Start with a suggestion or ask your own. The starters changed in v1.1: “What should I do today?”, “What's at risk of going cold?” and “What am I allowed to do?” now sit alongside “Summarise the pipeline”.",
+    isNew: true,
+    placement: "right",
+    optional: true,
+  },
+  {
+    id: "copilot-workqueue",
+    route: "/dashboard/copilot",
+    selector: '[data-tour="copilot-suggestions"]',
+    title: "“What should I do today?”",
+    body: "New, and the one to try first. It returns a single ranked list of every lead that needs a human — follow-ups you have missed, clients nobody has chased, deals nobody has triaged, deals gone quiet — ordered by what is at stake rather than by date, so a large deal two days late outranks a small one two weeks late. Each lead appears once, under its worst reason, and each row carries the action that clears it.",
+    isNew: true,
     placement: "right",
     optional: true,
   },
@@ -192,7 +237,8 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard/copilot",
     selector: '[data-tour="copilot-reasoning"]',
     title: "Deep reasoning",
-    body: "Toggle “Think deeply” for tougher questions — the Copilot spends more reasoning effort and shows its step-by-step thinking.",
+    body: "Toggle “Think deeply” for tougher questions — the Copilot spends more reasoning effort on the answer and shows its step-by-step thinking. In v1.1 this switch actually does something: it raises the effort sent with the request rather than pretending to swap models.",
+    isNew: true,
     placement: "top",
   },
   {
@@ -217,8 +263,10 @@ export const TOUR_STEPS: TourStep[] = [
     id: "copilot-input",
     route: "/dashboard/copilot",
     selector: '[data-tour="copilot-input"]',
-    title: "It can act, too",
-    body: "Beyond answering, the Copilot can search leads, explain scores, list reminders, research the live web — and even draft outreach or advance a stage. Writes are logged and outreach needs admin approval.",
+    title: "It can act, too — 31 tools now",
+    body: "It went from 14 tools to 31, and the gap it closed was everything the screens could do and the chat could not. It can now set who owes the next move, record a proposal, complete or snooze a follow-up, set strategic value, link a deal to a company and reassign an owner — as well as report data quality, deal pace, budget accuracy, the audit trail for one lead, dormant clients worth revisiting and the money going cold.",
+    sheet: "Every tool runs as you and checks the same permission the screens check, so the chat is never a way round the rules. Writes are logged, outreach still needs approval, and it will not delete anything.",
+    isNew: true,
     placement: "top",
   },
   {
@@ -253,8 +301,9 @@ export const TOUR_STEPS: TourStep[] = [
     id: "team",
     route: "/dashboard",
     selector: '[data-tour="topbar-team"]',
-    title: "Team & roles",
-    body: "Manage who's an admin (can approve outreach, delete leads, see the audit trail) versus a member. (Admins only.)",
+    title: "Access — far past admin vs member",
+    body: "Rebuilt. There are now 44 separate permissions across ten areas, and most are scoped: none, only your own records, your team's, or everything. So “see every lead but only edit mine” is a real, expressible answer. They are bundled into profiles — Administrator, Sales manager, Sales rep, Operations & analysis, Read only — which you assign per person, with individual grants or denials on top. A denial always wins. Ask the Copilot “What am I allowed to do?” and it will tell you exactly.",
+    isNew: true,
     placement: "left",
     optional: true,
   },
@@ -262,7 +311,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "finish",
     route: "/dashboard",
     title: "You're all set",
-    body: "That's the whole app. Replay this tour anytime from the “?” button in the top bar. Now go close some deals.",
+    body: "That's the whole app. v1.1 added the two-axis scoring model, pipeline health, Companies, granular permissions and a Copilot that can do 31 things instead of 14. Replay this tour anytime from the “?” button in the top bar. Now go close some deals.",
     placement: "center",
   },
 ];

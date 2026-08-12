@@ -11,7 +11,7 @@ test.use({ storageState: STORAGE_STATE });
  */
 test.describe("product tour", () => {
   test("guided walkthrough covers every surface end-to-end", async ({ page }) => {
-    test.setTimeout(120_000);
+    test.setTimeout(180_000);
 
     await page.goto("/dashboard");
     // Allow the tour to be (re)started deterministically via the launcher.
@@ -25,11 +25,13 @@ test.describe("product tour", () => {
     await shot(page, "tour-01-welcome");
 
     const seen: string[] = [];
+    let badges = 0;
     let last = "";
-    for (let i = 0; i < 40; i++) {
+    for (let i = 0; i < 50; i++) {
       const title = (await dialog.locator("h3").textContent().catch(() => ""))?.trim() ?? "";
       if (title && title !== last) {
         seen.push(title);
+        if (await dialog.getByText("New in v1.1").isVisible().catch(() => false)) badges += 1;
         last = title;
       }
       if (/^Pipeline/.test(title)) await shot(page, "tour-02-pipeline");
@@ -51,6 +53,13 @@ test.describe("product tour", () => {
     expect(seen.some((t) => /Copilot/.test(t))).toBeTruthy();
     expect(seen.some((t) => /all set/i.test(t))).toBeTruthy();
     expect(seen.length).toBeGreaterThanOrEqual(12);
+
+    // v1.1 surfaces the tour previously said nothing about.
+    expect(seen.some((t) => /owes the next move/i.test(t))).toBeTruthy();
+    expect(seen.some((t) => /Companies/i.test(t))).toBeTruthy();
+    expect(seen.some((t) => /31 tools/i.test(t))).toBeTruthy();
+    // The badge has to actually render, not just exist in the data.
+    expect(badges).toBeGreaterThanOrEqual(4);
   });
 
   test("relaunches from the top-bar button", async ({ page }) => {

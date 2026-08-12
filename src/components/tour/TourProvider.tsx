@@ -270,9 +270,16 @@ function TourOverlay({
         }}
       >
         <div className="mb-2 flex items-center justify-between">
-          <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-brand-bright)]">
-            {index + 1} / {total}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-brand-bright)]">
+              {index + 1} / {total}
+            </span>
+            {step.isNew && (
+              <span className="rounded-full border border-[var(--color-brand)] bg-[color-mix(in_srgb,var(--color-brand)_18%,transparent)] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-ink)]">
+                New in v1.1
+              </span>
+            )}
+          </div>
           <button
             onClick={onClose}
             aria-label="End tour"
