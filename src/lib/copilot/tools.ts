@@ -14,6 +14,7 @@ import { openLeads, outcomeOf } from "@/lib/lifecycle";
 import { opportunityScore, penetration, whitespace } from "@/lib/tam";
 import { getCrmGraph, getCompanyDetail, getPipelineMoney } from "@/lib/crm/graph";
 import { proposalsWithStatus, currentProposals } from "@/lib/crm/logic";
+import { pipelineHealth, withHealth } from "@/lib/pipeline/health";
 import { can } from "@/lib/auth/authorize";
 import type { Company } from "@/lib/crm/types";
 import { remindersFrom } from "@/lib/reminders";
@@ -280,6 +281,62 @@ const topOpportunities: CopilotTool = {
       }))
       .sort((a, b) => b.opportunityScore - a.opportunityScore);
     return { industries: ranked.slice(0, limit ?? 5) };
+  },
+};
+
+const pipelineHealthTool: CopilotTool = {
+  name: "pipeline_health",
+  description:
+    "Who owes the next move on the pipeline and who is late making it. Separates being late to REPLY to a client (on us) from being late to CHASE one (on them) — an overdue count alone cannot tell a backlog from a chase list. Also returns euros sitting with clients awaiting a greenlight, open leads nobody owns, and leads gone quiet. Use for 'who are we late with?', 'what do I owe today?', 'how much is waiting for a greenlight?'.",
+  parameters: {
+    type: "object",
+    properties: {
+      side: {
+        type: "string",
+        enum: ["us", "them", "untriaged", "stale"],
+        description: "Restrict the returned leads to one problem. Omit for the headline counts plus all of them.",
+      },
+      limit: { type: "number", description: "Max leads to return (default 10)" },
+    },
+  },
+  async execute(args) {
+    const { side, limit } = z
+      .object({ side: z.enum(["us", "them", "untriaged", "stale"]).optional(), limit: z.number().min(1).max(50).optional() })
+      .parse(args);
+
+    const [brands, graph] = await Promise.all([getVisibleBrands(), getCrmGraph()]);
+    const summary = pipelineHealth(brands, graph.proposals);
+    const rows = withHealth(brands, graph.proposals).filter((r) => outcomeOf(r.brand.status) === "open");
+
+    const matches = rows.filter(({ health }) =>
+      side === "us" ? health.lateOnUs
+      : side === "them" ? health.lateOnThem
+      : side === "untriaged" ? health.untriaged
+      : side === "stale" ? health.stale
+      : health.lateOnUs || health.lateOnThem,
+    );
+
+    return {
+      openLeads: summary.open,
+      lateOnUs: summary.lateOnUs,
+      lateOnThem: summary.lateOnThem,
+      untriaged: summary.untriaged,
+      goneQuiet: summary.stale,
+      awaitingGreenlightEur: Math.round(summary.awaitingGreenlightEur),
+      leads: matches
+        .sort((a, b) => b.health.daysLate - a.health.daysLate)
+        .slice(0, limit ?? 10)
+        .map(({ brand, health }) => ({
+          id: brand.id,
+          name: brand.name,
+          owner: brand.owner,
+          waitingOn: health.waitingOn,
+          nextStep: brand.nextStep ?? null,
+          dueDate: health.dueDate,
+          daysLate: health.daysLate,
+          daysSinceContact: health.daysSinceContact,
+        })),
+    };
   },
 };
 
@@ -580,6 +637,7 @@ export const COPILOT_TOOLS: CopilotTool[] = [
   pipelineSummary,
   topOpportunities,
   listReminders,
+  pipelineHealthTool,
   searchCompanies,
   getCompany,
   proposalPipeline,
