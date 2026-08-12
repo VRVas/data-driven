@@ -1,8 +1,9 @@
 import "server-only";
 import { cache } from "react";
-import { getBrands } from "@/lib/data";
+import { getBrands, getBrand } from "@/lib/data";
 import { getAuthzContext } from "@/lib/auth/resolve";
-import { authorizeRecord, type Authorized } from "@/lib/auth/authorize";
+import { authorizeRecord, requirePermission, type Authorized } from "@/lib/auth/authorize";
+import type { PermissionKey } from "@/lib/auth/catalogue";
 import { scopeFor } from "@/lib/auth/effective";
 import { ownerIdResolver } from "@/lib/crm/owners";
 import type { Brand } from "@/lib/types";
@@ -66,4 +67,31 @@ export async function authorizeLead(auth: Authorized, lead: Pick<Brand, "owner">
   // A lead whose owner does not resolve to a user has no owner to match, so a
   // scoped caller is refused rather than let through.
   authorizeRecord(auth, auth.scope, { ownerId: resolveOwner(lead.owner) });
+}
+
+
+/**
+ * A lead the caller is allowed to see, or null.
+ *
+ * Out of scope returns null so callers answer "not found" — the same answer as
+ * a lead that does not exist, which is what stops a reply confirming the
+ * existence of records the caller cannot open.
+ */
+export async function visibleLead(id: string): Promise<Brand | null> {
+  const b = await getBrand(id);
+  if (!b) return null;
+  return (await canSeeBrand(b)) ? b : null;
+}
+
+/**
+ * A lead the caller is allowed to CHANGE, at the scope `permission` itself
+ * resolves to. Throws on a scope violation; returns null when the lead
+ * genuinely does not exist.
+ */
+export async function writableLead(id: string, permission: PermissionKey): Promise<Brand | null> {
+  const auth = await requirePermission(permission);
+  const b = await getBrand(id);
+  if (!b) return null;
+  await authorizeLead(auth, b);
+  return b;
 }

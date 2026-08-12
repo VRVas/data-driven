@@ -1,4 +1,7 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { isPermissionKey } from "@/lib/auth/catalogue";
 import { COPILOT_TOOLS, getToolByName, toolSchemas } from "@/lib/copilot/tools";
 
 describe("copilot tool registry", () => {
@@ -33,5 +36,41 @@ describe("copilot tool registry", () => {
     expect(schemas).toHaveLength(COPILOT_TOOLS.length);
     expect(schemas.every((s) => s.type === "function" && !!s.function.name)).toBe(true);
     expect(schemas.some((s) => s.function.name === "draft_outreach")).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The chat is a second way into the same data as the screens
+// ---------------------------------------------------------------------------
+
+describe("copilot tools are gated", () => {
+  it("declares a catalogued permission on every tool", () => {
+    // Four tools once took a lead id and checked nothing, so the chat could
+    // read and even mutate records the UI refuses. The gate is declarative now
+    // and enforced centrally, so a new tool cannot forget it.
+    for (const t of COPILOT_TOOLS) {
+      expect(t.permission, `${t.name} declares no permission`).toBeTruthy();
+      expect(isPermissionKey(t.permission!), `${t.name}: ${t.permission} is not in the catalogue`).toBe(true);
+    }
+  });
+
+  it("never gates a write tool behind a read permission", () => {
+    for (const t of COPILOT_TOOLS.filter((x) => x.write)) {
+      expect(t.permission!.endsWith(":read"), `${t.name} is a write gated by ${t.permission}`).toBe(false);
+    }
+  });
+
+  it("has at least one write tool, so the check above is not vacuous", () => {
+    expect(COPILOT_TOOLS.some((t) => t.write)).toBe(true);
+  });
+
+  it("cannot read a lead without going through the scoped accessor", () => {
+    // getBrand() is the raw store read. Importing it here is what made the
+    // record scope skippable; the scoped helpers live in leads/visible.
+    const source = readFileSync(path.join(process.cwd(), "src/lib/copilot/tools.ts"), "utf8");
+    const imports = source.slice(0, source.indexOf("export interface ToolContext"));
+    expect(imports).not.toMatch(/\bgetBrand\b/);
+    expect(imports).toMatch(/visibleLead/);
+    expect(imports).toMatch(/writableLead/);
   });
 });

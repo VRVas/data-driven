@@ -1,8 +1,8 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getBrand, getDataset } from "@/lib/data";
-import { getVisibleBrands, canSeeBrand } from "@/lib/leads/visible";
+import { getDataset } from "@/lib/data";
+import { getVisibleBrands, visibleLead, writableLead } from "@/lib/leads/visible";
 import { getBrandStore } from "@/lib/store/brands";
 import { getOutreachStore, type Outreach } from "@/lib/store/outreach";
 import { answerFromDocuments } from "@/lib/copilot/documents";
@@ -17,6 +17,7 @@ import { getCrmGraph, getCompanyDetail, getPipelineMoney } from "@/lib/crm/graph
 import { proposalsWithStatus, currentProposals } from "@/lib/crm/logic";
 import { pipelineHealth, withHealth } from "@/lib/pipeline/health";
 import { can } from "@/lib/auth/authorize";
+import type { PermissionKey } from "@/lib/auth/catalogue";
 import type { Company } from "@/lib/crm/types";
 import { remindersFrom } from "@/lib/reminders";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
@@ -38,6 +39,14 @@ export interface CopilotTool {
   parameters: Record<string, unknown>;
   /** Mutating tool → role-gated + audited. */
   write?: boolean;
+  /**
+   * The permission this tool needs, enforced centrally in `runTool`.
+   *
+   * Declared per tool rather than checked inside each `execute`, because the
+   * chat is a second way into the same data as the UI: a tool that forgets is
+   * a way to do through conversation what the screens refuse.
+   */
+  permission?: PermissionKey;
   execute(args: Record<string, unknown>, ctx: ToolContext): Promise<unknown>;
 }
 
@@ -100,6 +109,7 @@ function companyBrief(c: Company) {
 
 const searchLeads: CopilotTool = {
   name: "search_leads",
+  permission: "lead:read",
   description:
     "Search and rank leads by any combination of status, priority, industry, owner or free text. Returns compact summaries with the priority score (0-100), its A-D grade, the Pursue/Invest/Quick win/Park quadrant, and expected value in euros. Ranked by priority by default. Ranks only live deals unless asked otherwise: pass outcome='won'/'lost'/'any' to include finished ones.",
   parameters: {
@@ -174,6 +184,7 @@ const searchLeads: CopilotTool = {
 
 const getLead: CopilotTool = {
   name: "get_lead",
+  permission: "lead:read",
   description: "Get the full detail of a single lead by id, including scores, timeline and outreach count.",
   parameters: {
     type: "object",
@@ -182,7 +193,7 @@ const getLead: CopilotTool = {
   },
   async execute(args) {
     const { id } = z.object({ id: z.string().min(1) }).parse(args);
-    const b = await getBrand(id);
+    const b = await visibleLead(id);
     if (!b) return { found: false, id };
     const outreach = await getOutreachStore().listForBrand(id);
     return {
@@ -205,6 +216,7 @@ const getLead: CopilotTool = {
 
 const explainScore: CopilotTool = {
   name: "explain_score",
+  permission: "scoring:read",
   description:
     "Explain how a lead's priority is composed: the opportunity axis (budget discounted by how much evidence backs it, plus capped strategic value), the winnability axis (stage, freshness, accessibility, receptivity), the ease index that is deliberately never blended in, and the geometric mean that combines the first two. Use whenever asked why a lead ranks where it does, or why its position changed.",
   parameters: {
@@ -214,7 +226,7 @@ const explainScore: CopilotTool = {
   },
   async execute(args) {
     const { id } = z.object({ id: z.string().min(1) }).parse(args);
-    const b = await getBrand(id);
+    const b = await visibleLead(id);
     if (!b) return { found: false, id };
     if (!b.scores) return { found: true, id, scored: false, note: "This lead has not been scored yet." };
     const s = b.scores;
@@ -265,6 +277,7 @@ const explainScore: CopilotTool = {
 
 const pipelineSummary: CopilotTool = {
   name: "pipeline_summary",
+  permission: "lead:read",
   description:
     "Summarise the whole pipeline: totals, scored coverage, weighted (probability-adjusted) value, hot-lead and closed counts, and the count of leads at each stage. Prefer the open* figures when talking about live pipeline — the totals include finished deals.",
   parameters: { type: "object", properties: {} },
@@ -290,6 +303,7 @@ const pipelineSummary: CopilotTool = {
 
 const topOpportunities: CopilotTool = {
   name: "top_opportunities",
+  permission: "tam:read",
   description:
     "Rank industries by whitespace opportunity (value weight × untapped share). Highlights high-value, barely-approached segments.",
   parameters: {
@@ -316,6 +330,7 @@ const topOpportunities: CopilotTool = {
 
 const pipelineHealthTool: CopilotTool = {
   name: "pipeline_health",
+  permission: "lead:read",
   description:
     "Who owes the next move on the pipeline and who is late making it. Separates being late to REPLY to a client (on us) from being late to CHASE one (on them) — an overdue count alone cannot tell a backlog from a chase list. Also returns euros sitting with clients awaiting a greenlight, open leads nobody owns, and leads gone quiet. Use for 'who are we late with?', 'what do I owe today?', 'how much is waiting for a greenlight?'.",
   parameters: {
@@ -372,6 +387,7 @@ const pipelineHealthTool: CopilotTool = {
 
 const listReminders: CopilotTool = {
   name: "list_reminders",
+  permission: "reminder:read",
   description: "List follow-up reminders derived from lead follow-up dates, optionally filtered to a bucket.",
   parameters: {
     type: "object",
@@ -397,6 +413,7 @@ const listReminders: CopilotTool = {
 
 const searchCompanies: CopilotTool = {
   name: "search_companies",
+  permission: "lead:read",
   description:
     "Find or rank CLIENT COMPANIES — the organisation itself and everything we have done with it across every deal, past and present. Use this for the relationship: lifetime value, repeat business, which clients came back, who our biggest accounts are ('how much repeat business do we have with Fastweb?'). Use search_leads instead when the question is about individual engagements and their pipeline stage — one company can have several leads/deals over time. Returns compact company records with rolled-up open, lifetime and repeat value.",
   parameters: {
@@ -448,6 +465,7 @@ const searchCompanies: CopilotTool = {
 
 const getCompany: CopilotTool = {
   name: "get_company",
+  permission: "lead:read",
   description:
     "The full picture for one client company: its relationship rollup, every deal we have run with it (won, lost and live) and every proposal sent, with values and decisions. Use for 'show me everything for Generali' or any question spanning a client's whole history. Accepts a company id OR any lead/deal id belonging to it. Use get_lead instead for the detail of a single engagement.",
   parameters: {
@@ -498,6 +516,7 @@ const getCompany: CopilotTool = {
 
 const proposalPipeline: CopilotTool = {
   name: "proposal_pipeline",
+  permission: "proposal:read",
   description:
     "The money view of proposals: how much value is sitting with clients awaiting a decision, how many proposals are sent/accepted/rejected, the real proposal win rate, plus open and weighted pipeline and total repeat business. Use this for 'how much is out awaiting a decision?' and for win rates — proposals are recorded separately from stages, so these are actual euros sent, counting only the newest revision per deal (a re-quote is never double counted). pipeline_summary counts leads by stage; this counts money on real proposals.",
   parameters: { type: "object", properties: {} },
@@ -529,6 +548,7 @@ const proposalPipeline: CopilotTool = {
 
 const advanceStage: CopilotTool = {
   name: "advance_lead_stage",
+  permission: "lead:stage:advance",
   description:
     "Move a lead to a new pipeline stage. Only transitions allowed by the workflow are accepted; illegal jumps are rejected.",
   write: true,
@@ -543,7 +563,7 @@ const advanceStage: CopilotTool = {
   async execute(args, ctx) {
     const { id, to } = z.object({ id: z.string().min(1), to: z.enum(asEnum(BRAND_STATUSES)) }).parse(args);
     const store = getBrandStore();
-    const brand = await store.get(id);
+    const brand = await writableLead(id, "lead:stage:advance");
     if (!brand) return { ok: false, error: "Lead not found." };
     const target = to as BrandStatus;
     if (brand.status === target) return { ok: true, id, status: target, note: "Already at that stage." };
@@ -566,6 +586,7 @@ const advanceStage: CopilotTool = {
 
 const draftOutreach: CopilotTool = {
   name: "draft_outreach",
+  permission: "outreach:compose",
   description:
     "Draft a templated outreach email for a lead. It is only SAVED — never sent. Admins get a draft; members get a pending-approval request an admin must send.",
   write: true,
@@ -586,7 +607,7 @@ const draftOutreach: CopilotTool = {
         to: z.string().email().optional(),
       })
       .parse(args);
-    const brand = await getBrand(a.id);
+    const brand = await writableLead(a.id, "outreach:compose");
     if (!brand) return { ok: false, error: "Lead not found." };
     const recipient = a.to ?? brand.email;
     if (!recipient) return { ok: false, error: "No recipient email — add a contact email to the lead first." };
@@ -623,6 +644,7 @@ const draftOutreach: CopilotTool = {
 
 const searchDocuments: CopilotTool = {
   name: "search_documents",
+  permission: "copilot:documents",
   description:
     "Search the user's uploaded documents (files they attached to the chat) and answer grounded in them, with citations. Use this whenever the user asks about their attached documents, files, PDFs, reports or uploaded content.",
   parameters: {
@@ -643,6 +665,7 @@ const searchDocuments: CopilotTool = {
 
 const webSearch: CopilotTool = {
   name: "web_search",
+  permission: "copilot:websearch",
   description:
     "Search the live public web (Grounding with Bing) and answer with citations. Use for current events, market/industry research, company or competitor news, funding, launches, trends, or any external fact NOT in the pipeline data or the user's uploaded documents. Prefer internal pipeline/document data when it exists; use the web to enrich, validate or fill gaps. Returns a synthesized answer plus web sources to cite.",
   parameters: {
