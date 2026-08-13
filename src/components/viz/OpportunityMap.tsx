@@ -35,7 +35,11 @@ export function OpportunityMap({ industries }: { industries: IndustryStat[] }) {
         duration: 0.8,
         ease: "back.out(1.7)",
         stagger: 0.06,
-        scrollTrigger: { trigger: ref.current, start: "top 80%", once: true },
+        // Same reason as the priority quadrant: a `from` tween hides its
+        // targets the instant it is created, so an unfired trigger leaves the
+        // map permanently blank.
+        immediateRender: false,
+        scrollTrigger: { trigger: ref.current, start: "top 95%", once: true },
       });
     },
     { scope: ref },

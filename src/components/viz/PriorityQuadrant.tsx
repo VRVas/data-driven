@@ -66,7 +66,13 @@ export function PriorityQuadrant({
         duration: 0.7,
         ease: "back.out(1.7)",
         stagger: 0.02,
-        scrollTrigger: { trigger: ref.current, start: "top 80%", once: true },
+        // Without this a `from` tween applies its start state the moment it is
+        // created, so every dot sat at r=0 until the trigger fired — and if it
+        // never fired (the smooth-scroll container measures differently) the
+        // chart stayed permanently empty. Now the dots render normally and the
+        // animation only takes over once it actually runs.
+        immediateRender: false,
+        scrollTrigger: { trigger: ref.current, start: "top 95%", once: true },
       });
     },
     { scope: ref },

@@ -33,12 +33,27 @@ export function Hero({ leadCount }: Props) {
         return;
       }
 
-      const chars = new SplitText(headline.current, { type: "chars", charsClass: "hero-char" });
+      // "words,chars" so characters animate individually but lines still break
+      // between words — chars alone wrapped mid-word ("t / urned").
+      const chars = new SplitText(headline.current, { type: "words,chars", charsClass: "hero-char" });
       const words = new SplitText(sub.current, { type: "words", wordsClass: "hero-word" });
 
       gsap.set([headline.current, sub.current, ".hero-rest"], { autoAlpha: 1 });
 
-      const tl = gsap.timeline();
+      // Put the original markup back once the animation is done. The split
+      // leaves every character in its own span carrying a residual filter, and
+      // a filtered child paints in its own layer, so the headline's
+      // background-clip:text gradient never reached those glyphs — "operating
+      // system." rendered fully transparent.
+      let restored = false;
+      const restore = () => {
+        if (restored) return;
+        restored = true;
+        chars.revert();
+        words.revert();
+      };
+
+      const tl = gsap.timeline({ onComplete: restore });
       tl.from(chars.chars, {
         opacity: 0,
         filter: "blur(12px)",
@@ -74,8 +89,7 @@ export function Hero({ leadCount }: Props) {
 
       return () => {
         tl.kill();
-        chars.revert();
-        words.revert();
+        restore();
       };
     },
     { scope },
