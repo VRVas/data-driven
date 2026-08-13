@@ -30,6 +30,7 @@ export interface UserStore {
   setRole(id: string, role: UserRole): Promise<AppUser | null>;
   setAssignment(id: string, assignment: Assignment): Promise<AppUser | null>;
   setActive(id: string, active: boolean): Promise<AppUser | null>;
+  setPasswordHash(id: string, passwordHash: string): Promise<AppUser | null>;
 }
 
 /**
@@ -116,6 +117,14 @@ class LocalUserStore implements UserStore {
     await this.writeAll(users);
     return user;
   }
+  async setPasswordHash(id: string, passwordHash: string): Promise<AppUser | null> {
+    const users = await this.readAll();
+    const user = users.find((u) => u.id === id);
+    if (!user) return null;
+    user.passwordHash = passwordHash;
+    await this.writeAll(users);
+    return user;
+  }
 }
 
 // --------------------------------------------------------------------------
@@ -171,6 +180,13 @@ class CosmosUserStore implements UserStore {
     const user = await this.findById(id);
     if (!user) return null;
     const updated: AppUser = { ...user, active, permissionsVersion: (user.permissionsVersion ?? 0) + 1 };
+    await this.container().items.upsert<AppUser>(updated);
+    return updated;
+  }
+  async setPasswordHash(id: string, passwordHash: string): Promise<AppUser | null> {
+    const user = await this.findById(id);
+    if (!user) return null;
+    const updated: AppUser = { ...user, passwordHash };
     await this.container().items.upsert<AppUser>(updated);
     return updated;
   }
