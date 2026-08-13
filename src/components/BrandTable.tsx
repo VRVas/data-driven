@@ -7,6 +7,7 @@ import type { Brand } from "@/lib/types";
 import { Badge } from "@/components/Badge";
 import { BrandEditor } from "@/components/BrandEditor";
 import { STATUS_TOKEN, PRIORITY_TOKEN, eur } from "@/lib/scoring";
+import { PRIORITIES } from "@/lib/vocab";
 import type { BrandStatus, Priority } from "@/lib/types";
 import type { SavedView } from "@/lib/store/views";
 import { createView, deleteView, type ViewActionState } from "@/app/actions/views";
@@ -15,8 +16,8 @@ import type { Column } from "@/lib/export";
 import type { LeadHealth } from "@/lib/pipeline/health";
 import { useActionState } from "react";
 
-type SortKey = "name" | "status" | "owner" | "industry" | "budget" | "lastContact";
-const SORT_KEYS: SortKey[] = ["name", "status", "owner", "industry", "budget", "lastContact"];
+type SortKey = "name" | "status" | "waitingOn" | "priority" | "owner" | "industry" | "budget" | "lastContact";
+const SORT_KEYS: SortKey[] = ["name", "status", "waitingOn", "priority", "owner", "industry", "budget", "lastContact"];
 
 /** The pipeline questions, as filters. */
 const HEALTH_FILTERS = [
@@ -106,6 +107,19 @@ export function BrandTable({
         switch (sort.key) {
           case "budget": return x.scores?.budget ?? -1;
           case "lastContact": return x.lastContact ?? "";
+          // Alphabetical would put Cold above Hot, so rank by the vocabulary's
+          // own order; unset sorts last either way.
+          case "priority": {
+            const i = PRIORITIES.indexOf(x.priority as Priority);
+            return i === -1 ? PRIORITIES.length : i;
+          }
+          // Ordered by who is blocked, then by how overdue, so the most urgent
+          // rise together rather than being scattered through the side groups.
+          case "waitingOn": {
+            const h = health[x.id];
+            const side = h?.waitingOn === "us" ? 0 : h?.waitingOn === "them" ? 1 : 2;
+            return side * 100_000 - Math.min(h?.daysLate ?? 0, 99_999);
+          }
           default: return (x[sort.key] ?? "") as string | number;
         }
       };
@@ -215,9 +229,8 @@ export function BrandTable({
             <tr>
               {th("name", "Brand")}
               {th("status", "Status")}
-              <th className="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">Waiting on</th>
-              <th className="hidden px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] sm:table-cell">Priority</th>
-              {th("owner", "Owner", "hidden lg:table-cell")}
+              {th("waitingOn", "Waiting on")}
+              {th("priority", "Priority", "hidden sm:table-cell")}              {th("owner", "Owner", "hidden lg:table-cell")}
               {th("industry", "Industry", "hidden md:table-cell")}
               {th("budget", "Budget", "hidden text-right sm:table-cell")}
               {th("lastContact", "Last contact", "hidden xl:table-cell")}

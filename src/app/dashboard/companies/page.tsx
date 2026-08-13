@@ -5,8 +5,8 @@ import { Reveal } from "@/components/Reveal";
 import { can } from "@/lib/auth/authorize";
 import { getCrmGraph, getPipelineMoney } from "@/lib/crm/graph";
 import { duplicateCandidates } from "@/lib/crm/logic";
-import type { CompanyRollup } from "@/lib/crm/types";
 import { eur } from "@/lib/scoring";
+import { CompanyTable } from "@/components/crm/CompanyTable";
 
 export const dynamic = "force-dynamic";
 
@@ -73,49 +73,7 @@ export default async function CompaniesPage() {
               No companies yet — they appear as soon as there are leads.
             </p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead className="border-b border-[var(--color-border)]">
-                  <tr className="text-left">
-                    <th className="eyebrow px-4 py-3 sm:px-6">Company</th>
-                    <th className="eyebrow hidden px-4 py-3 sm:table-cell sm:px-6">Industry</th>
-                    <th className="eyebrow px-4 py-3 sm:px-6">Deals</th>
-                    <th className="eyebrow px-4 py-3 text-right sm:px-6">Open pipeline</th>
-                    <th className="eyebrow hidden px-4 py-3 text-right md:table-cell sm:px-6">Lifetime</th>
-                    <th className="eyebrow hidden px-4 py-3 text-right lg:table-cell sm:px-6">Repeat</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {companies.map((c) => (
-                    <tr key={c.id} className="border-t border-[var(--color-border)] align-top">
-                      <td className="px-4 py-3 sm:px-6">
-                        <Link href={`/dashboard/companies/${c.id}`} className="font-medium hover:text-[var(--color-brand)]">
-                          {c.name}
-                        </Link>
-                        <div className="mt-0.5 text-[11px] text-[var(--color-ink-faint)] sm:hidden">
-                          {c.industry ?? "No industry"}
-                        </div>
-                      </td>
-                      <td className="hidden px-4 py-3 text-[var(--color-ink-muted)] sm:table-cell sm:px-6">
-                        {c.industry ?? "—"}
-                      </td>
-                      <td className="px-4 py-3 text-[var(--color-ink-muted)] sm:px-6">{dealSummary(c.rollup)}</td>
-                      <td className="px-4 py-3 text-right tabular-nums sm:px-6">{eur(c.rollup.openPipelineValue)}</td>
-                      <td className="hidden px-4 py-3 text-right tabular-nums md:table-cell sm:px-6">
-                        {eur(c.rollup.lifetimeValue)}
-                      </td>
-                      <td className="hidden px-4 py-3 text-right tabular-nums lg:table-cell sm:px-6">
-                        {c.rollup.repeatValue > 0 ? (
-                          <span className="text-[var(--color-mint)]">{eur(c.rollup.repeatValue)}</span>
-                        ) : (
-                          <span className="text-[var(--color-ink-faint)]">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <CompanyTable companies={companies} />
           )}
         </section>
       </Reveal>
@@ -154,13 +112,6 @@ export default async function CompaniesPage() {
   );
 }
 
-function dealSummary(r: CompanyRollup): string {
-  const parts: string[] = [];
-  if (r.openDealCount) parts.push(`${r.openDealCount} open`);
-  if (r.wonDealCount) parts.push(`${r.wonDealCount} won`);
-  if (r.lostDealCount) parts.push(`${r.lostDealCount} lost`);
-  return parts.join(" · ") || "—";
-}
 
 /** Matches KpiCard, for the figures that genuinely have no value yet. */
 function EmptyKpi({ label, hint, accent }: { label: string; hint: string; accent: string }) {
