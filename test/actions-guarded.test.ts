@@ -32,6 +32,21 @@ const PRE_AUTH_ALLOWLIST: readonly { file: string; fn: string; reason: string }[
     fn: "signupAction",
     reason: "Registration: runs before the account, and therefore any permission, exists.",
   },
+  {
+    file: "auth.ts",
+    fn: "requestLoginCode",
+    reason: "Emails a sign-in code to someone who has no session yet. Rate limited, and answers identically whether or not the address is registered.",
+  },
+  {
+    file: "auth.ts",
+    fn: "requestPasswordReset",
+    reason: "Password recovery: by definition the caller cannot authenticate. Same reply either way, so it is not an account oracle.",
+  },
+  {
+    file: "auth.ts",
+    fn: "resetPassword",
+    reason: "Consumes a single-use emailed token; possession of that token IS the authentication.",
+  },
 ];
 
 // ---------------------------------------------------------------------------

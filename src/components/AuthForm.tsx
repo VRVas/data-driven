@@ -7,9 +7,11 @@ import type { AuthState } from "@/app/actions/auth";
 interface Props {
   mode: "login" | "signup";
   action: (prev: AuthState, formData: FormData) => Promise<AuthState>;
+  /** Login-by-code is off unless a custom mail domain is configured. */
+  showCodeLogin?: boolean;
 }
 
-export function AuthForm({ mode, action }: Props) {
+export function AuthForm({ mode, action, showCodeLogin = false }: Props) {
   const [state, formAction, pending] = useActionState<AuthState, FormData>(action, undefined);
   const isSignup = mode === "signup";
 
@@ -50,6 +52,21 @@ export function AuthForm({ mode, action }: Props) {
           placeholder={isSignup ? "At least 10 characters" : "••••••••"}
         />
       </Field>
+
+      {!isSignup && (
+        <p className="-mt-1 flex justify-between text-xs">
+          {showCodeLogin ? (
+            <Link href="/login/code" className="text-[var(--color-brand-bright)] hover:underline">
+              Email me a code instead
+            </Link>
+          ) : (
+            <span />
+          )}
+          <Link href="/forgot" className="text-[var(--color-ink-muted)] hover:underline">
+            Forgot password?
+          </Link>
+        </p>
+      )}
 
       {state?.error && (
         <p className="rounded-lg border border-[color-mix(in_srgb,var(--color-rose)_40%,transparent)] bg-[color-mix(in_srgb,var(--color-rose)_12%,transparent)] px-3 py-2 text-sm text-[var(--color-rose)]">
