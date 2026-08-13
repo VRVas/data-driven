@@ -111,9 +111,19 @@ export async function runCopilotAction(tool: string, args: Record<string, unknow
   if (tool === "set_strategic_value") {
     return { ok: true, blocks: [b.callout(`Strategic value for ${d?.name} set to ${d?.strategicValue}.`, "success")] };
   }
+  if (tool === "send_outreach") {
+    return {
+      ok: true,
+      blocks: [
+        b.callout(
+          `Sent to ${d?.to}${d?.leadName ? ` at ${d.leadName}` : ""}. It cannot be recalled.`,
+          "success",
+          "Outreach sent",
+        ),
+      ],
+    };
+  }
   if (tool === "assign_lead") {
-    // Worth naming the side effect: under an "own records" profile this is the
-    // difference between the new owner seeing the lead and not.
     return {
       ok: true,
       blocks: [

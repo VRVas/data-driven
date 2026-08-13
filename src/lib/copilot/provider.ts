@@ -87,7 +87,8 @@ You reply as live, generative UI — charts, tables, lead cards, callouts — gr
   set_next_move (who owes what, by when), complete_follow_up, snooze_follow_up,
   record_proposal (adds a revision; accepting one confirms the lead's budget),
   set_strategic_value, link_deal_to_company, assign_lead (changes who owns it, and so who can see it),
-  advance_lead_stage, draft_outreach (drafts only — a human sends).
+  advance_lead_stage, draft_outreach (drafts only — a human sends),
+  send_outreach (sends a message that is ALREADY drafted, by its id from outreach_status — it leaves the building and cannot be recalled, so always offer it as a button and never chain it straight after draft_outreach).
 · Rankings cover live deals only — won and lost are excluded from "top leads" answers. Say so when it matters, and use pipeline_summary's open* figures for live pipeline.
 · Every tool runs as the person asking. If one comes back saying they lack permission, tell them plainly which capability is missing; do not try another route to the same data.
 Around the chat the user can also: toggle "Think deeply" (spends more reasoning effort on the same model and shows its thinking), tap the mic to ask out loud, press "Listen" to hear answers read aloud (the Luca voice), attach a document to chat with it, and keep conversation history (New chat / resume past chats).
@@ -97,7 +98,8 @@ Around the chat the user can also: toggle "Think deeply" (spends more reasoning 
 · Route tools deliberately: pipeline questions → the pipeline tools; questions about the user's uploaded files → search_documents; research, current events or anything outside the pipeline and documents → web_search (prefer internal data when it exists; use the web to enrich, validate or fill gaps).
 · For questions about the platform itself — what it is, how to use it, its features, the scoring methodology, or where to find something — answer directly and accurately from the overview above; you do not need a tool for those.
 · When you use web_search, base the answer on its result and always finish with a \`sources\` block (title + url), keeping any inline [n] markers aligned to it.
-· You act as the signed-in user and respect their permissions. You may DRAFT outreach but never send it. Surface write actions as buttons; never perform them silently.
+· You act as the signed-in user and respect their permissions. You may DRAFT outreach freely. Sending is a separate, permission-gated step over an existing draft — offer it, never assume it. Surface write actions as buttons; never perform them silently.
+· You are told who you are speaking to. Use their name, and when they say "my" — my leads, my pipeline, what do I owe — resolve it against the lead owner rather than asking them who they are.
 · Compose every answer as an ordered array of typed UI blocks (heading, text, metrics, chart, table, leadCard/leadGrid, companyCard, scoreBreakdown, callout, recommendation, list, timeline, sources, actions) — not plain prose. Be concise, concrete and decision-oriented: lead with the answer, then the evidence.
 · Pick the block that fits the question: scoreBreakdown whenever you explain why a lead ranks where it does (it shows both axes and that ease is excluded); companyCard for a client relationship rather than a single deal; table for a work queue; actions to offer a write rather than describing one.
 · When a write would answer the request, offer it as an actions block instead of doing it silently — the user presses the button.`;
@@ -147,6 +149,24 @@ class LocalCopilotProvider implements CopilotProvider {
       toolRuns: runs,
       provider: this.name,
     });
+
+    // "who am I" / "what's mine" — must precede the score and triage routes,
+    // whose patterns ("my work", "for me") would otherwise swallow it.
+    if (/(who am i|what.?s my name|do you know who i am|my account|am i logged)/.test(m)) {
+      const mine = await run("search_leads", { owner: user.name, limit: 5 });
+      const count = Number(mine?.count ?? 0);
+      return done(
+        [
+          b.heading(user.name, { eyebrow: "You", subtitle: user.email }),
+          b.text(
+            count > 0
+              ? `You have **${count}** ${count === 1 ? "lead" : "leads"} under your name. Ask me for "my work queue" or "what do I owe" and I'll scope it to you.`
+              : `Nothing in the pipeline is under your name yet. Ask "what should I do today?" and I'll show the whole queue instead.`,
+          ),
+        ],
+        "Identify the caller and check what the pipeline holds under their name.",
+      );
+    }
 
     // explain score
     if (/(why|explain|how).*(score|scored|rated|rating)/.test(m) || /score.*(of|for)\s/.test(m)) {
@@ -568,6 +588,23 @@ export function effortFor(deep: boolean | undefined): ReasoningEffort {
 
 export const copilotModel = () => process.env.COPILOT_MODEL ?? "gpt-5.4-mini";
 
+/**
+ * Who is asking, as a system message.
+ *
+ * Leads carry an `owner` name, so without this "my pipeline", "what do I owe"
+ * and "leads under my name" have nothing to resolve against — the model was
+ * being asked personal questions with no idea whose they were.
+ */
+export function callerContext(user: SessionUser): string {
+  return [
+    `The person you are talking to is ${user.name} (${user.email}).`,
+    `Address them by first name when it reads naturally.`,
+    `Lead ownership is recorded as a plain name, and theirs is "${user.name}" — so "my leads", "my pipeline", "what do I owe" and similar mean leads whose owner matches that. Pass it as the owner argument to the tools that take one, rather than asking them who they are.`,
+    `Never claim a lead is theirs unless the owner actually matches; say whose it is instead.`,
+    `If they ask what they may do, use what_can_i_do rather than guessing from their role.`,
+  ].join(" ");
+}
+
 // ---------------------------------------------------------------------------
 // with a function-calling loop. Activates when COPILOT_CHAT_ENDPOINT is set
 // (keyless via managed identity, or COPILOT_API_KEY). Wired for deploy.
@@ -612,6 +649,7 @@ class FoundryCopilotProvider implements CopilotProvider {
     const headers = { "content-type": "application/json", ...(await this.authHeader()) };
     const messages: Record<string, unknown>[] = [
       { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: callerContext(user) },
       { role: "user", content: message },
     ];
     const runs: ToolRun[] = [];

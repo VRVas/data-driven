@@ -10,6 +10,8 @@ import { getCrmGraph } from "@/lib/crm/graph";
 import { recordProposal } from "@/lib/crm/proposals";
 import { duplicateCandidates, currentProposals } from "@/lib/crm/logic";
 import { completeFollowUp, snoozeFollowUp } from "@/lib/leads/followups";
+import { sendExistingOutreach } from "@/lib/outreach/send";
+import { requirePermission } from "@/lib/auth/authorize";
 import { budgetVariance } from "@/lib/pipeline/budget";
 import { withHealth } from "@/lib/pipeline/health";
 import { effectiveTempoMonths } from "@/lib/scoring";
@@ -737,6 +739,48 @@ const whatCanIDo: CopilotTool = {
   },
 };
 
+const sendOutreachTool: CopilotTool = {
+  name: "send_outreach",
+  permission: "outreach:send",
+  write: true,
+  description:
+    "Send an outreach email that has already been drafted, by its id from outreach_status. Deliberately cannot compose and send in one step: drafting, review and sending are separate on purpose, and this is the last of the three. The message leaves the building and cannot be recalled, so surface it as a button and let the person press it. Use for 'send the Moncler email' after they have seen the draft.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Outreach message id, from outreach_status" },
+    },
+    required: ["id"],
+  },
+  async execute(args, ctx) {
+    const { id } = z.object({ id: z.string().min(1) }).parse(args);
+
+    // runTool has already checked outreach:send; this re-reads the context so
+    // the record scope travels with it, exactly as the outbox screen does.
+    const auth = await requirePermission("outreach:send");
+    const result = await sendExistingOutreach(auth, id);
+    if (!result.ok) return { ok: false, error: result.error ?? "Send failed." };
+
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "outreach.send",
+      entity: "outreach",
+      entityId: id,
+      summary: `Sent outreach to ${result.record?.brandName ?? id} from the copilot`,
+    });
+
+    return {
+      ok: true,
+      id,
+      to: result.record?.to ?? null,
+      subject: result.record?.subject ?? null,
+      leadName: result.record?.brandName ?? null,
+      provider: result.provider ?? null,
+    };
+  },
+};
+
 export const EXTRA_TOOLS: CopilotTool[] = [
   setNextMove,
   completeFollowUpTool,
@@ -745,6 +789,7 @@ export const EXTRA_TOOLS: CopilotTool[] = [
   setStrategicValue,
   linkCompany,
   assignLead,
+  sendOutreachTool,
   dataQuality,
   leadHistory,
   tempoReport,

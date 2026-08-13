@@ -10,6 +10,7 @@ import { authorizeLead } from "@/lib/leads/visible";
 import { getOutreachStore, type Outreach } from "@/lib/store/outreach";
 import { getEmailProvider } from "@/lib/mail/provider";
 import { logAudit } from "@/lib/store/audit";
+import { sendExistingOutreach } from "@/lib/outreach/send";
 import { todayYmd } from "@/lib/workflow";
 
 export type OutreachActionState = { ok?: boolean; error?: string } | undefined;
@@ -78,54 +79,13 @@ export async function sendOutreach(_prev: OutreachActionState, formData: FormDat
   const id = formData.get("id");
   if (typeof id !== "string" || !id) return { error: "Missing id." };
 
-  const store = getOutreachStore();
-  const record = await store.get(id);
-  if (!record) return { error: "That message no longer exists." };
-  if (record.status === "sent") return { ok: true };
-  if (record.status === "cancelled") return { error: "This message was cancelled." };
-
-  // Before the send, not after: an email cannot be recalled once it has gone.
-  const brand = await getBrandStore().get(record.brandId);
-  if (brand) await authorizeLead(auth, brand);
-
-  const result = await getEmailProvider().send({
-    to: record.to,
-    subject: record.subject,
-    body: record.body,
-  });
-
-  const updated: Outreach = {
-    ...record,
-    status: result.ok ? "sent" : "failed",
-    provider: result.provider,
-    providerMessageId: result.messageId,
-    error: result.ok ? undefined : result.error,
-    approvedById: admin.id,
-    approvedByName: admin.name,
-    updatedAt: new Date().toISOString(),
-  };
-  await store.update(updated);
-
-  if (result.ok) {
-    // Sending counts as a touch — refresh the lead's last-contact date.
-    if (brand) await getBrandStore().save({ ...brand, lastContact: todayYmd() });
-  }
-
-  await logAudit({
-    actorId: admin.id,
-    actorName: admin.name,
-    action: result.ok ? "outreach.send" : "outreach.fail",
-    entity: "outreach",
-    entityId: record.id,
-    summary: result.ok
-      ? `Sent outreach to ${record.brandName} via ${result.provider}`
-      : `Failed to send outreach to ${record.brandName}: ${result.error ?? "unknown"}`,
-  });
+  const result = await sendExistingOutreach(auth, id);
+  if (!result.ok) return { error: result.error?.startsWith("That message") || result.error?.startsWith("This message") ? result.error : `Send failed: ${result.error ?? "unknown error"}` };
 
   revalidatePath("/dashboard/outbox");
-  revalidatePath(`/dashboard/pipeline/${record.brandId}`);
+  if (result.record) revalidatePath(`/dashboard/pipeline/${result.record.brandId}`);
   revalidatePath("/dashboard");
-  return result.ok ? { ok: true } : { error: `Send failed: ${result.error ?? "unknown error"}` };
+  return { ok: true };
 }
 
 /** Cancel a draft / pending message. Admins, or the person who created it. */

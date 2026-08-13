@@ -271,6 +271,32 @@ test.describe("copilot starter prompts route to the right tool", () => {
   }
 });
 
+test.describe("copilot knows the caller and can send a drafted message", () => {
+  test("send_outreach refuses an id that does not exist", async ({ request }) => {
+    // The point is that it sends an EXISTING draft, never an arbitrary address.
+    const { body } = await callTool(request, "send_outreach", { id: "no-such-message" });
+    expect(body.data!.ok).toBe(false);
+    expect(String(body.data!.error)).toMatch(/no longer exists|not found/i);
+  });
+
+  test("send_outreach takes an id, not a recipient", async ({ request }) => {
+    const res = await request.get("/api/copilot/openapi");
+    const doc = (await res.json()) as {
+      paths: Record<string, { post: { requestBody: { content: Record<string, { schema: { properties: Record<string, unknown> } }> } } }>;
+    };
+    const schema = doc.paths["/api/copilot/tools/send_outreach"].post.requestBody.content["application/json"].schema;
+    // Only an id: there is no way to address a fresh email from the chat, so
+    // sending can only ever act on a draft a human can already see.
+    expect(Object.keys(schema.properties)).toEqual(["id"]);
+  });
+
+  test("the copilot can say who it is talking to", async ({ request }) => {
+    const { body } = await callTool(request, "what_can_i_do");
+    expect(body.ok).toBe(true);
+    expect(String(body.data!.user).length).toBeGreaterThan(0);
+  });
+});
+
 test.describe("copilot tool gating", () => {
   test("an unknown tool is a 404, not a silent success", async ({ request }) => {
     const res = await request.post("/api/copilot/tools/no_such_tool", { data: {} });
@@ -281,10 +307,11 @@ test.describe("copilot tool gating", () => {
     const res = await request.get("/api/copilot/openapi");
     expect(res.status()).toBe(200);
     const doc = (await res.json()) as { paths: Record<string, unknown> };
-    expect(Object.keys(doc.paths).length).toBeGreaterThanOrEqual(31);
+    expect(Object.keys(doc.paths).length).toBeGreaterThanOrEqual(32);
     expect(doc.paths["/api/copilot/tools/set_next_move"]).toBeTruthy();
     expect(doc.paths["/api/copilot/tools/my_work_queue"]).toBeTruthy();
     expect(doc.paths["/api/copilot/tools/pipeline_health"]).toBeTruthy();
+    expect(doc.paths["/api/copilot/tools/send_outreach"]).toBeTruthy();
   });
 });
 
