@@ -308,6 +308,15 @@ export const TOUR_STEPS: TourStep[] = [
     optional: true,
   },
   {
+    id: "recovery",
+    route: "/dashboard",
+    title: "Locked out? Not any more",
+    body: "New. Passwords are stored as one-way hashes, so a forgotten one was genuinely unrecoverable — there was no reset at all, not even for an admin. “Forgot password?” on the sign-in page now emails a single-use link that expires in 30 minutes. Asking for one tells nobody anything: a registered address and an unknown one get exactly the same reply, so the form cannot be used to discover who has an account.",
+    sheet: "Signing in with a six-digit emailed code also exists, but ships switched off: a managed mail domain allows only 10 sends an hour across the whole subscription, so it needs a custom domain before it is turned on.",
+    isNew: true,
+    placement: "center",
+  },
+  {
     id: "finish",
     route: "/dashboard",
     title: "You're all set",
