@@ -416,11 +416,17 @@ resource cosmosContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/co
     parent: cosmosDb
     name: c.name
     properties: {
-      resource: {
-        id: c.name
-        partitionKey: { paths: [ c.pk ], kind: 'Hash' }
-        defaultTtl: c.ttl
-      }
+      // defaultTtl is OMITTED rather than set to null when a container has no
+      // TTL: Cosmos rejects an explicit null with "One of the specified inputs
+      // is invalid", which ARM validation does not catch because it never
+      // reaches the data plane.
+      resource: union(
+        {
+          id: c.name
+          partitionKey: { paths: [ c.pk ], kind: 'Hash' }
+        },
+        c.ttl == null ? {} : { defaultTtl: c.ttl }
+      )
     }
   }
 ]
@@ -861,7 +867,7 @@ var reasoningEnv = [ { name: 'COPILOT_REASONING_EFFORT', value: reasoningEffort 
 // 10 sends an hour for the whole subscription, and sign-in is the highest
 // frequency mail there is: leaving this on would starve password reset and
 // outreach of the same quota.
-var otpEnv = [ { name: 'OTP_LOGIN_ENABLED', value: string(enableOtpLogin) } ]
+var otpEnv = [ { name: 'OTP_LOGIN_ENABLED', value: enableOtpLogin ? 'true' : 'false' } ]
 
 var baseEnv = [
   { name: 'PORT', value: '3000' }

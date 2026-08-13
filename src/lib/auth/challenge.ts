@@ -47,7 +47,10 @@ export const MAX_PER_HOUR = 5;
  * stuck. Turn it on once a custom, DNS-verified domain is attached.
  */
 export function otpLoginEnabled(): boolean {
-  return process.env.OTP_LOGIN_ENABLED === "true";
+  // Case-insensitive because Bicep's string(true) is "True": a strict === "true"
+  // meant the switch could be set and still never turn on. Still only the word
+  // itself, so "1"/"yes"/"on" do not enable it by accident.
+  return process.env.OTP_LOGIN_ENABLED?.trim().toLowerCase() === "true";
 }
 
 export const ttlMinutesFor = (kind: ChallengeKind) => (kind === "otp" ? OTP_TTL_MINUTES : RESET_TTL_MINUTES);

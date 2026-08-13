@@ -156,13 +156,20 @@ describe("login-by-code is opt-in", () => {
     expect(otpLoginEnabled()).toBe(false);
   });
 
-  it("needs the exact string true, not merely a truthy value", () => {
-    for (const v of ["1", "yes", "TRUE", "on", ""]) {
+  it("needs the word true, not merely a truthy value", () => {
+    for (const v of ["1", "yes", "on", "enabled", ""]) {
       process.env.OTP_LOGIN_ENABLED = v;
       expect(otpLoginEnabled()).toBe(false);
     }
-    process.env.OTP_LOGIN_ENABLED = "true";
-    expect(otpLoginEnabled()).toBe(true);
+  });
+
+  it("accepts the casing Bicep actually emits", () => {
+    // string(true) in an ARM template is "True". A strict === "true" meant the
+    // switch could be set in infra and still never turn on.
+    for (const v of ["true", "True", " TRUE "]) {
+      process.env.OTP_LOGIN_ENABLED = v;
+      expect(otpLoginEnabled()).toBe(true);
+    }
   });
 });
 
