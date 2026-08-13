@@ -22,6 +22,9 @@ param aiLocation string = 'swedencentral'
 @description('Deploy Azure Communication Services email (one-click outreach).')
 param deployEmail bool = false
 
+@description('Allow signing in with an emailed code. Needs a custom mail domain — a managed domain only permits 10 sends an hour per subscription.')
+param enableOtpLogin bool = false
+
 @description('Email address for the monthly cost-budget alert on the resource group. Empty disables it.')
 param budgetContactEmail string = ''
 
@@ -70,6 +73,7 @@ module resources 'resources.bicep' = {
     resourceToken: resourceToken
     tags: tags
     deployEmail: deployEmail
+    enableOtpLogin: enableOtpLogin
     chatModelName: chatModelName
     reasoningEffort: reasoningEffort
     agentName: agentName

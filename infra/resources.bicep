@@ -58,6 +58,9 @@ param deployerPrincipalId string = ''
 @description('Deploy Azure Communication Services email (one-click outreach). Off by default.')
 param deployEmail bool = false
 
+@description('Allow signing in with an emailed code. Requires a CUSTOM mail domain: an Azure Managed Domain permits only 10 sends per hour per subscription, which sign-in traffic would exhaust.')
+param enableOtpLogin bool = false
+
 @description('Monthly cost budget (in the billing currency) tracked on the resource group. Used only when a budget contact email is set.')
 param budgetAmount int = 100
 
@@ -390,17 +393,22 @@ resource cosmosDb 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-11-15
 }
 
 var containers = [
-  { name: 'brands', pk: '/id' }
-  { name: 'agents', pk: '/id' }
-  { name: 'industries', pk: '/name' }
-  { name: 'users', pk: '/email' }
-  { name: 'audit', pk: '/id' }
-  { name: 'savedViews', pk: '/userId' }
-  { name: 'outreach', pk: '/id' }
-  { name: 'conversations', pk: '/userId' }
-  { name: 'documents', pk: '/userId' }
-  { name: 'crm', pk: '/companyId' }
-  { name: 'profiles', pk: '/id' }
+  { name: 'brands', pk: '/id', ttl: null }
+  { name: 'agents', pk: '/id', ttl: null }
+  { name: 'industries', pk: '/name', ttl: null }
+  { name: 'users', pk: '/email', ttl: null }
+  { name: 'audit', pk: '/id', ttl: null }
+  { name: 'savedViews', pk: '/userId', ttl: null }
+  { name: 'outreach', pk: '/id', ttl: null }
+  { name: 'conversations', pk: '/userId', ttl: null }
+  { name: 'documents', pk: '/userId', ttl: null }
+  { name: 'crm', pk: '/companyId', ttl: null }
+  { name: 'profiles', pk: '/id', ttl: null }
+  // Login codes and reset tokens. Partitioned by email because every read is
+  // "the challenges for this address". defaultTtl -1 turns TTL ON with no
+  // default: without it Cosmos IGNORES the per-item ttl the app writes, and
+  // spent codes would pile up forever.
+  { name: 'authChallenges', pk: '/email', ttl: -1 }
 ]
 
 resource cosmosContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-11-15' = [
@@ -411,6 +419,7 @@ resource cosmosContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/co
       resource: {
         id: c.name
         partitionKey: { paths: [ c.pk ], kind: 'Hash' }
+        defaultTtl: c.ttl
       }
     }
   }
@@ -848,6 +857,12 @@ var emailEnv = deployEmail
 
 var reasoningEnv = [ { name: 'COPILOT_REASONING_EFFORT', value: reasoningEffort } ]
 
+// Off unless a custom mail domain is attached. An Azure Managed Domain allows
+// 10 sends an hour for the whole subscription, and sign-in is the highest
+// frequency mail there is: leaving this on would starve password reset and
+// outreach of the same quota.
+var otpEnv = [ { name: 'OTP_LOGIN_ENABLED', value: string(enableOtpLogin) } ]
+
 var baseEnv = [
   { name: 'PORT', value: '3000' }
   { name: 'AZURE_CLIENT_ID', value: uami.properties.clientId }
@@ -909,7 +924,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'web'
           image: webImage
           resources: { cpu: json('0.5'), memory: '1Gi' }
-          env: concat(baseEnv, emailEnv, reasoningEnv)
+          env: concat(baseEnv, emailEnv, reasoningEnv, otpEnv)
         }
       ]
       // minReplicas: 1 keeps one instance always warm (no cold starts). Cost of
