@@ -22,21 +22,46 @@ set -euo pipefail
 export AGENT_INSTRUCTIONS="${AGENT_INSTRUCTIONS:-You are the OOVIE BD Copilot for OOVIE Studios, a studio that builds AI-native music and video experiences for brands. You help the business-development team reason over their client pipeline. Your tools are described in the OpenAPI document you were given — read it and route deliberately; never invent a capability it does not list. Leads are ranked by a two-axis priority model: an Opportunity index (budget, weighted by how confident that number is, plus strategic value) and a Winnability index (stage probability, recency, access, receptivity), combined with a geometric mean so a lead must be decent on BOTH to rank — ease of delivery is reported but never blended in. Rankings cover open deals only. Ground every answer in tool results — never invent leads, numbers, scores, dates or sources; if you do not have the data, say so. Access is granular: ~44 permissions, each either on/off or scoped to none/own/team/all, so every tool runs as the signed-in user and may legitimately refuse. If one does, say which permission is missing and who to ask — never try another route to the same data. You may draft outreach but never send it; an admin approves and sends. You cannot delete anything. Be concise, concrete and decision-oriented: lead with the answer, then the evidence and the sources you used.}"
 
 BODY=$(python3 -c "import json,os;print(json.dumps({'name':os.environ['AZURE_AI_AGENT_NAME'],'definition':{'kind':'prompt','model':os.environ['AZURE_OPENAI_DEPLOYMENT'],'instructions':os.environ['AGENT_INSTRUCTIONS']}}))")
+# Updating an existing agent means adding a version, not re-creating it.
+VERSION_BODY=$(python3 -c "import json,os;print(json.dumps({'definition':{'kind':'prompt','model':os.environ['AZURE_OPENAI_DEPLOYMENT'],'instructions':os.environ['AGENT_INSTRUCTIONS']}}))")
 
-echo "Creating prompt agent '$AZURE_AI_AGENT_NAME' on $AZURE_AI_PROJECT_ENDPOINT"
+# Creates on the first deploy and updates on every one after. Previously this
+# only ever POSTed to /agents, so a second deploy got "already exists", retried
+# it ten times as if it were RBAC propagation, and left the agent running the
+# instructions it was born with — silently, because the hook continues on error.
+publish() {
+  err=$(az rest --method post \
+    --url "${AZURE_AI_PROJECT_ENDPOINT}/agents?api-version=v1" \
+    --resource "https://ai.azure.com" \
+    --headers "Content-Type=application/json" \
+    --body "$BODY" 2>&1) && { echo "Prompt agent '$AZURE_AI_AGENT_NAME' created."; return 0; }
+
+  case "$err" in
+    *conflict*|*already\ exists*)
+      az rest --method post \
+        --url "${AZURE_AI_PROJECT_ENDPOINT}/agents/${AZURE_AI_AGENT_NAME}/versions?api-version=v1" \
+        --resource "https://ai.azure.com" \
+        --headers "Content-Type=application/json" \
+        --body "$VERSION_BODY" >/dev/null && {
+          echo "Prompt agent '$AZURE_AI_AGENT_NAME' updated (new version)."
+          return 0
+        }
+      return 1
+      ;;
+    *)
+      printf '%s\n' "$err" >&2
+      return 1
+      ;;
+  esac
+}
+
+echo "Publishing prompt agent '$AZURE_AI_AGENT_NAME' on $AZURE_AI_PROJECT_ENDPOINT"
 for i in $(seq 1 10); do
-  if az rest --method post \
-      --url "${AZURE_AI_PROJECT_ENDPOINT}/agents?api-version=v1" \
-      --resource "https://ai.azure.com" \
-      --headers "Content-Type=application/json" \
-      --body "$BODY"; then
-    echo "Prompt agent '$AZURE_AI_AGENT_NAME' is ready and visible in the Foundry portal."
-    exit 0
-  fi
+  if publish; then exit 0; fi
   echo "Attempt $i failed (waiting for RBAC propagation)…"
   sleep 15
 done
 
-echo "WARNING: could not create the prompt agent automatically."
+echo "WARNING: could not publish the prompt agent automatically."
 echo "Grant your account 'Foundry Project Manager' on the Foundry account and re-run: azd hooks run postprovision"
 exit 1
