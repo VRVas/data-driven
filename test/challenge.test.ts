@@ -1,4 +1,7 @@
-import { describe, it, expect, afterEach } from "vitest";
+import { describe, it, expect, afterEach, beforeEach } from "vitest";
+import fs from "node:fs";
+import path from "node:path";
+import { getChallengeStore } from "@/lib/store/challenges";
 import {
   MAX_ATTEMPTS,
   MAX_PER_HOUR,
@@ -160,5 +163,49 @@ describe("login-by-code is opt-in", () => {
     }
     process.env.OTP_LOGIN_ENABLED = "true";
     expect(otpLoginEnabled()).toBe(true);
+  });
+});
+
+describe("redemption through the real store", () => {
+  // The store writes to .data; keep the dev file intact around these.
+  const FILE = path.join(process.cwd(), ".data/challenges.json");
+  let backup: string | null = null;
+
+  beforeEach(() => {
+    backup = fs.existsSync(FILE) ? fs.readFileSync(FILE, "utf8") : null;
+    fs.rmSync(FILE, { force: true });
+  });
+  afterEach(() => {
+    if (backup === null) fs.rmSync(FILE, { force: true });
+    else fs.writeFileSync(FILE, backup);
+  });
+
+  it("accepts a code once and never again", async () => {
+    const store = getChallengeStore();
+    await store.issue("replay@example.com", "otp", "123456");
+
+    expect((await store.redeem("replay@example.com", "otp", "123456")).ok).toBe(true);
+    // The whole point of a one-time code.
+    expect((await store.redeem("replay@example.com", "otp", "123456")).ok).toBe(false);
+  });
+
+  it("burns the challenge after too many wrong guesses", async () => {
+    const store = getChallengeStore();
+    await store.issue("brute@example.com", "otp", "654321");
+
+    for (let i = 0; i < MAX_ATTEMPTS; i++) {
+      expect((await store.redeem("brute@example.com", "otp", "000000")).ok).toBe(false);
+    }
+    // Even the correct code is worthless once the budget is spent.
+    expect((await store.redeem("brute@example.com", "otp", "654321")).ok).toBe(false);
+  });
+
+  it("issuing a new code invalidates the previous one", async () => {
+    const store = getChallengeStore();
+    await store.issue("rotate@example.com", "otp", "111111");
+    await store.issue("rotate@example.com", "otp", "222222");
+
+    expect((await store.redeem("rotate@example.com", "otp", "111111")).ok).toBe(false);
+    expect((await store.redeem("rotate@example.com", "otp", "222222")).ok).toBe(true);
   });
 });
