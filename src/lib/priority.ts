@@ -100,12 +100,28 @@ export function recencyOf(brand: Pick<Brand, "lastContact" | "initialContact">, 
   return Math.max(RECENCY_FLOOR, 0.5 ** (months / RECENCY_HALF_LIFE_MONTHS));
 }
 
+/** Where each grade starts. Ordered strongest first so `gradeFor` can walk it. */
+export const GRADE_BANDS: readonly { grade: Grade; from: number }[] = [
+  { grade: "A", from: 65 },
+  { grade: "B", from: 45 },
+  { grade: "C", from: 25 },
+  { grade: "D", from: 0 },
+];
+
 export function gradeFor(priority: number): Grade {
-  if (priority >= 65) return "A";
-  if (priority >= 45) return "B";
-  if (priority >= 25) return "C";
-  return "D";
+  return GRADE_BANDS.find((b) => priority >= b.from)!.grade;
 }
+
+/** The weights inside winnability, kept here so the model can be read off one list. */
+export const WI_WEIGHTS = {
+  stage: 0.45,
+  recency: 0.25,
+  accessibility: 0.15,
+  receptivity: 0.15,
+} as const;
+
+/** How opportunity splits between money and strategic worth. */
+export const OI_WEIGHTS = { money: 0.75, strategic: 0.25 } as const;
 
 export function quadrantFor(opportunity: number, winnability: number): PriorityQuadrant {
   if (opportunity >= PURSUE_OI) return winnability >= PURSUE_WI ? "Pursue" : "Invest";
@@ -122,17 +138,17 @@ export function priorityOf(brand: Brand, now: Date = new Date()): PriorityBreakd
   const strategicIndex = 100 * clamp01((brand.strategicValue ?? 0) / 3);
   // Strategic value is capped at a quarter of the axis so a flagship freebie
   // stays visible without being able to outrank paid work on its own.
-  const opportunity = Math.min(100, 0.75 * moneyIndex + 0.25 * strategicIndex);
+  const opportunity = Math.min(100, OI_WEIGHTS.money * moneyIndex + OI_WEIGHTS.strategic * strategicIndex);
 
   const pWin = STAGE_PROBABILITY[brand.status as BrandStatus] ?? 0;
   const recency = recencyOf(brand, now);
   const winnability =
     100 *
     clamp01(
-      0.45 * clamp01(pWin / OPEN_STAGE_MAX) +
-        0.25 * recency +
-        0.15 * clamp01((s.accessibilityScore ?? 0) / 5) +
-        0.15 * clamp01((s.receptivityScore ?? 0) / 5),
+      WI_WEIGHTS.stage * clamp01(pWin / OPEN_STAGE_MAX) +
+        WI_WEIGHTS.recency * recency +
+        WI_WEIGHTS.accessibility * clamp01((s.accessibilityScore ?? 0) / 5) +
+        WI_WEIGHTS.receptivity * clamp01((s.receptivityScore ?? 0) / 5),
     );
 
   const ease =

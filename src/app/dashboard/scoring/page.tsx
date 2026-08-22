@@ -1,6 +1,7 @@
 import { Reveal } from "@/components/Reveal";
 import { Badge } from "@/components/Badge";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
+import { ScoringExplainer } from "@/components/ScoringExplainer";
 import { getVisibleScoredBrands } from "@/lib/leads/visible";
 import { openLeads } from "@/lib/lifecycle";
 import { PRIORITY_TOKEN, leadScore, effectiveScores, eur } from "@/lib/scoring";
@@ -156,6 +157,18 @@ export default async function ScoringPage() {
           </div>
         </Reveal>
       </div>
+
+      <Reveal>
+        <div className="glass p-6">
+          <div className="eyebrow mb-2">Reference</div>
+          <h2 className="font-display text-xl font-semibold tracking-tight">How the numbers are worked out</h2>
+          <p className="mb-6 mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">
+            Every field, every weight, every threshold, and what has no effect at all. Rendered from the same
+            constants the ranking uses, so this page cannot drift away from the code.
+          </p>
+          <ScoringExplainer />
+        </div>
+      </Reveal>
     </div>
   );
 }

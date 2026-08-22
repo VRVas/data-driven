@@ -90,6 +90,45 @@ export default async function CompaniesPage() {
         </section>
       </Reveal>
 
+      <Reveal>
+        <section className="glass p-4 sm:p-6">
+          <div className="eyebrow mb-1">Reference</div>
+          <h2 className="font-display text-xl font-semibold tracking-tight">Where each figure comes from</h2>
+          <p className="mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">
+            One value per deal, strongest evidence first: an <strong>accepted</strong> proposal, else the one
+            currently <strong>sent</strong> and awaiting a decision, else the estimate typed when the lead
+            opened. An acceptance does not expire, so a later draft or a rejected re-quote cannot displace it.
+          </p>
+          <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+              <dt className="text-sm font-medium">Open pipeline</dt>
+              <dd className="mt-0.5 text-sm text-[var(--color-ink-muted)]">
+                Deals still open — every stage except Deal Closed and Did not work out.
+              </dd>
+            </div>
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+              <dt className="text-sm font-medium">Awaiting decision</dt>
+              <dd className="mt-0.5 text-sm text-[var(--color-ink-muted)]">
+                Proposals whose newest revision is <strong>sent</strong>. A re-quote replaces the old figure
+                rather than adding to it.
+              </dd>
+            </div>
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+              <dt className="text-sm font-medium">Lifetime value</dt>
+              <dd className="mt-0.5 text-sm text-[var(--color-ink-muted)]">
+                Deals at Deal Closed. Repeat value is everything after the first win.
+              </dd>
+            </div>
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+              <dt className="text-sm font-medium">Proposal win rate</dt>
+              <dd className="mt-0.5 text-sm text-[var(--color-ink-muted)]">
+                Accepted ÷ decided, one vote per deal. A deal re-quoted twice and won counts once.
+              </dd>
+            </div>
+          </dl>
+        </section>
+      </Reveal>
+
       {(duplicates.length > 0 || canMerge) && (
         <Reveal>
           <section className="glass p-4 sm:p-6">
