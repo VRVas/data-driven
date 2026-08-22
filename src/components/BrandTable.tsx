@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import type { Brand } from "@/lib/types";
+import { outcomeOf } from "@/lib/lifecycle";
 import { Badge } from "@/components/Badge";
 import { BrandEditor } from "@/components/BrandEditor";
 import { STATUS_TOKEN, PRIORITY_TOKEN, eur } from "@/lib/scoring";
@@ -19,15 +20,33 @@ import { useActionState } from "react";
 type SortKey = "name" | "status" | "waitingOn" | "priority" | "owner" | "industry" | "budget" | "lastContact";
 const SORT_KEYS: SortKey[] = ["name", "status", "waitingOn", "priority", "owner", "industry", "budget", "lastContact"];
 
-/** The pipeline questions, as filters. */
+/** The pipeline questions, as filters. Named for the work, not the lateness. */
 const HEALTH_FILTERS = [
   { key: "all", label: "All" },
-  { key: "lateOnUs", label: "Late on us" },
-  { key: "lateOnThem", label: "Late on them" },
+  { key: "lateOnUs", label: "To reply" },
+  { key: "lateOnThem", label: "To follow up" },
   { key: "untriaged", label: "Needs an owner" },
   { key: "stale", label: "Gone quiet" },
 ] as const;
 type HealthFilter = (typeof HEALTH_FILTERS)[number]["key"];
+
+/**
+ * Finished deals are noise in a view about what to do next, but hiding them
+ * outright loses them. They stay one chip away.
+ */
+const LIFECYCLE_FILTERS = [
+  { key: "active", label: "Active" },
+  { key: "won", label: "Won" },
+  { key: "lost", label: "Lost" },
+  { key: "everything", label: "Everything" },
+] as const;
+type LifecycleFilter = (typeof LIFECYCLE_FILTERS)[number]["key"];
+
+const matchesLifecycle = (b: Brand, f: LifecycleFilter): boolean => {
+  if (f === "everything") return true;
+  const outcome = outcomeOf(b.status);
+  return f === "active" ? outcome === "open" : outcome === f;
+};
 
 const PIPE_COLS: Column[] = [
   { key: "name", label: "Brand" },
@@ -78,6 +97,7 @@ export function BrandTable({
   const [status, setStatus] = useState<string>("All");
   const [owner, setOwner] = useState<string>("All");
   const [healthFilter, setHealthFilter] = useState<HealthFilter>("all");
+  const [lifecycle, setLifecycle] = useState<LifecycleFilter>("active");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "name", dir: 1 });
   // undefined = closed · null = creating · Brand = editing
   const [editing, setEditing] = useState<Brand | null | undefined>(undefined);
@@ -97,6 +117,7 @@ export function BrandTable({
       const h = health[b.id];
       return (
         hay.includes(q.toLowerCase()) &&
+        matchesLifecycle(b, lifecycle) &&
         (status === "All" || b.status === status) &&
         (owner === "All" || b.owner === owner) &&
         (healthFilter === "all" || !!h?.[healthFilter])
@@ -127,7 +148,7 @@ export function BrandTable({
       return (av < bv ? -1 : av > bv ? 1 : 0) * sort.dir;
     });
     return r;
-  }, [brands, health, q, status, owner, healthFilter, sort]);
+  }, [brands, health, q, status, owner, healthFilter, lifecycle, sort]);
 
   const toggleSort = (key: SortKey) =>
     setSort((s) => ({ key, dir: s.key === key && s.dir === 1 ? -1 : 1 }));
@@ -173,12 +194,39 @@ export function BrandTable({
         <SaveViewForm q={q} status={status} owner={owner} sortKey={sort.key} sortDir={sort.dir} />
       </div>
 
+      {/* what to show at all — finished deals are noise here, not gone */}
+      <div data-tour="pipe-lifecycle" className="mb-3 flex flex-wrap items-center gap-2">
+        <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Show</span>
+        {LIFECYCLE_FILTERS.map((f) => {
+          const count = brands.filter((b) => matchesLifecycle(b, f.key)).length;
+          const active = lifecycle === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setLifecycle(f.key)}
+              className={clsx(
+                "rounded-full border px-3 py-0.5 text-xs transition-colors",
+                active
+                  ? "border-[var(--color-brand)] bg-[var(--color-brand)]/10 text-[var(--color-ink)]"
+                  : "border-[var(--color-border-strong)] text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",
+              )}
+            >
+              {f.label} <span className="tabular-nums text-[var(--color-ink-faint)]">{count}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* health filters — the two questions the pipeline view exists to answer */}
       <div data-tour="pipe-health" className="mb-3 flex flex-wrap items-center gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Health</span>
         {HEALTH_FILTERS.map((f) => {
-          const count =
-            f.key === "all" ? brands.length : brands.filter((b) => health[b.id]?.[f.key]).length;
+          // Counted within what is on screen, so the chip cannot promise rows
+          // the lifecycle filter is hiding.
+          const inScope = brands.filter((b) => matchesLifecycle(b, lifecycle));
+          const count = f.key === "all" ? inScope.length : inScope.filter((b) => health[b.id]?.[f.key]).length;
           const active = healthFilter === f.key;
           return (
             <button
@@ -307,6 +355,10 @@ export function BrandTable({
  *
  * "Waiting" and "late" are shown as one cell because the side alone is not
  * actionable — it is the overdue days that turn it into a to-do.
+ *
+ * A side nobody stated is marked as inferred. It used to render identically to
+ * a stated one, so a lead whose "waiting on" was literally "not decided" still
+ * announced "Us, 142 days late" with nothing on the page to say why.
  */
 function WaitingCell({ health }: { health?: LeadHealth }) {
   if (!health || !health.waitingOn) {
@@ -314,9 +366,19 @@ function WaitingCell({ health }: { health?: LeadHealth }) {
   }
   const onUs = health.waitingOn === "us";
   const late = health.daysLate > 0;
+  const inferred = health.source !== "explicit";
   return (
     <span className="inline-flex items-center gap-1.5">
       <Badge color={onUs ? "var(--color-brand)" : "var(--color-ink-faint)"}>{onUs ? "Us" : "Them"}</Badge>
+      {inferred && (
+        <span
+          title={WAITING_REASON[health.source]}
+          className="cursor-help text-xs text-[var(--color-ink-faint)]"
+          aria-label="inferred"
+        >
+          ?
+        </span>
+      )}
       {late && (
         <span
           className="text-xs font-medium tabular-nums"
@@ -328,6 +390,15 @@ function WaitingCell({ health }: { health?: LeadHealth }) {
     </span>
   );
 }
+
+export const WAITING_REASON: Record<LeadHealth["source"], string> = {
+  explicit: "Someone set this on the lead.",
+  proposal:
+    "Inferred: a proposal is out for decision, so the ball is with them. Nobody has set this on the lead.",
+  followUp:
+    "Inferred: the lead has a follow-up date but nobody has said who owes the next move, so it is taken as ours. Set “Waiting on” to say otherwise.",
+  none: "Nobody has said, and there is no follow-up date or open proposal to infer it from.",
+};
 
 function Select({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) {  return (
     <label className="flex items-center gap-2 text-sm text-[var(--color-ink-muted)]">

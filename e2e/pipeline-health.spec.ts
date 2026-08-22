@@ -17,20 +17,26 @@ test.describe("pipeline health", () => {
     await expect(page.getByRole("heading", { name: "Pipeline", level: 1 })).toBeVisible();
   });
 
-  test("shows the four health headlines", async ({ page }) => {
+  test("shows the pipeline headlines", async ({ page }) => {
     const cards = page.locator("div.beam-card");
-    await expect(cards).toHaveCount(4);
-    for (const label of ["Late on us", "Late on them", "Awaiting greenlight", "Needs an owner"]) {
+    await expect(cards).toHaveCount(5);
+    for (const label of [
+      "Pipeline value",
+      "Outstanding proposals",
+      "To reply",
+      "To follow up",
+      "Needs an owner",
+    ]) {
       await expect(cards.filter({ hasText: label }).first()).toBeVisible();
     }
     await page.screenshot({ path: "e2e-artifacts/screens/40-pipeline-health.png", fullPage: false });
   });
 
-  test("late-on-us and late-on-them are counted separately", async ({ page }) => {
+  test("work we owe and work they owe are counted separately", async ({ page }) => {
     // The whole point of the wave: one overdue count cannot tell a backlog
     // from a chase list.
-    const onUs = page.getByRole("button", { name: /^Late on us/ });
-    const onThem = page.getByRole("button", { name: /^Late on them/ });
+    const onUs = page.getByRole("button", { name: /^To reply/ });
+    const onThem = page.getByRole("button", { name: /^To follow up/ });
     await expect(onUs).toBeVisible();
     await expect(onThem).toBeVisible();
     expect(await onUs.textContent()).not.toBe(await onThem.textContent());
@@ -40,7 +46,7 @@ test.describe("pipeline health", () => {
     const counter = page.locator("text=/^\\d+ of \\d+$/");
     const before = await counter.textContent();
 
-    const chip = page.getByRole("button", { name: /^Late on us/ });
+    const chip = page.getByRole("button", { name: /^To reply/ });
     const count = Number((await chip.textContent())?.match(/(\d+)\s*$/)?.[1] ?? "0");
     await chip.click();
     await expect(chip).toHaveAttribute("aria-pressed", "true");
@@ -58,15 +64,31 @@ test.describe("pipeline health", () => {
   test("clearing the filter restores the full list", async ({ page }) => {
     const counter = page.locator("text=/^\\d+ of \\d+$/");
     const full = await counter.textContent();
-    await page.getByRole("button", { name: /^Late on us/ }).click();
+    await page.getByRole("button", { name: /^To reply/ }).click();
     await page.getByRole("button", { name: /^All/ }).click();
     await expect(counter).toHaveText(full ?? "");
   });
 
   test("the table says which side owes the next move", async ({ page }) => {
-    await page.getByRole("button", { name: /^Late on us/ }).click();
+    await page.getByRole("button", { name: /^To reply/ }).click();
     const first = page.locator("tbody tr").first();
     await expect(first.getByText("Us", { exact: true })).toBeVisible();
+  });
+
+  test("finished deals are out of the way but not lost", async ({ page }) => {
+    // "Remove all the noise, as here I want to see only what is active" —
+    // without the closed deals becoming unreachable.
+    const counter = page.locator("text=/^\\d+ of \\d+$/");
+    const active = page.getByRole("button", { name: /^Active/ });
+    await expect(active).toHaveAttribute("aria-pressed", "true");
+
+    const won = page.getByRole("button", { name: /^Won/ });
+    const wonCount = Number((await won.textContent())?.match(/(\d+)\s*$/)?.[1] ?? "0");
+    test.skip(wonCount === 0, "no won deals in the seeded set");
+
+    await won.click();
+    await expect(counter).toHaveText(new RegExp(`^${wonCount} of `));
+    await expect(page.getByText("Deal Closed").first()).toBeVisible();
   });
 });
 
