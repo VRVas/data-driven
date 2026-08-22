@@ -56,6 +56,7 @@ export const PERMISSIONS = [
   { key: "lead:stage:advance", category: "Pipeline", label: "Move leads between stages", scoped: true },
   { key: "lead:assign", category: "Pipeline", label: "Change lead owner", scoped: true },
   { key: "lead:delete", category: "Pipeline", label: "Delete leads", scoped: true, risk: "high", help: "Permanent." },
+  { key: "company:merge", category: "Pipeline", label: "Merge companies", scoped: false, risk: "high", help: "Moves every deal onto the surviving company. Undone one deal at a time." },
 
   // ---- Agents -------------------------------------------------------------
   { key: "agent:read", category: "Agents", label: "View agents & agencies", scoped: true },

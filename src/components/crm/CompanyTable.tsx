@@ -27,6 +27,7 @@ export function CompanyTable({ companies }: { companies: CompanyRow[] }) {
   // Money descending first: the useful default is "who is worth the most", not
   // alphabetical.
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "open", dir: -1 });
+  const [q, setQ] = useState("");
 
   const rows = useMemo(() => {
     const value = (c: CompanyRow): string | number => {
@@ -40,11 +41,14 @@ export function CompanyTable({ companies }: { companies: CompanyRow[] }) {
         case "repeat": return c.rollup.repeatValue;
       }
     };
-    return [...companies].sort((a, b) => {
-      const av = value(a), bv = value(b);
-      return (av < bv ? -1 : av > bv ? 1 : 0) * sort.dir;
-    });
-  }, [companies, sort]);
+    const needle = q.trim().toLowerCase();
+    return companies
+      .filter((c) => !needle || `${c.name} ${c.industry ?? ""}`.toLowerCase().includes(needle))
+      .sort((a, b) => {
+        const av = value(a), bv = value(b);
+        return (av < bv ? -1 : av > bv ? 1 : 0) * sort.dir;
+      });
+  }, [companies, sort, q]);
 
   // Text sorts read best A→Z first; money reads best biggest-first.
   const toggle = (key: SortKey) =>
@@ -71,8 +75,23 @@ export function CompanyTable({ companies }: { companies: CompanyRow[] }) {
   );
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+    <div>
+      <div className="flex flex-wrap items-center gap-3 border-b border-[var(--color-border)] px-4 py-3 sm:px-6">
+        <input
+          type="search"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Search companies…"
+          aria-label="Search companies"
+          className="h-9 w-64 max-w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-brand)]"
+        />
+        <span className="text-sm text-[var(--color-ink-muted)]">
+          {rows.length} of {companies.length}
+        </span>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
         <thead className="border-b border-[var(--color-border)]">
           <tr className="text-left">
             {th("name", "Company")}
@@ -111,8 +130,16 @@ export function CompanyTable({ companies }: { companies: CompanyRow[] }) {
               </td>
             </tr>
           ))}
-        </tbody>
-      </table>
+          {rows.length === 0 && (
+            <tr>
+              <td colSpan={6} className="px-4 py-10 text-center text-sm text-[var(--color-ink-muted)] sm:px-6">
+                No company matches “{q}”.
+              </td>
+            </tr>
+          )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

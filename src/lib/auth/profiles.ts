@@ -55,6 +55,7 @@ const SALES_REP_KEYS: PermissionKey[] = [
 const SALES_MANAGER_KEYS: PermissionKey[] = [
   ...SALES_REP_KEYS,
   "lead:delete",
+  "company:merge",
   "outreach:approve", "outreach:send",
   "audit:read", "audit:export",
   "user:read",

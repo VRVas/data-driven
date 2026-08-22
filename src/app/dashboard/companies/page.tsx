@@ -7,17 +7,29 @@ import { getCrmGraph, getPipelineMoney } from "@/lib/crm/graph";
 import { duplicateCandidates } from "@/lib/crm/logic";
 import { eur } from "@/lib/scoring";
 import { CompanyTable } from "@/components/crm/CompanyTable";
+import { MergeCompanies } from "@/components/crm/MergeCompanies";
 
 export const dynamic = "force-dynamic";
 
 export default async function CompaniesPage() {
   if (!(await can("lead:read"))) redirect("/dashboard");
 
-  const [graph, money] = await Promise.all([getCrmGraph(), getPipelineMoney()]);
+  const [graph, money, canMerge] = await Promise.all([
+    getCrmGraph(),
+    getPipelineMoney(),
+    can("company:merge"),
+  ]);
   const companies = [...graph.companies].sort(
     (a, b) => b.rollup.openPipelineValue - a.rollup.openPipelineValue,
   );
   const duplicates = duplicateCandidates(graph.companies);
+  const mergeChoices = [...graph.companies]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      dealCount: graph.deals.filter((d) => d.companyId === c.id).length,
+    }));
 
   return (
     <div className="space-y-8">
@@ -78,33 +90,53 @@ export default async function CompaniesPage() {
         </section>
       </Reveal>
 
-      {duplicates.length > 0 && (
+      {(duplicates.length > 0 || canMerge) && (
         <Reveal>
           <section className="glass p-4 sm:p-6">
             <div className="eyebrow mb-1">Review</div>
-            <h2 className="font-display text-xl font-semibold tracking-tight">Possible duplicates</h2>
+            <h2 className="font-display text-xl font-semibold tracking-tight">
+              {duplicates.length > 0 ? "Possible duplicates" : "Merge companies"}
+            </h2>
             <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-              These names look alike, which is not the same as being the same client — &ldquo;Allianz Bank&rdquo; and
-              &ldquo;Allianz CH&rdquo; may well be two customers. Nothing is ever merged automatically; open them and
-              link the deals yourself if they belong together.
+              {duplicates.length > 0 ? (
+                <>
+                  These names look alike, which is not the same as being the same client —
+                  &ldquo;Allianz Bank&rdquo; and &ldquo;Allianz CH&rdquo; may well be two customers. Nothing is
+                  ever merged automatically.
+                </>
+              ) : (
+                <>
+                  Nothing looks duplicated right now. If two records are the same client anyway, fold one into
+                  the other here.
+                </>
+              )}
             </p>
-            <ul className="mt-4 space-y-2">
-              {duplicates.map((group) => (
-                <li
-                  key={group.map((c) => c.id).join("|")}
-                  className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
-                >
-                  {group.map((c, i) => (
-                    <span key={c.id} className="flex items-center gap-2">
-                      {i > 0 && <span className="text-[var(--color-ink-faint)]">·</span>}
-                      <Link href={`/dashboard/companies/${c.id}`} className="hover:text-[var(--color-brand)]">
-                        {c.name}
-                      </Link>
-                    </span>
-                  ))}
-                </li>
-              ))}
-            </ul>
+            {duplicates.length > 0 && (
+              <ul className="mt-4 space-y-2">
+                {duplicates.map((group) => (
+                  <li
+                    key={group.map((c) => c.id).join("|")}
+                    className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm"
+                  >
+                    {group.map((c, i) => (
+                      <span key={c.id} className="flex items-center gap-2">
+                        {i > 0 && <span className="text-[var(--color-ink-faint)]">·</span>}
+                        <Link href={`/dashboard/companies/${c.id}`} className="hover:text-[var(--color-brand)]">
+                          {c.name}
+                        </Link>
+                      </span>
+                    ))}
+                  </li>
+                ))}
+              </ul>
+            )}
+            {canMerge ? (
+              <MergeCompanies companies={mergeChoices} />
+            ) : (
+              <p className="mt-3 text-sm text-[var(--color-ink-faint)]">
+                Open them and link the deals yourself if they belong together — merging is restricted.
+              </p>
+            )}
           </section>
         </Reveal>
       )}

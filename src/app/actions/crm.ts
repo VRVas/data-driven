@@ -67,6 +67,69 @@ export async function linkDealToCompany(_prev: CrmActionState, formData: FormDat
   return { ok: true };
 }
 
+/**
+ * Fold one company into another: every deal it holds is re-pointed at the
+ * survivor.
+ *
+ * Duplicate detection has always been deliberately over-inclusive and refused
+ * to act on its own guesses, which left "merge them" as a manual job of
+ * re-linking each deal by hand. This is that job, done once, and it is still a
+ * human asserting the two are the same client.
+ *
+ * There is no separate merged-company record to write: companies are projected
+ * from their deals, so a company with no deals left simply stops existing.
+ */
+export async function mergeCompanies(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
+  const auth = await requirePermission("company:merge");
+  const { user } = auth;
+
+  const parsed = z
+    .object({ sourceId: z.string().min(1), targetId: z.string().min(1) })
+    .safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "Pick both companies." };
+  const { sourceId, targetId } = parsed.data;
+  if (sourceId === targetId) return { error: "Pick two different companies." };
+
+  const graph = await getCrmGraph();
+  const source = graph.companies.find((c) => c.id === sourceId);
+  const target = graph.companies.find((c) => c.id === targetId);
+  if (!source) return { error: "That company no longer exists." };
+  if (!target) return { error: "The company you are merging into no longer exists." };
+
+  const moving = graph.deals.filter((d) => d.companyId === sourceId);
+  // Checked before anything is written: a merge that moved the deals it could
+  // reach and skipped the rest would split the company rather than merge it.
+  for (const deal of moving) await authorizeLead(auth, deal);
+
+  const store = getCrmOverlayStore();
+  const linkedAt = todayIso();
+  for (const deal of moving) {
+    await store.linkDeal({
+      dealId: deal.id,
+      companyId: targetId,
+      companyName: target.name,
+      linkedById: user.id,
+      linkedByName: user.name,
+      linkedAt,
+    });
+  }
+
+  await logAudit({
+    actorId: user.id,
+    actorName: user.name,
+    action: "company.merge",
+    entity: "company",
+    entityId: targetId,
+    summary: `Merged ${source.name} into ${target.name} (${moving.length} ${moving.length === 1 ? "deal" : "deals"})`,
+  });
+
+  revalidatePath("/dashboard/companies");
+  revalidatePath(`/dashboard/companies/${targetId}`);
+  revalidatePath(`/dashboard/companies/${sourceId}`);
+  for (const deal of moving) revalidatePath(`/dashboard/pipeline/${deal.id}`);
+  return { ok: true };
+}
+
 /** Undo a link — the deal goes back to standing on its own. */
 export async function unlinkDeal(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
   const auth = await requirePermission("lead:update");
