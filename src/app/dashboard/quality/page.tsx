@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
+import { ResolveConflictButton } from "@/components/crm/ResolveConflictButton";
+import { can } from "@/lib/auth/authorize";
 import { getDataQuality } from "@/lib/data";
 import { getVisibleBrands } from "@/lib/leads/visible";
 import { outcomeConflicts } from "@/lib/lifecycle";
@@ -11,6 +13,7 @@ export const dynamic = "force-dynamic";
 export default async function QualityPage() {
   const { issues, count } = getDataQuality();
   const conflicts = outcomeConflicts(await getVisibleBrands());
+  const canUpdate = await can("lead:update");
   const groups = issues.reduce<Record<string, typeof issues>>((acc, i) => {
     const bucket = i.issue.includes("date") || i.key.includes("Contact")
       ? "Dates"
@@ -64,9 +67,11 @@ export default async function QualityPage() {
               {conflicts.length} leads look like two deals in one row
             </h2>
             <p className="mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">
-              The imported outcome disagrees with the current stage. That is rarely a typo — it usually means
-              one deal finished and another is already running with the same brand (won, then re-approached; or
-              lost, then a fresh attempt). Splitting these into separate deals per company is coming.
+              &ldquo;Imported outcome&rdquo; is the outcome column from the original spreadsheet, recorded at import
+              and never edited since. Where it disagrees with the stage, one of two things is true: the stage is
+              simply the newer answer, or the row is carrying two engagements (won, then re-approached; or lost,
+              then a fresh attempt). Confirm the stage to close it, or open the lead and add the second deal
+              under the same company.
             </p>
             <ul className="mt-4 space-y-2">
               {conflicts.map((c) => (
@@ -87,6 +92,7 @@ export default async function QualityPage() {
                   <span className="text-[var(--color-ink-muted)]">
                     imported outcome <span className="text-[var(--color-ink)]">{c.process}</span>
                   </span>
+                  {canUpdate && <ResolveConflictButton id={c.id} status={c.status ?? "unset"} />}
                 </li>
               ))}
             </ul>

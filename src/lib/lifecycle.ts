@@ -61,3 +61,24 @@ export function outcomeConflicts(brands: Brand[]): OutcomeConflict[] {
     .filter((c): c is OutcomeConflict => c !== null)
     .sort((a, b) => a.name.localeCompare(b.name));
 }
+
+/**
+ * Bring the imported outcome into line with the stage a human has just set.
+ *
+ * `process` came from the spreadsheet's own outcome column and had no UI, so a
+ * lead correctly marked "Did not work out" in the app kept being reported as
+ * disagreeing with an imported "Open" forever — the warning named a field the
+ * user could not reach, and nothing they did could clear it.
+ *
+ * Once someone states the outcome here, the import is stale by definition.
+ * Returns the same object when there is nothing to reconcile.
+ */
+export function reconcileImportedOutcome(brand: Brand): Brand {
+  const s = brand.scores;
+  if (!s?.process) return brand;
+  const outcome = outcomeOf(brand.status);
+  if ((s.process === "Open") === (outcome === "open")) return brand;
+
+  const process = outcome === "open" ? "Open" : outcome === "won" ? "Closed" : "Failed";
+  return { ...brand, scores: { ...s, process } };
+}

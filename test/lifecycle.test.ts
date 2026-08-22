@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { outcomeOf, isOpen, openLeads, outcomeConflictOf, outcomeConflicts } from "@/lib/lifecycle";
+import { outcomeOf, isOpen, openLeads, outcomeConflictOf, outcomeConflicts, reconcileImportedOutcome } from "@/lib/lifecycle";
 import { BRAND_STATUSES } from "@/lib/vocab";
 import type { Brand, BrandScores } from "@/lib/types";
 
@@ -86,5 +86,38 @@ describe("outcomeConflictOf", () => {
       brand("Early", { process: "Failed" }, "Alpha", "a"),
     ]);
     expect(rows.map((r) => r.name)).toEqual(["Alpha", "Zeta"]);
+  });
+});
+
+describe("reconcileImportedOutcome", () => {
+  it("clears a conflict the user had no way to resolve", () => {
+    // Reported: a lead correctly marked "Did not work out", with a closing
+    // date, kept being flagged against an imported "Open" that has no UI.
+    const flagged = brand("Did not work out", { process: "Open" });
+    expect(outcomeConflictOf(flagged)).not.toBeNull();
+
+    const after = reconcileImportedOutcome(flagged);
+    expect(after.scores!.process).toBe("Failed");
+    expect(outcomeConflictOf(after)).toBeNull();
+  });
+
+  it("maps a win to the sheet's own word for it", () => {
+    expect(reconcileImportedOutcome(brand("Deal Closed", { process: "Open" })).scores!.process).toBe("Closed");
+  });
+
+  it("reopens the imported outcome when the lead goes back to work", () => {
+    expect(reconcileImportedOutcome(brand("Back to Attack", { process: "Closed" })).scores!.process).toBe("Open");
+  });
+
+  it("leaves an agreeing record untouched", () => {
+    const agreed = brand("Early", { process: "Open" });
+    expect(reconcileImportedOutcome(agreed)).toBe(agreed);
+  });
+
+  it("has nothing to reconcile when the import said nothing", () => {
+    const noProcess = brand("Early", { process: null });
+    expect(reconcileImportedOutcome(noProcess)).toBe(noProcess);
+    const unscored = brand("Early", null);
+    expect(reconcileImportedOutcome(unscored)).toBe(unscored);
   });
 });

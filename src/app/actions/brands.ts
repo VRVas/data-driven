@@ -8,6 +8,7 @@ import { getCrmOverlayStore } from "@/lib/store/crm";
 import { authorizeLead } from "@/lib/leads/visible";
 import { logAudit } from "@/lib/store/audit";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
+import { reconcileImportedOutcome } from "@/lib/lifecycle";
 import { writeBudget } from "@/lib/pipeline/budget";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import { STRATEGIC_REASONS } from "@/lib/priority";
@@ -84,6 +85,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   const store = getBrandStore();
 
   let brand: Brand;
+  let statusChanged = false;
   if (input.id) {
     const existing = await store.get(input.id);
     if (!existing) return { error: "That lead no longer exists." };
@@ -118,6 +120,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   }
 
   brand.name = input.name;
+  statusChanged = brand.status !== ((input.status as Brand["status"]) ?? null);
   brand.status = (input.status as Brand["status"]) ?? null;
   brand.priority = (input.priority as Brand["priority"]) ?? null;
   brand.industry = (input.industry as Brand["industry"]) ?? null;
@@ -144,6 +147,9 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
     input.budget ?? null,
     (input.assumption as "Confirmed" | "Estimated" | undefined) ?? (input.budget == null ? null : "Estimated"),
   );
+  // Only when the stage actually moved: saving an unrelated edit should not
+  // quietly close a review item nobody looked at.
+  if (statusChanged) brand = reconcileImportedOutcome(brand);
 
   await store.save(brand);
   await logAudit({
@@ -161,6 +167,46 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   revalidatePath("/dashboard/scoring");
   // Companies and their rollups are projected from leads, so an edit moves them.
   revalidatePath("/dashboard/companies");
+  revalidatePath("/dashboard/quality");
+  revalidatePath("/dashboard/industries");
+  revalidatePath("/dashboard/whitespace");
+  return { ok: true };
+}
+
+/**
+ * Accept the current stage as the answer, closing an imported-outcome conflict.
+ *
+ * The alternative reading is that the row holds two engagements, which is
+ * resolved by creating the second lead — not here.
+ */
+export async function resolveOutcomeConflict(
+  _prev: BrandActionState,
+  formData: FormData,
+): Promise<BrandActionState> {
+  const auth = await requirePermission("lead:update");
+  const id = formData.get("id");
+  if (typeof id !== "string" || !id) return { error: "Missing id." };
+
+  const store = getBrandStore();
+  const brand = await store.get(id);
+  if (!brand) return { error: "That lead no longer exists." };
+  await authorizeLead(auth, brand);
+
+  const reconciled = reconcileImportedOutcome(brand);
+  if (reconciled === brand) return { ok: true };
+
+  await store.save(reconciled);
+  await logAudit({
+    actorId: auth.user.id,
+    actorName: auth.user.name,
+    action: "brand.update",
+    entity: "brand",
+    entityId: id,
+    summary: `Confirmed ${brand.name} is ${brand.status ?? "unset"}, not the imported outcome`,
+  });
+
+  revalidatePath("/dashboard/quality");
+  revalidatePath(`/dashboard/pipeline/${id}`);
   return { ok: true };
 }
 
@@ -223,7 +269,7 @@ export async function changeBrandStatus(
   }
 
   const patch = statusSideEffects(brand, to, todayYmd());
-  await store.save({ ...brand, status: to, ...patch });
+  await store.save(reconcileImportedOutcome({ ...brand, status: to, ...patch }));
   await logAudit({
     actorId: user.id,
     actorName: user.name,
@@ -237,5 +283,6 @@ export async function changeBrandStatus(
   revalidatePath("/dashboard/pipeline");
   revalidatePath(`/dashboard/pipeline/${id}`);
   revalidatePath("/dashboard/companies");
+  revalidatePath("/dashboard/quality");
   return { ok: true };
 }
