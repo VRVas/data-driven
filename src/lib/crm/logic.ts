@@ -150,6 +150,46 @@ export function proposalWinRate(proposals: Proposal[]): number | null {
   return decided.filter((p) => p.status === "accepted").length / decided.length;
 }
 
+/**
+ * Where a deal's commercial figure came from, strongest evidence first.
+ *
+ * `accepted` the client agreed to pay it · `quoted` we have asked for it and
+ * are waiting · `estimate` somebody typed it when the lead opened · `none`
+ * nobody has said.
+ */
+export type ValueBasis = "accepted" | "quoted" | "estimate" | "none";
+
+export interface DealValue {
+  value: number;
+  basis: ValueBasis;
+}
+
+/**
+ * The one commercial figure for a deal, and how much it can be trusted.
+ *
+ * Every money total on the platform resolves through here, because the same
+ * deal reporting one number on the lead page and another on the companies page
+ * is how a client with an accepted €2,222,222 offer showed €0 lifetime value:
+ * the totals only ever read the budget typed at the start, which for a lead
+ * created in the app was nothing at all.
+ *
+ * An acceptance is a fact and does not expire, so it outranks a later draft or
+ * a rejected re-quote. Below that sits the live ask, and only then the opening
+ * hypothesis.
+ */
+export function dealValue(deal: Pick<Deal, "id" | "economics">, proposals: Proposal[] = []): DealValue {
+  const mine = proposals.filter((p) => p.dealId === deal.id);
+
+  const accepted = latestProposal(mine.filter((p) => p.status === "accepted"));
+  if (accepted) return { value: accepted.value, basis: "accepted" };
+
+  const current = latestProposal(mine);
+  if (current?.status === "sent") return { value: current.value, basis: "quoted" };
+
+  const budget = deal.economics.budget;
+  return budget == null ? { value: 0, basis: "none" } : { value: budget, basis: "estimate" };
+}
+
 // ---------------------------------------------------------------------------
 // Rollups
 // ---------------------------------------------------------------------------
@@ -175,14 +215,17 @@ export type DealProbability = (deal: Pick<Deal, "stage" | "dealType">) => number
 export function rollupFor(
   deals: Deal[],
   winProbability: DealProbability,
+  proposals: Proposal[] = [],
   now: Date = new Date(),
 ): CompanyRollup {
   const open = deals.filter((d) => d.outcome === "open");
   const won = deals.filter((d) => d.outcome === "won");
   const lost = deals.filter((d) => d.outcome === "lost");
 
-  const valueOf = (d: Deal) => d.economics.budget ?? 0;
-  const lifetimeValue = won.reduce((s, d) => s + (d.wonValue ?? valueOf(d)), 0);
+  // A won deal keeps whatever was banked; everything else resolves to the best
+  // evidence available.
+  const valueOf = (d: Deal) => d.wonValue ?? dealValue(d, proposals).value;
+  const lifetimeValue = won.reduce((s, d) => s + valueOf(d), 0);
   // Undated wins would otherwise make "which came first" depend on array order,
   // and repeat value with it. Fall back to the id so the answer is stable.
   const wonInOrder = [...won].sort((a, b) =>
@@ -198,7 +241,7 @@ export function rollupFor(
     openPipelineValue: open.reduce((s, d) => s + valueOf(d), 0),
     weightedPipelineValue: open.reduce((s, d) => s + valueOf(d) * winProbability(d), 0),
     lifetimeValue,
-    repeatValue: lifetimeValue - (firstWon ? (firstWon.wonValue ?? valueOf(firstWon)) : 0),
+    repeatValue: lifetimeValue - (firstWon ? valueOf(firstWon) : 0),
     dealWinRate: decided === 0 ? null : won.length / decided,
     firstWonAt: earliest(won.map((d) => d.wonAt)),
     lastWonAt: latest(won.map((d) => d.wonAt)),

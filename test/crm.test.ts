@@ -9,6 +9,7 @@ import {
   currentProposals,
   rollupFor,
   latestProposal,
+  dealValue,
 } from "@/lib/crm/logic";
 import { migrateBrands, stageOf, companyIdFor } from "@/lib/crm/migrate";
 import { winProbability } from "@/lib/scoring";
@@ -150,7 +151,70 @@ describe("proposals", () => {
   });
 });
 
+describe("dealValue", () => {
+  it("prefers what the client accepted over what we guessed", () => {
+    const d = deal({ economics: { ...deal().economics, budget: 30_000 } });
+    expect(dealValue(d, [proposal({ value: 2_222_222, status: "accepted" })]))
+      .toEqual({ value: 2_222_222, basis: "accepted" });
+  });
+
+  it("uses the live ask when nothing has been decided", () => {
+    const d = deal({ economics: { ...deal().economics, budget: 30_000 } });
+    expect(dealValue(d, [proposal({ value: 45_000, status: "sent" })]))
+      .toEqual({ value: 45_000, basis: "quoted" });
+  });
+
+  it("falls back to the opening estimate once an ask is rejected", () => {
+    const d = deal({ economics: { ...deal().economics, budget: 30_000 } });
+    expect(dealValue(d, [proposal({ value: 45_000, status: "rejected" })]))
+      .toEqual({ value: 30_000, basis: "estimate" });
+  });
+
+  it("keeps an acceptance even when a later revision is still a draft", () => {
+    // An acceptance is a fact. A re-quote in progress does not undo it.
+    const value = dealValue(deal(), [
+      proposal({ id: "p1", revision: 1, value: 50_000, status: "accepted" }),
+      proposal({ id: "p2", revision: 2, value: 60_000, status: "draft" }),
+    ]);
+    expect(value).toEqual({ value: 50_000, basis: "accepted" });
+  });
+
+  it("quotes the newest ask, not a superseded one", () => {
+    const value = dealValue(deal(), [
+      proposal({ id: "p1", revision: 1, value: 50_000, status: "sent" }),
+      proposal({ id: "p2", revision: 2, value: 62_000, status: "sent" }),
+    ]);
+    expect(value).toEqual({ value: 62_000, basis: "quoted" });
+  });
+
+  it("says nobody has put a figure on it rather than reporting zero as fact", () => {
+    expect(dealValue(deal(), [])).toEqual({ value: 0, basis: "none" });
+  });
+
+  it("ignores proposals belonging to other deals", () => {
+    const d = deal({ id: "mine", economics: { ...deal().economics, budget: 10_000 } });
+    expect(dealValue(d, [proposal({ dealId: "someone-else", value: 999_999, status: "accepted" })]).value)
+      .toBe(10_000);
+  });
+});
+
 describe("rollupFor", () => {
+  it("counts an accepted proposal on a lead that was never given a budget", () => {
+    // The reported bug: an accepted 2,222,222 EUR offer sat next to 0 EUR
+    // lifetime value because the rollup only ever read the lead's own budget,
+    // and a lead created in the app has none.
+    const won = deal({ id: "d1", outcome: "won", stage: "Deal Closed", wonValue: null });
+    const r = rollupFor([won], prob, [proposal({ dealId: "d1", value: 2_222_222, status: "accepted" })]);
+    expect(r.lifetimeValue).toBe(2_222_222);
+  });
+
+  it("counts an open deal's live quote as its pipeline value", () => {
+    const open = deal({ id: "d1", outcome: "open", stage: "Advanced" });
+    const r = rollupFor([open], prob, [proposal({ dealId: "d1", value: 80_000, status: "sent" })]);
+    expect(r.openPipelineValue).toBe(80_000);
+    expect(r.weightedPipelineValue).toBeCloseTo(80_000 * prob(open));
+  });
+
   it("separates landing a client from what the relationship earned after", () => {
     const r = rollupFor(
       [

@@ -4,7 +4,7 @@ import { getVisibleBrands } from "@/lib/leads/visible";
 import { getCrmOverlayStore, type CompanyLink } from "@/lib/store/crm";
 import { ownerIdResolver } from "./owners";
 import { migrateBrands } from "./migrate";
-import { rollupFor, awaitingDecisionValue, proposalWinRate, EMPTY_ROLLUP } from "./logic";
+import { rollupFor, awaitingDecisionValue, proposalWinRate, dealValue, EMPTY_ROLLUP } from "./logic";
 import { winProbability } from "@/lib/scoring";
 import type { BrandStatus } from "@/lib/types";
 import type { Company, Deal, DealStage, Proposal } from "./types";
@@ -95,6 +95,13 @@ export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
     else dealsByCompany.set(d.companyId, [d]);
   }
 
+  // Overlay records belong to a deal, so they inherit that deal's visibility.
+  // Without this the money figures, the proposal_pipeline tool and the edit and
+  // delete actions all still reach proposals attached to leads the viewer
+  // cannot open — addressable by id, because the id is all they take.
+  const visibleDeals = new Set(deals.map((d) => d.id));
+  const proposals = overlay.proposals.filter((p) => visibleDeals.has(p.dealId));
+
   const companies: Company[] = [];
   for (const [companyId, companyDeals] of dealsByCompany) {
     const seed = companyById.get(companyId);
@@ -109,21 +116,16 @@ export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
       id: companyId,
       companyId,
       name: seed?.name ?? link?.companyName ?? first.companyName,
-      rollup: rollupFor(companyDeals, prob),
+      rollup: rollupFor(companyDeals, prob, proposals),
     });
   }
 
   companies.sort((a, b) => a.name.localeCompare(b.name));
 
-  // Overlay records belong to a deal, so they inherit that deal's visibility.
-  // Without this the money figures, the proposal_pipeline tool and the edit and
-  // delete actions all still reach proposals attached to leads the viewer
-  // cannot open — addressable by id, because the id is all they take.
-  const visibleDeals = new Set(deals.map((d) => d.id));
   return {
     companies,
     deals,
-    proposals: overlay.proposals.filter((p) => visibleDeals.has(p.dealId)),
+    proposals,
     links: overlay.links.filter((l) => visibleDeals.has(l.dealId)),
   };
 });
@@ -169,9 +171,10 @@ export async function getPipelineMoney(): Promise<PipelineMoney> {
   const { companies, deals, proposals } = await getCrmGraph();
   const open = deals.filter((d) => d.outcome === "open");
   const repeat = companies.filter((c) => c.rollup.repeatValue > 0);
+  const valueOf = (d: Deal) => dealValue(d, proposals).value;
   return {
-    openPipeline: open.reduce((s, d) => s + (d.economics.budget ?? 0), 0),
-    weightedPipeline: open.reduce((s, d) => s + (d.economics.budget ?? 0) * prob(d), 0),
+    openPipeline: open.reduce((s, d) => s + valueOf(d), 0),
+    weightedPipeline: open.reduce((s, d) => s + valueOf(d) * prob(d), 0),
     awaitingDecision: awaitingDecisionValue(proposals),
     proposalWinRate: proposalWinRate(proposals),
     companiesWithRepeatBusiness: repeat.length,

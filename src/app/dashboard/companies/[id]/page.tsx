@@ -3,8 +3,10 @@ import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/Badge";
 import { Reveal } from "@/components/Reveal";
 import { CompanyProposals } from "@/components/crm/CompanyProposals";
+import { ValueBasisNote } from "@/components/crm/ValueBasisNote";
 import { can } from "@/lib/auth/authorize";
 import { getCompanyDetail } from "@/lib/crm/graph";
+import { dealValue } from "@/lib/crm/logic";
 import type { Deal } from "@/lib/crm/types";
 import { eur } from "@/lib/scoring";
 
@@ -31,7 +33,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
   const deals = [...detail.deals].sort(
     (a, b) =>
       OUTCOME_ORDER[a.outcome] - OUTCOME_ORDER[b.outcome] ||
-      (b.economics.budget ?? 0) - (a.economics.budget ?? 0),
+      (b.wonValue ?? dealValue(b, proposals).value) - (a.wonValue ?? dealValue(a, proposals).value),
   );
   const dealChoices = deals.map((d) => ({ id: d.id, name: d.name }));
 
@@ -97,7 +99,8 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                 </thead>
                 <tbody>
                   {deals.map((d) => {
-                    const value = d.wonValue ?? d.economics.budget;
+                    const resolved = d.wonValue == null ? dealValue(d, proposals) : null;
+                    const value = d.wonValue ?? resolved!.value;
                     return (
                       <tr key={d.id} className="border-t border-[var(--color-border)] align-top">
                         <td className="px-4 py-3 sm:px-6">
@@ -118,7 +121,14 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                           {d.dealType}
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums sm:px-6">
-                          {value == null ? <span className="text-[var(--color-ink-faint)]">—</span> : eur(value)}
+                          {resolved?.basis === "none" ? (
+                            <span className="text-[var(--color-ink-faint)]">—</span>
+                          ) : (
+                            <>
+                              {eur(value)}
+                              {resolved && <ValueBasisNote basis={resolved.basis} />}
+                            </>
+                          )}
                         </td>
                         <td className="hidden px-4 py-3 tabular-nums text-[var(--color-ink-muted)] lg:table-cell sm:px-6">
                           {day(d.lastContact)}

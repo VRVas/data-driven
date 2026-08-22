@@ -140,7 +140,7 @@ export function migrateBrands(
         alignmentScore: s?.alignmentScore ?? null,
         easeOfAccess: s?.easeOfAccess ?? null,
       },
-      rollup: rollupFor([deal], winProbability, now),
+      rollup: rollupFor([deal], winProbability, [], now),
       mergedIntoCompanyId: null,
     });
   }
