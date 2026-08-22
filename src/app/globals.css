@@ -188,6 +188,19 @@ h1, h2, h3, .font-display {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-digital-violet) 22%, transparent);
 }
 
+/*
+ * The open dropdown is drawn by the OS, not by the page. Our controls sit on a
+ * near-transparent background, which left the popup painting itself white while
+ * the options kept inheriting the theme's near-white text — Strategic value and
+ * Why strategic were unreadable unless an option happened to be highlighted.
+ * Options have to be told outright.
+ */
+select { color-scheme: dark; }
+option {
+  background-color: var(--color-bg-elevated);
+  color: var(--color-frosted-canvas);
+}
+
 /* Gradient text (frosted → violet → aqua). */
 .text-gradient {
   background: linear-gradient(120deg, var(--color-frosted-canvas) 0%, var(--color-digital-violet) 52%, var(--color-aqua-glow) 100%);

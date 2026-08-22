@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -51,6 +51,7 @@ export function PriorityQuadrant({
   labels = DEFAULT_LABELS,
 }: Props) {
   const ref = useRef<SVGSVGElement>(null);
+  const [hover, setHover] = useState<QuadPoint | null>(null);
   const sx = (v: number) => PAD + (v / AXIS_MAX) * (W - PAD * 2);
   const sy = (v: number) => H - PAD - (v / AXIS_MAX) * (H - PAD * 2);
   const r = (b: number) => 5 + Math.sqrt(Math.max(0, b) / 80000) * 12;
@@ -121,12 +122,54 @@ export function PriorityQuadrant({
             stroke={p.color}
             strokeWidth={1.5}
             className="cursor-pointer transition-all hover:brightness-125"
+            onMouseEnter={() => setHover(p)}
+            onMouseLeave={() => setHover((h) => (h?.id === p.id ? null : h))}
+            onFocus={() => setHover(p)}
+            onBlur={() => setHover((h) => (h?.id === p.id ? null : h))}
           >
             <title>{`${p.name} · €${p.budget.toLocaleString()} · winnability ${p.x.toFixed(0)} / opportunity ${p.y.toFixed(0)}`}</title>
           </circle>
         </Link>
       ))}
+
+      {/* Drawn last so it sits above every dot, and never intercepts the pointer. */}
+      {hover && <HoverLabel point={hover} cx={sx(hover.x)} cy={sy(hover.y)} r={r(hover.budget)} />}
     </svg>
     </div>
+  );
+}
+
+/**
+ * The name, the instant the cursor lands.
+ *
+ * An SVG <title> is the only tooltip the chart had, and browsers hold that back
+ * for about a second and style it as an OS bubble — with several bubbles the
+ * same size, identifying one meant hovering and waiting.
+ */
+function HoverLabel({ point, cx, cy, r }: { point: QuadPoint; cx: number; cy: number; r: number }) {
+  const text = `${point.name} · €${point.budget.toLocaleString()}`;
+  // No text metrics inside an SVG without measuring, and measuring costs a
+  // reflow per hover; 6px per character is close enough for a label box.
+  const w = text.length * 6 + 16;
+  const above = cy - r - 12 > PAD;
+  const y = above ? cy - r - 26 : cy + r + 6;
+  const x = Math.min(Math.max(cx - w / 2, 4), W - w - 4);
+
+  return (
+    <g pointerEvents="none">
+      <rect
+        x={x}
+        y={y}
+        width={w}
+        height={20}
+        rx={6}
+        fill="var(--color-bg-elevated)"
+        stroke={point.color}
+        strokeWidth={1}
+      />
+      <text x={x + w / 2} y={y + 14} textAnchor="middle" fontSize="11" className="fill-[var(--color-ink)]">
+        {text}
+      </text>
+    </g>
   );
 }
