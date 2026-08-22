@@ -1,4 +1,5 @@
 import { budgetScore, economicalEfficiency } from "@/lib/scoring";
+import { blankScores } from "./rubric";
 import type { Brand, BrandScores } from "@/lib/types";
 
 /**
@@ -38,26 +39,6 @@ export function confirmBudget(brand: Brand, acceptedValue: number): Brand {
  * Every judgement is null because none has been made; only the industry is
  * known, and it is copied rather than guessed.
  */
-function blankScores(brand: Brand): BrandScores {
-  return {
-    tempoMonths: null,
-    tempoScore: null,
-    closing: null,
-    process: null,
-    dealsClosed: null,
-    budget: null,
-    assumption: null,
-    budgetScore: null,
-    customizationScore: null,
-    accessibilityRaw: null,
-    accessibilityScore: null,
-    receptivityScore: null,
-    alignmentScore: null,
-    industry: brand.industry ?? "Other",
-    economicalEfficiency: null,
-    easeOfAccess: null,
-  };
-}
 
 /**
  * Write a commercial value onto a lead, creating the score record if the lead

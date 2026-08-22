@@ -11,6 +11,7 @@ import { logAudit } from "@/lib/store/audit";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
 import { reconcileImportedOutcome } from "@/lib/lifecycle";
 import { writeBudget } from "@/lib/pipeline/budget";
+import { writeRubric } from "@/lib/pipeline/rubric";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import { STRATEGIC_REASONS } from "@/lib/priority";
 import type { Brand, BrandStatus } from "@/lib/types";
@@ -24,6 +25,12 @@ const optionalStr = z.preprocess(emptyToUndef, z.string().trim().optional());
 const optionalDate = z.preprocess(
   emptyToUndef,
   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD").optional(),
+);
+
+/** The rubric is a 0–5 judgement, half-points included, as the workbook had it. */
+const rubricScore = z.preprocess(
+  emptyToUndef,
+  z.coerce.number().min(0, "Scores run from 0 to 5").max(5, "Scores run from 0 to 5").optional(),
 );
 
 const brandInputSchema = z.object({
@@ -61,6 +68,10 @@ const brandInputSchema = z.object({
   // Set when the lead is started from a company page: the new engagement
   // belongs to that client rather than standing up a company of its own.
   companyId: optionalStr,
+  customizationScore: rubricScore,
+  accessibilityScore: rubricScore,
+  receptivityScore: rubricScore,
+  alignmentScore: rubricScore,
   notes: optionalStr,
 });
 
@@ -151,6 +162,12 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
     input.budget ?? null,
     (input.assumption as "Confirmed" | "Estimated" | undefined) ?? (input.budget == null ? null : "Estimated"),
   );
+  brand = writeRubric(brand, {
+    customizationScore: input.customizationScore ?? null,
+    accessibilityScore: input.accessibilityScore ?? null,
+    receptivityScore: input.receptivityScore ?? null,
+    alignmentScore: input.alignmentScore ?? null,
+  });
   // Only when the stage actually moved: saving an unrelated edit should not
   // quietly close a review item nobody looked at.
   if (statusChanged) brand = reconcileImportedOutcome(brand);

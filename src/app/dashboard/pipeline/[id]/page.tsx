@@ -8,6 +8,7 @@ import { OutreachComposer } from "@/components/OutreachComposer";
 import { OutreachItem } from "@/components/OutreachItem";
 import { LeadToolbar } from "@/components/LeadToolbar";
 import { LinkCompanyButton } from "@/components/crm/LinkCompanyButton";
+import { CompanyProposals } from "@/components/crm/CompanyProposals";
 import { getBrand } from "@/lib/data";
 import { getCrmGraph, getDealWithCompany } from "@/lib/crm/graph";
 import { ownerIdResolver } from "@/lib/crm/owners";
@@ -62,6 +63,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const isAdmin = await can("outreach:send");
   const canDeleteLead = await can("lead:delete");
   const canLinkCompany = await can("lead:update");
+  const [canReadProposals, canManageProposals] = await Promise.all([
+    can("proposal:read"),
+    can("proposal:manage"),
+  ]);
   const outreach = await getOutreachStore().listForBrand(brand.id);
 
   const [crm, graph] = await Promise.all([getDealWithCompany(brand.id), getCrmGraph()]);
@@ -238,6 +243,16 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </section>
         </Reveal>
       )}
+      {crm && canReadProposals && (
+        <Reveal>
+          <CompanyProposals
+            proposals={crm.proposals}
+            deals={[{ id: crm.deal.id, name: crm.deal.name }]}
+            canManage={canManageProposals}
+          />
+        </Reveal>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-2">
         {/* score breakdown */}
         <Reveal>
@@ -255,7 +270,8 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </div>
             ) : (
               <p className="text-sm text-[var(--color-ink-muted)]">
-                This lead hasn&apos;t been scored yet. Add budget, tempo and the rubric scores to see it on the quadrant.
+                Nothing judged yet. Use Edit to set a commercial value and the four 0–5 scores, and this lead
+                joins the quadrant.
               </p>
             )}
           </section>

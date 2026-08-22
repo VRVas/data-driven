@@ -6,6 +6,7 @@ import { OverlayPortal } from "@/components/ui/OverlayPortal";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import type { Brand } from "@/lib/types";
 import { STRATEGIC_REASONS } from "@/lib/priority";
+import { RUBRIC_FIELDS } from "@/lib/pipeline/rubric";
 
 /** Mounted only while open — remounting gives each session fresh action state. */
 export function BrandEditor({
@@ -176,6 +177,31 @@ export function BrandEditor({
               </select>
             </FormField>
           </div>
+
+          <fieldset className="rounded-xl border border-[var(--color-border)] p-3">
+            <legend className="px-1 text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">
+              Scoring (0–5)
+            </legend>
+            <p className="mb-3 text-xs text-[var(--color-ink-faint)]">
+              Your judgement of the lead. Budget and pace are worked out from the fields above.
+            </p>
+            <div className="grid grid-cols-2 gap-3">
+              {RUBRIC_FIELDS.map(({ key, label, help }) => (
+                <FormField key={key} label={label}>
+                  <input
+                    type="number"
+                    name={key}
+                    min={0}
+                    max={5}
+                    step={0.5}
+                    title={help}
+                    defaultValue={brand?.scores?.[key] ?? ""}
+                    className="auth-input"
+                  />
+                </FormField>
+              ))}
+            </div>
+          </fieldset>
 
           <FormField label="Notes">
             <textarea name="notes" defaultValue={brand?.notes ?? ""} rows={4} className="auth-input resize-none" />

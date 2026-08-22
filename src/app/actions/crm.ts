@@ -236,8 +236,10 @@ export async function saveProposal(_prev: CrmActionState, formData: FormData): P
   }
 
   revalidatePath(`/dashboard/pipeline/${input.dealId}`);
+  revalidatePath("/dashboard/pipeline");
   revalidatePath("/dashboard/companies");
-  // The proposals table lives on the company page.
+  // Proposals show on both the lead and the company, and both money rollups
+  // resolve through them.
   revalidatePath(`/dashboard/companies/${deal.companyId}`);
   return { ok: true };
 }
