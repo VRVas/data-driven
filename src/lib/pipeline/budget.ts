@@ -1,5 +1,5 @@
 import { budgetScore, economicalEfficiency } from "@/lib/scoring";
-import type { Brand } from "@/lib/types";
+import type { Brand, BrandScores } from "@/lib/types";
 
 /**
  * Estimated budget versus the offer that was actually accepted.
@@ -29,23 +29,71 @@ export interface BudgetVariance {
  * unconditionally without writing a no-op record.
  */
 export function confirmBudget(brand: Brand, acceptedValue: number): Brand {
-  const s = brand.scores;
-  if (!s) return brand; // an unscored lead has no budget to confirm
-  if (s.budget === acceptedValue && s.assumption === "Confirmed") return brand;
+  return writeBudget(brand, acceptedValue, "Confirmed");
+}
 
-  const scores = {
-    ...s,
-    budget: acceptedValue,
-    assumption: "Confirmed" as const,
-    budgetScore: budgetScore(acceptedValue),
+/**
+ * A score record for a lead nobody has run through the rubric.
+ *
+ * Every judgement is null because none has been made; only the industry is
+ * known, and it is copied rather than guessed.
+ */
+function blankScores(brand: Brand): BrandScores {
+  return {
+    tempoMonths: null,
+    tempoScore: null,
+    closing: null,
+    process: null,
+    dealsClosed: null,
+    budget: null,
+    assumption: null,
+    budgetScore: null,
+    customizationScore: null,
+    accessibilityRaw: null,
+    accessibilityScore: null,
+    receptivityScore: null,
+    alignmentScore: null,
+    industry: brand.industry ?? "Other",
+    economicalEfficiency: null,
+    easeOfAccess: null,
   };
-  scores.economicalEfficiency = economicalEfficiency(scores) ?? s.economicalEfficiency;
+}
+
+/**
+ * Write a commercial value onto a lead, creating the score record if the lead
+ * has never had one.
+ *
+ * A lead added through the UI arrives with no `scores` at all, so the previous
+ * `if (!s) return brand` meant accepting a proposal against it silently did
+ * nothing: the company kept reporting €0 lifetime value next to an accepted
+ * six-figure offer. Recording the figure is what makes a lead rankable, so the
+ * lead counts as scored from here on.
+ */
+export function writeBudget(
+  brand: Brand,
+  value: number | null,
+  assumption: "Confirmed" | "Estimated" | null,
+): Brand {
+  const s = brand.scores;
+  if (!s && value == null) return brand; // nothing said, nothing to record
+  if (s && s.budget === value && s.assumption === assumption) return brand;
+
+  const base = s ?? blankScores(brand);
+  const scores: BrandScores = {
+    ...base,
+    budget: value,
+    assumption,
+    budgetScore: value == null ? null : budgetScore(value),
+  };
+  scores.economicalEfficiency = economicalEfficiency(scores) ?? base.economicalEfficiency;
 
   return {
     ...brand,
+    scored: brand.scored || value != null,
     // Captured once: a second accepted offer must not overwrite the original
-    // hypothesis with the previous actual.
-    budgetAtOpen: brand.budgetAtOpen ?? s.budget,
+    // hypothesis with the previous actual. `??` cannot be used here — a lead
+    // that opened with no estimate records null, and null is an answer.
+    budgetAtOpen: brand.budgetAtOpen === undefined ? base.budget : brand.budgetAtOpen,
     scores,
   };
 }

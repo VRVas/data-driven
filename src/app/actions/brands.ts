@@ -8,6 +8,7 @@ import { getCrmOverlayStore } from "@/lib/store/crm";
 import { authorizeLead } from "@/lib/leads/visible";
 import { logAudit } from "@/lib/store/audit";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
+import { writeBudget } from "@/lib/pipeline/budget";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import { STRATEGIC_REASONS } from "@/lib/priority";
 import type { Brand, BrandStatus } from "@/lib/types";
@@ -47,6 +48,14 @@ const brandInputSchema = z.object({
     emptyToUndef,
     z.coerce.number().min(0, "Months cannot be negative").max(60, "That is over five years").optional(),
   ),
+  // Asked for at creation so a lead is worth something from day one: without
+  // it the lead had no score record at all, and an accepted proposal had
+  // nowhere to land.
+  budget: z.preprocess(
+    emptyToUndef,
+    z.coerce.number().min(0, "Value cannot be negative").max(1_000_000_000, "That figure looks wrong").optional(),
+  ),
+  assumption: optionalEnum(["Estimated", "Confirmed"]),
   notes: optionalStr,
 });
 
@@ -128,6 +137,13 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   brand.expectedMonths = input.expectedMonths ?? null;
   brand.closingFailed = input.closingFailed ?? null;
   brand.notes = input.notes ?? null;
+  // Last, so it sees the industry this edit just set when it has to build a
+  // score record from nothing.
+  brand = writeBudget(
+    brand,
+    input.budget ?? null,
+    (input.assumption as "Confirmed" | "Estimated" | undefined) ?? (input.budget == null ? null : "Estimated"),
+  );
 
   await store.save(brand);
   await logAudit({

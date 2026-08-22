@@ -114,6 +114,31 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
           </FormField>
 
           <div className="grid grid-cols-2 gap-3">
+            <FormField label="Commercial value (€)">
+              <input
+                type="number"
+                name="budget"
+                min={0}
+                step={500}
+                defaultValue={brand?.scores?.budget ?? ""}
+                placeholder="e.g. 45000"
+                className="auth-input"
+              />
+            </FormField>
+            <FormField label="Confidence">
+              <SelectField
+                name="assumption"
+                defaultValue={brand?.scores?.assumption ?? ""}
+                options={["Estimated", "Confirmed"]}
+                placeholder="— estimated —"
+              />
+            </FormField>
+          </div>
+          <p className="-mt-2 text-xs text-[var(--color-ink-faint)]">
+            A starting figure. Accepting a proposal replaces it and marks it confirmed.
+          </p>
+
+          <div className="grid grid-cols-2 gap-3">
             <FormField label="Strategic value">
               <select name="strategicValue" defaultValue={String(brand?.strategicValue ?? 0)} className="auth-input">
                 <option value="0">0 — none beyond the invoice</option>
@@ -211,10 +236,20 @@ function FormField({ label, required, children }: { label: string; required?: bo
   );
 }
 
-function SelectField({ name, defaultValue, options }: { name: string; defaultValue: string; options: readonly string[] }) {
+function SelectField({
+  name,
+  defaultValue,
+  options,
+  placeholder = "—",
+}: {
+  name: string;
+  defaultValue: string;
+  options: readonly string[];
+  placeholder?: string;
+}) {
   return (
     <select name={name} defaultValue={defaultValue} className="auth-input">
-      <option value="">—</option>
+      <option value="">{placeholder}</option>
       {options.map((o) => (
         <option key={o} value={o}>{o}</option>
       ))}

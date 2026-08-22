@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { confirmBudget, budgetVariance } from "@/lib/pipeline/budget";
+import { confirmBudget, writeBudget, budgetVariance } from "@/lib/pipeline/budget";
 import { budgetScore } from "@/lib/scoring";
+import { priorityOf } from "@/lib/priority";
 import type { Brand } from "@/lib/types";
 
 const lead = (over: Partial<Brand> = {}, budget: number | null = 40_000): Brand => ({
@@ -50,15 +51,62 @@ describe("confirmBudget", () => {
     expect(confirmBudget(already, 52_000)).toBe(already);
   });
 
-  it("leaves an unscored lead alone rather than inventing scores", () => {
+  it("confirms against a lead that was never scored", () => {
+    // A lead added through the UI has no score record. Bailing out here meant
+    // an accepted six-figure offer left the company reporting €0 lifetime
+    // value, which is what the platform actually did.
     const unscored = lead({ scored: false, scores: undefined });
-    expect(confirmBudget(unscored, 52_000)).toBe(unscored);
+    const after = confirmBudget(unscored, 52_000);
+    expect(after.scores!.budget).toBe(52_000);
+    expect(after.scores!.assumption).toBe("Confirmed");
+    expect(after.scored).toBe(true);
+    // No estimate was ever made, so there is nothing to compare against.
+    expect(after.budgetAtOpen).toBeNull();
+    expect(budgetVariance(after)).toBeNull();
+  });
+
+  it("keeps a missing original estimate missing when a second offer lands", () => {
+    const first = confirmBudget(lead({ scored: false, scores: undefined }), 52_000);
+    expect(confirmBudget(first, 61_000).budgetAtOpen).toBeNull();
   });
 
   it("handles a free project being accepted at zero", () => {
     const after = confirmBudget(lead({}, 0), 0);
     expect(after.scores!.assumption).toBe("Confirmed");
     expect(after.budgetAtOpen).toBe(0);
+  });
+});
+
+describe("writeBudget", () => {
+  it("creates a score record for a lead that has none", () => {
+    const after = writeBudget(lead({ scored: false, scores: undefined, industry: "Finance" }), 45_000, "Estimated");
+    expect(after.scores!.budget).toBe(45_000);
+    expect(after.scores!.industry).toBe("Finance");
+    expect(after.scored).toBe(true);
+    // Nothing else has been judged, so nothing else is claimed.
+    expect(after.scores!.customizationScore).toBeNull();
+    expect(after.scores!.accessibilityScore).toBeNull();
+  });
+
+  it("makes the lead rankable, which is the point of asking for a value", () => {
+    const after = writeBudget(lead({ scored: false, scores: undefined }), 45_000, "Estimated");
+    expect(priorityOf(after)).not.toBeNull();
+  });
+
+  it("records no value as no value rather than inventing a record", () => {
+    const unscored = lead({ scored: false, scores: undefined });
+    expect(writeBudget(unscored, null, null)).toBe(unscored);
+  });
+
+  it("clears a value on a lead that already has one", () => {
+    const after = writeBudget(lead(), null, null);
+    expect(after.scores!.budget).toBeNull();
+    expect(after.scores!.budgetScore).toBeNull();
+  });
+
+  it("returns the same object when nothing changes", () => {
+    const l = lead();
+    expect(writeBudget(l, 40_000, "Estimated")).toBe(l);
   });
 });
 
