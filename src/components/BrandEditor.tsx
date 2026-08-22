@@ -8,7 +8,18 @@ import type { Brand } from "@/lib/types";
 import { STRATEGIC_REASONS } from "@/lib/priority";
 
 /** Mounted only while open — remounting gives each session fresh action state. */
-export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Brand | null; onClose: () => void; canDelete?: boolean }) {
+export function BrandEditor({
+  brand,
+  onClose,
+  canDelete = false,
+  company,
+}: {
+  brand: Brand | null;
+  onClose: () => void;
+  canDelete?: boolean;
+  /** Set when the lead is being started from a company page. */
+  company?: { id: string; name: string };
+}) {
   const isNew = brand === null;
   const [state, action, pending] = useActionState<BrandActionState, FormData>(saveBrand, undefined);
 
@@ -29,12 +40,21 @@ export function BrandEditor({ brand, onClose, canDelete = false }: { brand: Bran
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} aria-hidden />
       <div className="relative flex h-full w-full max-w-md flex-col border-l border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl">
         <header className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
-          <h2 className="font-display text-lg font-semibold">{isNew ? "New lead" : brand!.name}</h2>
+          <h2 className="font-display text-lg font-semibold">{isNew ? (company ? "New deal" : "New lead") : brand!.name}</h2>
           <button onClick={onClose} className="text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]" aria-label="Close">✕</button>
         </header>
 
         <form action={action} className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
           {!isNew && <input type="hidden" name="id" value={brand!.id} />}
+          {isNew && company && (
+            <>
+              <input type="hidden" name="companyId" value={company.id} />
+              <p className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-ink-muted)]">
+                New deal for <span className="text-[var(--color-ink)]">{company.name}</span>. It joins their
+                existing work rather than starting a separate client.
+              </p>
+            </>
+          )}
 
           <FormField label="Brand name" required>
             <input name="name" required defaultValue={brand?.name ?? ""} className="auth-input" placeholder="e.g. Alibaba" />

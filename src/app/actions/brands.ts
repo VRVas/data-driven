@@ -5,6 +5,7 @@ import { z } from "zod";
 import { requirePermission } from "@/lib/auth/authorize";
 import { getBrandStore } from "@/lib/store/brands";
 import { getCrmOverlayStore } from "@/lib/store/crm";
+import { getCrmGraph } from "@/lib/crm/graph";
 import { authorizeLead } from "@/lib/leads/visible";
 import { logAudit } from "@/lib/store/audit";
 import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
@@ -57,6 +58,9 @@ const brandInputSchema = z.object({
     z.coerce.number().min(0, "Value cannot be negative").max(1_000_000_000, "That figure looks wrong").optional(),
   ),
   assumption: optionalEnum(["Estimated", "Confirmed"]),
+  // Set when the lead is started from a company page: the new engagement
+  // belongs to that client rather than standing up a company of its own.
+  companyId: optionalStr,
   notes: optionalStr,
 });
 
@@ -152,6 +156,26 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
   if (statusChanged) brand = reconcileImportedOutcome(brand);
 
   await store.save(brand);
+  // A lead started from a company page belongs to that client. Without this it
+  // would project a brand-new company from its own name, which is how "we
+  // closed with them last year, now we are exploring something else" ended up
+  // as two unrelated records.
+  if (isNew && input.companyId) {
+    const graph = await getCrmGraph();
+    const target = graph.companies.find((c) => c.id === input.companyId);
+    if (target) {
+      await getCrmOverlayStore().linkDeal({
+        dealId: brand.id,
+        companyId: target.id,
+        companyName: target.name,
+        linkedById: user.id,
+        linkedByName: user.name,
+        linkedAt: new Date().toISOString(),
+      });
+      revalidatePath(`/dashboard/companies/${target.id}`);
+    }
+  }
+
   await logAudit({
     actorId: user.id,
     actorName: user.name,

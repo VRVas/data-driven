@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Badge } from "@/components/Badge";
 import { Reveal } from "@/components/Reveal";
 import { CompanyProposals } from "@/components/crm/CompanyProposals";
+import { NewDealButton } from "@/components/crm/NewDealButton";
 import { ValueBasisNote } from "@/components/crm/ValueBasisNote";
 import { can } from "@/lib/auth/authorize";
 import { getCompanyDetail } from "@/lib/crm/graph";
@@ -25,9 +26,10 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
   const { company, proposals } = detail;
   const rollup = company.rollup;
-  const [canReadProposals, canManageProposals] = await Promise.all([
+  const [canReadProposals, canManageProposals, canCreateLeads] = await Promise.all([
     can("proposal:read"),
     can("proposal:manage"),
+    can("lead:create"),
   ]);
 
   const deals = [...detail.deals].sort(
@@ -75,9 +77,15 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
 
       <Reveal>
         <section className="glass overflow-hidden">
-          <header className="border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
-            <div className="eyebrow mb-1">Engagements</div>
-            <h2 className="font-display text-xl font-semibold tracking-tight">Deals</h2>
+          <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
+            <div>
+              <div className="eyebrow mb-1">Engagements</div>
+              <h2 className="font-display text-xl font-semibold tracking-tight">Deals</h2>
+              <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
+                Every piece of work with this client, live or finished.
+              </p>
+            </div>
+            {canCreateLeads && <NewDealButton company={{ id: company.id, name: company.name }} />}
           </header>
 
           {deals.length === 0 ? (
