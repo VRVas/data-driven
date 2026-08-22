@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { z } from "zod";
-import { getDataset } from "@/lib/data";
+import { getDataset, getLiveIndustries } from "@/lib/data";
 import { getVisibleBrands, visibleLead, writableLead } from "@/lib/leads/visible";
 import { getBrandStore } from "@/lib/store/brands";
 import { getOutreachStore, type Outreach } from "@/lib/store/outreach";
@@ -352,7 +352,7 @@ const topOpportunities: CopilotTool = {
   },
   async execute(args) {
     const { limit } = z.object({ limit: z.number().int().min(1).max(10).optional() }).parse(args);
-    const industries = getDataset().industries;
+    const industries = await getLiveIndustries();
     const ranked = [...industries]
       .map((i) => ({
         industry: i.name,

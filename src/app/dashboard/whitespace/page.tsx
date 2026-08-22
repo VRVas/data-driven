@@ -3,7 +3,7 @@ import { KpiCard } from "@/components/KpiCard";
 import { WhitespaceBars } from "@/components/viz/WhitespaceBars";
 import { OpportunityMap } from "@/components/viz/OpportunityMap";
 import { MarketSizingBars } from "@/components/viz/MarketSizingBars";
-import { getDataset } from "@/lib/data";
+import { getDataset, getLiveIndustries } from "@/lib/data";
 import { rankByOpportunity, whitespace as whitespaceOf, penetration as penetrationOf, opportunityScore } from "@/lib/tam";
 import { ExportMenu } from "@/components/ExportMenu";
 
@@ -19,9 +19,11 @@ function Panel({ title, subtitle, children }: { title: string; subtitle?: string
   );
 }
 
-export default function WhitespacePage() {
+export const dynamic = "force-dynamic";
+
+export default async function WhitespacePage() {
   const ds = getDataset();
-  const industries = ds.industries;
+  const industries = await getLiveIndustries();
 
   const addressable = industries.reduce((s, i) => s + (i.companiesEU ?? 0), 0);
   const approached = industries.reduce((s, i) => s + i.opened, 0);

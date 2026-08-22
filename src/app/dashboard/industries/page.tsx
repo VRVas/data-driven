@@ -1,14 +1,16 @@
 import { Reveal } from "@/components/Reveal";
 import { IndustryHeatmap } from "@/components/viz/IndustryHeatmap";
 import { Badge } from "@/components/Badge";
-import { getDataset } from "@/lib/data";
+import { getDataset, getLiveIndustries } from "@/lib/data";
 import { valuationToken } from "@/lib/scoring";
 import type { Industry } from "@/lib/types";
 import { ExportMenu } from "@/components/ExportMenu";
 
-export default function IndustriesPage() {
+export const dynamic = "force-dynamic";
+
+export default async function IndustriesPage() {
   const ds = getDataset();
-  const industries = [...ds.industries].sort(
+  const industries = (await getLiveIndustries()).sort(
     (a, b) => (b.economicalEfficiency ?? 0) - (a.economicalEfficiency ?? 0),
   );
   const playbook = new Map(ds.playbook.map((p) => [p.industry, p]));

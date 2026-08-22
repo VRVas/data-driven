@@ -5,6 +5,7 @@ import { StatusFunnel, type FunnelRow } from "@/components/viz/StatusFunnel";
 import { IndustryHeatmap } from "@/components/viz/IndustryHeatmap";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
 import { getDataset } from "@/lib/data";
+import { liveIndustries } from "@/lib/industries";
 import { getVisibleBrands } from "@/lib/leads/visible";
 import { openLeads } from "@/lib/lifecycle";
 import { STATUS_TOKEN, PRIORITY_TOKEN, weightedValue, effectiveScores } from "@/lib/scoring";
@@ -53,7 +54,7 @@ export default async function DashboardOverview() {
     color: STATUS_TOKEN[s],
   })).filter((r) => r.value > 0);
 
-  const industries = [...ds.industries].sort(
+  const industries = liveIndustries(ds.industries, brands).sort(
     (a, b) => (b.economicalEfficiency ?? 0) - (a.economicalEfficiency ?? 0),
   );
 

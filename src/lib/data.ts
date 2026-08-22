@@ -3,6 +3,8 @@ import dqJson from "@/data/data-quality.json";
 import type { Dataset, Brand, IndustryStat, DataQualityIssue, Agent } from "./types";
 import { getBrandStore } from "./store/brands";
 import { getAgentStore } from "./store/agents";
+import { getVisibleBrands } from "./leads/visible";
+import { liveIndustries } from "./industries";
 
 /**
  * Data-access seam.
@@ -43,6 +45,14 @@ export async function getAgent(id: string): Promise<Agent | null> {
 
 export function getIndustries(): IndustryStat[] {
   return dataset.industries;
+}
+
+/**
+ * Industry rows with our own pipeline counted fresh. Reference market data is
+ * still the imported research; the lead-derived half is not.
+ */
+export async function getLiveIndustries(): Promise<IndustryStat[]> {
+  return liveIndustries(dataset.industries, await getVisibleBrands());
 }
 
 export function getDataQuality(): { issues: DataQualityIssue[]; count: number } {
