@@ -2,6 +2,7 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 export type OutreachStatus =
@@ -51,8 +52,7 @@ class LocalOutreachStore implements OutreachStore {
     }
   }
   private async writeAll(rows: Outreach[]): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(FILE, JSON.stringify(rows, null, 2), "utf8");
+    await writeJsonAtomic(FILE, rows);
   }
   async list(limit = 200): Promise<Outreach[]> {
     return (await this.readAll()).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, limit);

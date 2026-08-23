@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import datasetJson from "@/data/dataset.json";
 import type { Brand, Dataset } from "@/lib/types";
+import { withFileLock, writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 const SEED = (datasetJson as unknown as Dataset).brands;
@@ -45,24 +46,29 @@ class LocalBrandStore implements BrandStore {
     }
   }
   private async writeAll(brands: Brand[]): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(BRANDS_FILE, JSON.stringify(brands, null, 2), "utf8");
+    await writeJsonAtomic(BRANDS_FILE, brands);
   }
   async list(): Promise<Brand[]> {
     return this.readAll();
   }
   async get(id: string): Promise<Brand | null> {
     return (await this.readAll()).find((b) => b.id === id) ?? null;
-  }  async save(brand: Brand): Promise<Brand> {
-    const all = await this.readAll();
-    const i = all.findIndex((b) => b.id === brand.id);
-    if (i >= 0) all[i] = brand;
-    else all.push(brand);
-    await this.writeAll(all);
+  }
+  /** Locked: two saves racing would otherwise each write a whole file from its own stale read. */
+  async save(brand: Brand): Promise<Brand> {
+    await withFileLock(BRANDS_FILE, async () => {
+      const all = await this.readAll();
+      const i = all.findIndex((b) => b.id === brand.id);
+      if (i >= 0) all[i] = brand;
+      else all.push(brand);
+      await this.writeAll(all);
+    });
     return brand;
   }
   async remove(id: string): Promise<void> {
-    await this.writeAll((await this.readAll()).filter((b) => b.id !== id));
+    await withFileLock(BRANDS_FILE, async () => {
+      await this.writeAll((await this.readAll()).filter((b) => b.id !== id));
+    });
   }
 }
 

@@ -1,6 +1,7 @@
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import { SYSTEM_PROFILES, type Profile } from "@/lib/auth/profiles";
 
@@ -30,8 +31,7 @@ class LocalProfileStore implements ProfileStore {
     }
   }
   private async writeAll(profiles: Profile[]): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(FILE, JSON.stringify(profiles, null, 2), "utf8");
+    await writeJsonAtomic(FILE, profiles);
   }
   async list(): Promise<Profile[]> {
     return withSystemProfiles(await this.readAll());

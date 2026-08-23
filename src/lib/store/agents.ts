@@ -3,6 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import datasetJson from "@/data/dataset.json";
 import type { Agent, Dataset } from "@/lib/types";
+import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 const SEED = (datasetJson as unknown as Dataset).agents;
@@ -30,8 +31,7 @@ class LocalAgentStore implements AgentStore {
     }
   }
   private async writeAll(agents: Agent[]): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(AGENTS_FILE, JSON.stringify(agents, null, 2), "utf8");
+    await writeJsonAtomic(AGENTS_FILE, agents);
   }
   async list(): Promise<Agent[]> {
     return this.readAll();

@@ -60,3 +60,25 @@ export function mutateJsonArray<T>(file: string, mutate: (rows: T[]) => T[] | Pr
     return next;
   });
 }
+
+/** As `mutateJsonArray`, for a file holding an object rather than an array. */
+export async function readJsonObject<T extends object>(file: string, fallback: T): Promise<T> {
+  try {
+    const parsed = JSON.parse(await fs.readFile(file, "utf8")) as T;
+    return parsed && typeof parsed === "object" ? parsed : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function mutateJsonObject<T extends object>(
+  file: string,
+  fallback: T,
+  mutate: (current: T) => T | Promise<T>,
+): Promise<T> {
+  return withFileLock(file, async () => {
+    const next = await mutate(await readJsonObject(file, fallback));
+    await writeJsonAtomic(file, next);
+    return next;
+  });
+}

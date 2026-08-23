@@ -2,6 +2,7 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import {
   expiryFor,
@@ -68,7 +69,7 @@ class LocalChallengeStore implements ChallengeStore {
     await fs.mkdir(DATA_DIR, { recursive: true });
     // Expired rows are noise, not history - drop them on every write.
     const keep = rows.filter((c) => Date.parse(c.expiresAt) > Date.now() - 86_400_000);
-    await fs.writeFile(FILE, JSON.stringify(keep, null, 2), "utf8");
+    await writeJsonAtomic(FILE, keep);
   }
 
   async issue(email: string, kind: ChallengeKind, secret: string): Promise<Challenge> {

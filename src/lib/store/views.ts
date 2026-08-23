@@ -2,6 +2,7 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 export interface SavedView {
@@ -36,8 +37,7 @@ class LocalViewStore implements ViewStore {
     }
   }
   private async writeAll(views: SavedView[]): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(VIEWS_FILE, JSON.stringify(views, null, 2), "utf8");
+    await writeJsonAtomic(VIEWS_FILE, views);
   }
   async listForUser(userId: string): Promise<SavedView[]> {
     return (await this.readAll())

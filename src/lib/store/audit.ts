@@ -2,6 +2,7 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 export interface AuditEntry {
@@ -38,8 +39,7 @@ class LocalAuditStore implements AuditStore {
   async append(entry: AuditEntry): Promise<AuditEntry> {
     const all = await this.readAll();
     all.push(entry);
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(AUDIT_FILE, JSON.stringify(all, null, 2), "utf8");
+    await writeJsonAtomic(AUDIT_FILE, all);
     return entry;
   }
 }

@@ -41,6 +41,18 @@ export function companyNameKey(name: string): string {
 }
 
 /**
+ * Leading articles carry no identity, in any of the languages this book is
+ * written in. Grouping on one is not loose matching, it is matching on nothing.
+ */
+const LEADING_ARTICLES = new Set([
+  "the", "a", "an",
+  "il", "lo", "la", "i", "gli", "le", "l",
+  "el", "los", "las",
+  "les", "un", "une", "des", "du",
+  "der", "die", "das", "den", "het", "een",
+]);
+
+/**
  * The leading word of a company name - a deliberately loose grouping signal.
  *
  * Exact key matching is useless here: the real cases ("Generali - Taverna" and
@@ -48,9 +60,15 @@ export function companyNameKey(name: string): string {
  * This casts a wider net on purpose and WILL pair genuinely different clients
  * (Qatar Airways / Qatar Museums). That is the intended trade - it surfaces a
  * question for a human, never an answer.
+ *
+ * Articles are skipped, which fixes the trade in both directions. Grouping on
+ * "the" put The Body Shop, The North Face and The Coca-Cola Company in one
+ * pile, which buries the real candidates it exists to surface; and it MISSED
+ * "The Body Shop" against "Body Shop", which is the same client written twice.
  */
 export function companyRoot(name: string): string {
-  return companyNameKey(name).split(" ")[0] ?? "";
+  const words = companyNameKey(name).split(" ").filter(Boolean);
+  return words.find((w) => !LEADING_ARTICLES.has(w)) ?? words[0] ?? "";
 }
 
 /** Companies that might be the same client. A suggestion, never a merge. */

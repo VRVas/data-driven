@@ -1,7 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
+import { mutateJsonObject, readJsonObject } from "./local-json";
 import type { Proposal } from "@/lib/crm/types";
 
 /**
@@ -45,46 +45,39 @@ const FILE = path.join(DATA_DIR, "crm.json");
 
 class LocalCrmOverlayStore implements CrmOverlayStore {
   private async readAll(): Promise<CrmOverlay> {
-    try {
-      const parsed = JSON.parse(await fs.readFile(FILE, "utf8")) as Partial<CrmOverlay>;
-      return { links: parsed.links ?? [], proposals: parsed.proposals ?? [] };
-    } catch {
-      return { links: [], proposals: [] };
-    }
+    const parsed = await readJsonObject<Partial<CrmOverlay>>(FILE, {});
+    return { links: parsed.links ?? [], proposals: parsed.proposals ?? [] };
   }
-  private async writeAll(overlay: CrmOverlay): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(FILE, JSON.stringify(overlay, null, 2), "utf8");
+  /** Serialised and atomic: a merge writes one link per deal in a loop. */
+  private edit(mutate: (o: CrmOverlay) => CrmOverlay): Promise<CrmOverlay> {
+    return mutateJsonObject<CrmOverlay>(FILE, { links: [], proposals: [] }, (current) =>
+      mutate({ links: current.links ?? [], proposals: current.proposals ?? [] }),
+    );
   }
   async read() {
     return this.readAll();
   }
   async linkDeal(link: CompanyLink) {
-    const o = await this.readAll();
-    o.links = [...o.links.filter((l) => l.dealId !== link.dealId), link];
-    await this.writeAll(o);
+    await this.edit((o) => ({ ...o, links: [...o.links.filter((l) => l.dealId !== link.dealId), link] }));
   }
   async unlinkDeal(dealId: string) {
-    const o = await this.readAll();
-    o.links = o.links.filter((l) => l.dealId !== dealId);
-    await this.writeAll(o);
+    await this.edit((o) => ({ ...o, links: o.links.filter((l) => l.dealId !== dealId) }));
   }
   async saveProposal(proposal: Proposal) {
-    const o = await this.readAll();
-    o.proposals = [...o.proposals.filter((p) => p.id !== proposal.id), proposal];
-    await this.writeAll(o);
+    await this.edit((o) => ({
+      ...o,
+      proposals: [...o.proposals.filter((p) => p.id !== proposal.id), proposal],
+    }));
     return proposal;
   }
   async removeProposal(id: string) {
-    const o = await this.readAll();
-    o.proposals = o.proposals.filter((p) => p.id !== id);
-    await this.writeAll(o);
+    await this.edit((o) => ({ ...o, proposals: o.proposals.filter((p) => p.id !== id) }));
   }
   async purgeDeal(dealId: string) {
-    const o = await this.readAll();
-    o.links = o.links.filter((l) => l.dealId !== dealId);
-    o.proposals = o.proposals.filter((p) => p.dealId !== dealId);
-    await this.writeAll(o);
+    await this.edit((o) => ({
+      links: o.links.filter((l) => l.dealId !== dealId),
+      proposals: o.proposals.filter((p) => p.dealId !== dealId),
+    }));
   }
 }
 

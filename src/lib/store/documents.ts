@@ -2,6 +2,7 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import type { DocFile } from "@/lib/copilot/documents";
+import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 export interface DocRegistry {
@@ -34,8 +35,7 @@ class LocalDocRegistryStore implements DocRegistryStore {
     }
   }
   private async writeAll(all: Record<string, DocRegistry>): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(FILE, JSON.stringify(all, null, 2), "utf8");
+    await writeJsonAtomic(FILE, all);
   }
   async get(userId: string): Promise<DocRegistry> {
     return (await this.readAll())[userId] ?? empty(userId);

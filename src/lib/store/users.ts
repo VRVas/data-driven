@@ -2,6 +2,7 @@ import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import type { UserRole } from "@/lib/auth/roles";
 import type { Assignment } from "@/lib/auth/profiles";
@@ -62,8 +63,7 @@ class LocalUserStore implements UserStore {
     }
   }
   private async writeAll(users: AppUser[]): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(USERS_FILE, JSON.stringify(users, null, 2), "utf8");
+    await writeJsonAtomic(USERS_FILE, users);
   }
   async list(): Promise<AppUser[]> {
     return this.readAll();
