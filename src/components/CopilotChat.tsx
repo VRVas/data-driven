@@ -140,6 +140,10 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
             patchLast((msg) => ({ ...msg, tools: ev.data as Msg["tools"] }));
           } else if (ev.event === "error") {
             const em = String((ev.data as { message?: string })?.message ?? "Error");
+            // Keep the thread across a transient failure, or retrying the
+            // question costs every turn of context behind it.
+            const cid = (ev.data as { conversationId?: string })?.conversationId;
+            if (cid) setConversationId(cid);
             patchLast((msg) => ({ ...msg, blocks: [...(msg.blocks ?? []), { type: "callout", tone: "danger", title: null, text: em }] }));
           } else if (ev.event === "done") {
             const cid = (ev.data as { conversationId?: string })?.conversationId;

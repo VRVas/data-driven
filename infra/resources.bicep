@@ -35,8 +35,8 @@ param reasoningEffort string = 'high'
 @description('Chat model version.')
 param chatModelVersion string = '2026-03-17'
 
-@description('Deployment SKU capacity (thousands of tokens/min) for the chat model.')
-param chatModelCapacity int = 30
+@description('Deployment SKU capacity (thousands of tokens/min) for the chat model. One copilot turn is several model calls - the whole tool surface is sent on each - so a turn costs roughly 25-30k tokens. At the original 30 this allowed about one exchange per minute and the second question in a conversation returned 429.')
+param chatModelCapacity int = 324
 
 @description('Foundry project name (new Foundry project, child of the account).')
 param aiProjectName string = 'data-driven'

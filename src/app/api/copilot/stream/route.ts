@@ -79,7 +79,13 @@ export async function POST(req: NextRequest) {
           summary: `Asked copilot${deep ? " (deep)" : ""}: ${message.slice(0, 80)}`,
         });
       } catch (e) {
-        send("error", { message: e instanceof Error ? e.message : "stream failed" });
+        // The thread id rides on the error too. Without it a transient 429
+        // silently starts a new conversation, so recovering from a blip costs
+        // the user every turn of context they had built up.
+        send("error", {
+          message: e instanceof Error ? e.message : "stream failed",
+          conversationId,
+        });
       } finally {
         controller.close();
       }

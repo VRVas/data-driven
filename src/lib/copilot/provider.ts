@@ -664,6 +664,29 @@ export function callerContext(user: SessionUser): string {
 // with a function-calling loop. Activates when COPILOT_CHAT_ENDPOINT is set
 // (keyless via managed identity, or COPILOT_API_KEY). Wired for deploy.
 // ---------------------------------------------------------------------------
+
+/**
+ * A model call that could not be completed, in words a person can act on.
+ *
+ * "Foundry model call failed: 429" is a status code shown to somebody who
+ * asked a question about their pipeline. Throttling is the common case and it
+ * is temporary, so it has to say so and say what to do.
+ */
+export class CopilotUnavailableError extends Error {
+  readonly status: number;
+  constructor(status: number) {
+    super(
+      status === 429
+        ? "The model is busy right now - it is rate limited. Give it a few seconds and ask again."
+        : status === 401 || status === 403
+          ? "I could not authenticate to the model. That is a deployment setting, not something you can fix from here."
+          : `The model did not answer (HTTP ${status}). Try again in a moment.`,
+    );
+    this.name = "CopilotUnavailableError";
+    this.status = status;
+  }
+}
+
 class FoundryCopilotProvider implements CopilotProvider {
   readonly name = "foundry";
 
@@ -685,11 +708,40 @@ class FoundryCopilotProvider implements CopilotProvider {
     return { Authorization: `Bearer ${token?.token ?? ""}` };
   }
 
+  /**
+   * Retry a throttled or briefly unavailable deployment.
+   *
+   * One turn is several calls - the tool loop sends the whole tool surface each
+   * time - so a busy minute lands on 429 easily, and a 429 is a "wait", not a
+   * failure. Without this the second question in a conversation died and the
+   * user saw an HTTP status code.
+   *
+   * Retry-After is honoured when the service sends one, because it knows when
+   * the window reopens and a guess does not.
+   */
+  private async sendWithBackoff(
+    send: (payload: Record<string, unknown>) => Promise<Response>,
+    body: Record<string, unknown>,
+  ): Promise<Response> {
+    const RETRYABLE = new Set([429, 500, 502, 503, 504]);
+    let wait = 1_000;
+    let res = await send(body);
+
+    for (let attempt = 0; attempt < 3 && RETRYABLE.has(res.status); attempt++) {
+      const after = Number(res.headers.get("retry-after"));
+      const delay = Number.isFinite(after) && after > 0 ? Math.min(after * 1000, 20_000) : wait;
+      await new Promise((r) => setTimeout(r, delay));
+      wait = Math.min(wait * 2, 8_000);
+      res = await send(body);
+    }
+    return res;
+  }
+
   private async post(endpoint: string, headers: Record<string, string>, body: Record<string, unknown>): Promise<Response> {
     const send = (payload: Record<string, unknown>) =>
       fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
 
-    let res = await send(body);
+    let res = await this.sendWithBackoff(send, body);
     if (res.ok || res.status !== 400) return res;
 
     // Only retry for the arguments a deployment can legitimately reject, so a
@@ -744,7 +796,7 @@ class FoundryCopilotProvider implements CopilotProvider {
       if (FoundryCopilotProvider.tokenParam) body[FoundryCopilotProvider.tokenParam] = completionBudget();
 
       const res = await this.post(endpoint, headers, body);
-      if (!res.ok) throw new Error(`Foundry model call failed: ${res.status}`);
+      if (!res.ok) throw new CopilotUnavailableError(res.status);
       const json = (await res.json()) as { choices: { message: Record<string, unknown> }[] };
       const msg = json.choices[0]?.message ?? {};
       messages.push(msg);
