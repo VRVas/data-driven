@@ -13,7 +13,7 @@ import path from "node:path";
  *
  * Mirrors deleteBrand: the lead, its proposals, and any company link to it.
  */
-const PROBE = /^zz-wiring-probe/;
+const PROBE = /^(zz-wiring-probe|zzqa-)/;
 const PROBE_TITLE = /^ZZ /;
 
 async function rewrite<T>(file: string, edit: (data: T) => T): Promise<void> {
@@ -57,9 +57,11 @@ export async function purgeProbeData(): Promise<void> {
   );
 
   // Conversations are titled from their first message, which the memory spec
-  // prefixes for exactly this reason.
-  await rewrite<Array<{ title: string }>>(path.join(dataDir, "conversations.json"), (rows) =>
-    rows.filter((c) => !/^ZZQA/.test(c.title)),
+  // prefixes. The control tests deliberately start a thread with no prefix at
+  // all, so the E2E account's whole history goes too - every one of them is
+  // debris from a run, and 280 had piled up before anybody looked.
+  await rewrite<Array<{ title: string; userId: string }>>(path.join(dataDir, "conversations.json"), (rows) =>
+    rows.filter((c) => c.userId !== "e2e-user" && !/^ZZQA/.test(c.title)),
   );
 }
 
