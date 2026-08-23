@@ -30,14 +30,23 @@ test.describe("access control", () => {
 
   test("built-in profiles cannot be edited, only duplicated", async ({ page }) => {
     await page.goto("/dashboard/team");
-    const builtIn = page.getByText("BUILT-IN").first();
-    await expect(builtIn).toBeVisible();
-    // Every Edit button on a seeded profile is disabled.
-    const edits = page.getByRole("button", { name: "Edit" });
-    const count = await edits.count();
-    expect(count).toBeGreaterThan(0);
-    for (let i = 0; i < count; i++) await expect(edits.nth(i)).toBeDisabled();
-    await expect(page.getByRole("button", { name: "Duplicate" }).first()).toBeEnabled();
+    const cards = page.locator("article", { has: page.getByRole("heading", { level: 3 }) });
+
+    // Scoped to the built-in cards. Asserting on EVERY Edit button on the page
+    // only held while no custom profile existed, and a custom one being
+    // editable is the other half of the same rule.
+    const builtIn = cards.filter({ hasText: "Built-in" });
+    const builtInCount = await builtIn.count();
+    expect(builtInCount).toBeGreaterThan(0);
+    for (let i = 0; i < builtInCount; i++) {
+      await expect(builtIn.nth(i).getByRole("button", { name: "Edit" })).toBeDisabled();
+      await expect(builtIn.nth(i).getByRole("button", { name: "Duplicate" })).toBeEnabled();
+    }
+
+    const custom = cards.filter({ hasNotText: "Built-in" });
+    for (let i = 0; i < (await custom.count()); i++) {
+      await expect(custom.nth(i).getByRole("button", { name: "Edit" })).toBeEnabled();
+    }
   });
 
   test("the profile editor exposes a scoped permission matrix", async ({ page }) => {
