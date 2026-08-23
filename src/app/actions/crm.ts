@@ -6,7 +6,7 @@ import { requirePermission } from "@/lib/auth/authorize";
 import { authorizeLead } from "@/lib/leads/visible";
 import { getCrmOverlayStore } from "@/lib/store/crm";
 import { getCrmGraph } from "@/lib/crm/graph";
-import { recordProposal } from "@/lib/crm/proposals";
+import { recordProposal, syncLeadValue } from "@/lib/crm/proposals";
 import { logAudit } from "@/lib/store/audit";
 import type { ProposalStatus } from "@/lib/crm/types";
 
@@ -258,6 +258,13 @@ export async function deleteProposal(_prev: CrmActionState, formData: FormData):
   if (deal) await authorizeLead(auth, deal);
 
   await getCrmOverlayStore().removeProposal(id);
+  // The lead mirrors its paperwork, so removing the paperwork has to move it —
+  // otherwise a deleted acceptance leaves a Confirmed budget with nothing
+  // behind it, still weighted as fact by the score.
+  await syncLeadValue(
+    proposal.dealId,
+    graph.proposals.filter((p) => p.dealId === proposal.dealId && p.id !== id),
+  );
   await logAudit({
     actorId: user.id,
     actorName: user.name,

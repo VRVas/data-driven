@@ -319,7 +319,7 @@ const pipelineSummary: CopilotTool = {
   name: "pipeline_summary",
   permission: "lead:read",
   description:
-    "Summarise the whole pipeline: totals, scored coverage, weighted (probability-adjusted) value, hot-lead and closed counts, and the count of leads at each stage. Prefer the open* figures when talking about live pipeline — the totals include finished deals.",
+    "Summarise the whole pipeline: lead counts by outcome and stage, scored coverage, hot-lead and closed counts, and the weighted (probability-adjusted) value of the live book. Counts leads; use proposal_pipeline for money on real proposals.",
   parameters: { type: "object", properties: {} },
   async execute() {
     const brands = await getVisibleBrands();
@@ -334,8 +334,9 @@ const pipelineSummary: CopilotTool = {
       scored: brands.filter((b) => b.scored).length,
       hotLeads: brands.filter((b) => b.priority === "Hot Lead").length,
       dealsClosed: brands.filter((b) => b.status === "Deal Closed").length,
-      weightedValueEur: Math.round(brands.reduce((sum, b) => sum + weightedValue(b), 0)),
-      openWeightedValueEur: Math.round(live.reduce((sum, b) => sum + weightedValue(b), 0)),
+      // Open deals only. Weighting a won deal by its stage probability of 1.0
+      // adds banked money to a figure that claims to be pipeline.
+      weightedValueEur: Math.round(live.reduce((sum, b) => sum + weightedValue(b), 0)),
       byStatus,
     };
   },
@@ -568,9 +569,12 @@ const proposalPipeline: CopilotTool = {
     // Counts describe deals, not paperwork: a deal re-quoted three times is one
     // negotiation, so only its live revision is counted.
     const current = currentProposals(graph.proposals);
+    // sentCount has to be counted the same way awaitingDecisionEur is, or the
+    // count and the euros describe different sets of paperwork.
+    const openIds = new Set(graph.deals.filter((d) => d.outcome === "open").map((d) => d.id));
     return {
       awaitingDecisionEur: Math.round(money.awaitingDecision),
-      sentCount: proposalsWithStatus(current, "sent").length,
+      sentCount: proposalsWithStatus(current, "sent").filter((p) => openIds.has(p.dealId)).length,
       acceptedCount: proposalsWithStatus(current, "accepted").length,
       rejectedCount: proposalsWithStatus(current, "rejected").length,
       proposalWinRate: money.proposalWinRate,

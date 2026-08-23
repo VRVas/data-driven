@@ -24,23 +24,6 @@ export interface BudgetVariance {
 }
 
 /**
- * Record an accepted offer as the lead's confirmed budget.
- *
- * Returns the same object when there is nothing to change, so callers can save
- * unconditionally without writing a no-op record.
- */
-export function confirmBudget(brand: Brand, acceptedValue: number): Brand {
-  return writeBudget(brand, acceptedValue, "Confirmed");
-}
-
-/**
- * A score record for a lead nobody has run through the rubric.
- *
- * Every judgement is null because none has been made; only the industry is
- * known, and it is copied rather than guessed.
- */
-
-/**
  * Write a commercial value onto a lead, creating the score record if the lead
  * has never had one.
  *
@@ -68,14 +51,33 @@ export function writeBudget(
   };
   scores.economicalEfficiency = economicalEfficiency(scores) ?? base.economicalEfficiency;
 
+  return { ...brand, scored: brand.scored || value != null, scores };
+}
+
+/**
+ * Write the value a proposal asserts, remembering the figure it replaced.
+ *
+ * `budgetAtOpen` is captured here and nowhere else, because it means "what we
+ * thought before the paperwork said otherwise". Capturing it on an ordinary
+ * edit would freeze it the moment a lead was created — at null, since a new
+ * lead has no previous budget — and the estimate-versus-accepted comparison
+ * would report nothing for every lead made in the app.
+ *
+ * `undefined` means never captured; null means captured and there was no
+ * estimate. The difference is what stops a second proposal from recording the
+ * first proposal's number as the original guess.
+ */
+export function writeProposalValue(
+  brand: Brand,
+  value: number,
+  assumption: "Confirmed" | "Estimated",
+): Brand {
+  const next = writeBudget(brand, value, assumption);
+  if (next === brand) return brand;
+
   return {
-    ...brand,
-    scored: brand.scored || value != null,
-    // Captured once: a second accepted offer must not overwrite the original
-    // hypothesis with the previous actual. `??` cannot be used here — a lead
-    // that opened with no estimate records null, and null is an answer.
-    budgetAtOpen: brand.budgetAtOpen === undefined ? base.budget : brand.budgetAtOpen,
-    scores,
+    ...next,
+    budgetAtOpen: brand.budgetAtOpen === undefined ? (brand.scores?.budget ?? null) : brand.budgetAtOpen,
   };
 }
 

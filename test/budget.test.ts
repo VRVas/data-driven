@@ -1,8 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { confirmBudget, writeBudget, budgetVariance } from "@/lib/pipeline/budget";
+import { writeBudget, writeProposalValue, budgetVariance } from "@/lib/pipeline/budget";
 import { budgetScore } from "@/lib/scoring";
 import { priorityOf } from "@/lib/priority";
 import type { Brand } from "@/lib/types";
+
+/** Accepting an offer is the proposal path at full confidence. */
+const confirmBudget = (b: Brand, value: number) => writeProposalValue(b, value, "Confirmed");
 
 const lead = (over: Partial<Brand> = {}, budget: number | null = 40_000): Brand => ({
   id: "l1", name: "L", aliases: [], status: "Advanced", priority: null,

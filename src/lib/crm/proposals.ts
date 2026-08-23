@@ -3,17 +3,17 @@ import { randomUUID } from "node:crypto";
 import { getCrmGraph } from "./graph";
 import { getCrmOverlayStore } from "@/lib/store/crm";
 import { getBrandStore } from "@/lib/store/brands";
-import { confirmBudget } from "@/lib/pipeline/budget";
+import { writeBudget, writeProposalValue } from "@/lib/pipeline/budget";
+import { proposalValue } from "./logic";
 import type { Deal, Proposal, ProposalStatus } from "./types";
 
 /**
  * Recording a proposal, in one place.
  *
  * The screens and the copilot both do this, and the rules are not obvious:
- * revisions increment per deal, a sent proposal keeps its stamp, and accepting
- * one rewrites the lead's budget as Confirmed while preserving the original
- * estimate. Two implementations of that would drift, and the drift would show
- * up as money.
+ * revisions increment per deal, a sent proposal keeps its stamp, and the lead's
+ * own value is kept in step with what the paperwork says. Two implementations
+ * of that would drift, and the drift would show up as money.
  */
 
 export interface RecordProposalInput {
@@ -76,15 +76,45 @@ export async function recordProposal(
 
   await getCrmOverlayStore().saveProposal(proposal);
 
-  let confirmedBudget: RecordedProposal["confirmedBudget"] = null;
-  if (input.status === "accepted") {
-    const lead = await getBrandStore().get(input.dealId);
-    const updated = lead ? confirmBudget(lead, proposal.value) : null;
-    if (lead && updated && updated !== lead) {
-      await getBrandStore().save(updated);
-      confirmedBudget = { estimated: updated.budgetAtOpen ?? null, accepted: proposal.value };
-    }
-  }
+  // The lead carries the deal's value for everything that is not a money
+  // total — the priority axes, the quadrant bubble, exports, the copilot's
+  // per-lead figures. Leaving it behind meant one deal was worth its proposal
+  // in the pipeline totals and its opening guess in the score.
+  const others = graph.proposals.filter((p) => p.dealId === input.dealId && p.id !== proposal.id);
+  const confirmedBudget = await syncLeadValue(input.dealId, [...others, proposal]);
 
   return { proposal, deal, confirmedBudget };
+}
+
+/**
+ * Bring the lead's own value into line with what its paperwork now says.
+ *
+ * Returns the estimate-versus-accepted pair when an acceptance is what moved
+ * it, so the caller can record that in the audit trail.
+ */
+export async function syncLeadValue(
+  dealId: string,
+  proposals: Proposal[],
+): Promise<RecordedProposal["confirmedBudget"]> {
+  const store = getBrandStore();
+  const lead = await store.get(dealId);
+  if (!lead) return null;
+
+  const paper = proposalValue(dealId, proposals);
+  if (!paper) {
+    // Nothing asserts a value any more. The figure is the last thing anyone
+    // knew, but calling it Confirmed with no accepted offer behind it would
+    // keep weighting it as fact.
+    if (lead.scores?.assumption !== "Confirmed") return null;
+    await store.save(writeBudget(lead, lead.scores.budget, "Estimated"));
+    return null;
+  }
+
+  const updated = writeProposalValue(lead, paper.value, paper.basis === "accepted" ? "Confirmed" : "Estimated");
+  if (updated === lead) return null;
+
+  await store.save(updated);
+  return paper.basis === "accepted"
+    ? { estimated: updated.budgetAtOpen ?? null, accepted: paper.value }
+    : null;
 }

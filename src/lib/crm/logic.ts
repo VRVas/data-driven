@@ -165,6 +165,27 @@ export interface DealValue {
 }
 
 /**
+ * The value the paperwork asserts for a deal, ignoring anything typed on the
+ * lead. Null when no proposal makes a claim worth believing.
+ *
+ * An acceptance is a fact and does not expire, so it outranks a later draft or
+ * a rejected re-quote. Below it sits the live ask; a superseded or rejected one
+ * asserts nothing.
+ */
+export function proposalValue(
+  dealId: string,
+  proposals: Proposal[],
+): { value: number; basis: "accepted" | "quoted" } | null {
+  const mine = proposals.filter((p) => p.dealId === dealId);
+
+  const accepted = latestProposal(mine.filter((p) => p.status === "accepted"));
+  if (accepted) return { value: accepted.value, basis: "accepted" };
+
+  const current = latestProposal(mine);
+  return current?.status === "sent" ? { value: current.value, basis: "quoted" } : null;
+}
+
+/**
  * The one commercial figure for a deal, and how much it can be trusted.
  *
  * Every money total on the platform resolves through here, because the same
@@ -172,19 +193,10 @@ export interface DealValue {
  * is how a client with an accepted €2,222,222 offer showed €0 lifetime value:
  * the totals only ever read the budget typed at the start, which for a lead
  * created in the app was nothing at all.
- *
- * An acceptance is a fact and does not expire, so it outranks a later draft or
- * a rejected re-quote. Below that sits the live ask, and only then the opening
- * hypothesis.
  */
 export function dealValue(deal: Pick<Deal, "id" | "economics">, proposals: Proposal[] = []): DealValue {
-  const mine = proposals.filter((p) => p.dealId === deal.id);
-
-  const accepted = latestProposal(mine.filter((p) => p.status === "accepted"));
-  if (accepted) return { value: accepted.value, basis: "accepted" };
-
-  const current = latestProposal(mine);
-  if (current?.status === "sent") return { value: current.value, basis: "quoted" };
+  const paper = proposalValue(deal.id, proposals);
+  if (paper) return paper;
 
   const budget = deal.economics.budget;
   return budget == null ? { value: 0, basis: "none" } : { value: budget, basis: "estimate" };

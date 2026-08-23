@@ -172,10 +172,16 @@ export async function getPipelineMoney(): Promise<PipelineMoney> {
   const open = deals.filter((d) => d.outcome === "open");
   const repeat = companies.filter((c) => c.rollup.repeatValue > 0);
   const valueOf = (d: Deal) => dealValue(d, proposals).value;
+  // A proposal still marked sent on a deal that has since been won or lost is
+  // not awaiting anything — the negotiation ended and the record went stale.
+  // The pipeline page has always read it this way; the companies page did not,
+  // so the same "awaiting decision" claim showed two different numbers.
+  const openIds = new Set(open.map((d) => d.id));
+  const live = proposals.filter((p) => openIds.has(p.dealId));
   return {
     openPipeline: open.reduce((s, d) => s + valueOf(d), 0),
     weightedPipeline: open.reduce((s, d) => s + valueOf(d) * prob(d), 0),
-    awaitingDecision: awaitingDecisionValue(proposals),
+    awaitingDecision: awaitingDecisionValue(live),
     proposalWinRate: proposalWinRate(proposals),
     companiesWithRepeatBusiness: repeat.length,
     repeatValue: repeat.reduce((s, c) => s + c.rollup.repeatValue, 0),

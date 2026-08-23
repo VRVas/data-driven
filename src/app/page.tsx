@@ -5,14 +5,16 @@ import { Hero } from "@/components/landing/Hero";
 import { SmoothScrollProvider } from "@/lib/gsap/SmoothScrollProvider";
 import { getDataset } from "@/lib/data";
 import { weightedValue } from "@/lib/scoring";
+import { openLeads } from "@/lib/lifecycle";
 
 export default function Home() {
   const ds = getDataset();
   const brands = ds.brands;
   const scored = brands.filter((b) => b.scored && b.scores);
   const closed = brands.filter((b) => b.status === "Deal Closed").length;
-  const weighted = brands.reduce((sum, b) => sum + weightedValue(b), 0);
-  const totalBudget = scored.reduce((s, b) => s + (b.scores?.budget ?? 0), 0);
+  const weighted = openLeads(brands).reduce((sum, b) => sum + weightedValue(b), 0);
+  // "In play" means still open — a won or lost deal is not in play.
+  const totalBudget = openLeads(scored).reduce((s, b) => s + (b.scores?.budget ?? 0), 0);
 
   const features = [
     { title: "Pipeline & CRM", body: "Every lead, owner, stage and follow-up — live, filterable, editable.", tag: "Trackers" },
@@ -44,7 +46,7 @@ export default function Home() {
               label="Weighted value"
               value={weighted}
               format="eur"
-              hint="probability-adjusted"
+              hint="open deals, probability-adjusted"
               accent="var(--color-cyan)"
             />
             <KpiCard label="Deals closed" value={closed} hint="won this cycle" accent="var(--color-mint)" />

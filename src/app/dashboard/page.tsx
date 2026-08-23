@@ -45,7 +45,9 @@ export default async function DashboardOverview() {
   const scored = brands.filter((b) => b.scored && b.scores);
 
   const closed = brands.filter((b) => b.status === "Deal Closed").length;
-  const weighted = brands.reduce((s, b) => s + weightedValue(b), 0);
+  // Only live deals: weighting a won deal by its stage probability of 1.0 adds
+  // money already banked to a figure labelled probability-adjusted pipeline.
+  const weighted = openLeads(brands).reduce((s, b) => s + weightedValue(b), 0);
   const hot = brands.filter((b) => b.priority === "Hot Lead").length;
 
   const funnel: FunnelRow[] = STATUS_ORDER.map((s) => ({
@@ -85,7 +87,7 @@ export default async function DashboardOverview() {
       <div data-tour="kpis">
         <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
           <KpiCard label="Total pipeline" value={brands.length} hint={`${hot} hot leads`} />
-          <KpiCard label="Weighted value" value={weighted} format="eur" accent="var(--color-cyan)" hint="probability-adjusted" />
+          <KpiCard label="Weighted value" value={weighted} format="eur" accent="var(--color-cyan)" hint="open deals, probability-adjusted" />
           <KpiCard label="Deals closed" value={closed} accent="var(--color-mint)" hint="won" />
           <KpiCard label="Scored coverage" value={Math.round((scored.length / brands.length) * 100)} format="percent" accent="var(--color-amber)" hint={`${brands.length - scored.length} unscored`} />
         </Reveal>
