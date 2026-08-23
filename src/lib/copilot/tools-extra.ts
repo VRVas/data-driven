@@ -28,6 +28,7 @@ import { budgetVariance, writeBudget } from "@/lib/pipeline/budget";
 import { writeRubric } from "@/lib/pipeline/rubric";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import { withHealth } from "@/lib/pipeline/health";
+import { hygieneFindings, hygieneSummary } from "@/lib/pipeline/hygiene";
 import { effectiveTempoMonths } from "@/lib/scoring";
 import { STRATEGIC_REASONS, priorityOf } from "@/lib/priority";
 import { getAuthzContext } from "@/lib/auth/resolve";
@@ -996,7 +997,7 @@ const dataQuality: CopilotTool = {
   name: "data_quality",
   permission: "quality:read",
   description:
-    "What is broken or missing in the pipeline data: unscored leads, missing fields, stale contacts, and rows where the imported outcome contradicts the current stage (usually one record carrying two engagements, not a typo). Use for 'what needs cleaning up?' or before trusting a total.",
+    "What is wrong with the pipeline right now: leads that cannot be ranked because they have no value, leads nobody owns, missing stage or industry, open deals with no follow-up date, deals gone quiet, and rows where the imported outcome contradicts the current stage (usually one record carrying two engagements, not a typo). `liveFindings` is computed from the current data every time. `migrationNotes` is a separate, FROZEN record of what the original spreadsheet import had to clean - it is history, never today's state, and must not be described as outstanding work.",
   parameters: { type: "object", properties: { limit: { type: "integer", minimum: 1, maximum: 50 } } },
   async execute(args) {
     const { limit } = z.object({ limit: z.number().int().min(1).max(50).optional() }).parse(args);
@@ -1004,14 +1005,20 @@ const dataQuality: CopilotTool = {
     const brands = await getVisibleBrands();
     const conflicts = outcomeConflicts(brands);
     const open = openLeads(brands);
+    const findings = hygieneFindings(brands);
 
     return {
-      issueCount: count,
-      issues: issues.slice(0, limit ?? 15),
+      liveFindings: findings.slice(0, limit ?? 15),
+      liveSummary: hygieneSummary(findings),
       outcomeConflicts: conflicts.map((c) => ({ id: c.id, name: c.name, stage: c.status, importedOutcome: c.process })),
       openLeadsWithoutOwner: open.filter((b) => !b.owner).length,
       openLeadsWithoutFollowUp: open.filter((b) => !b.followUpDate).length,
       unscored: brands.filter((b) => !b.scored).length,
+      migrationNotes: {
+        count,
+        note: "Resolved during the original import. History, not outstanding work.",
+        sample: issues.slice(0, 5),
+      },
     };
   },
 };
