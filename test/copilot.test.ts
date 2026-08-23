@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import { isPermissionKey, PERMISSIONS } from "@/lib/auth/catalogue";
 import { COPILOT_TOOLS, getToolByName, toolSchemas } from "@/lib/copilot/tools";
+import { isStructuredNotProse } from "@/lib/copilot/provider";
 
 describe("copilot tool registry", () => {
   it("has unique, non-empty tool names", () => {
@@ -100,5 +101,35 @@ describe("copilot tools are gated", () => {
     expect(imports).not.toMatch(/\bgetBrand\b/);
     expect(imports).toMatch(/visibleLead/);
     expect(imports).toMatch(/writableLead/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A reply that is not prose must never be printed at a person
+// ---------------------------------------------------------------------------
+
+describe("structured output that is not an answer", () => {
+  it("recognises the schema echoed back", () => {
+    // The real failure, verified against the deployed model: under a
+    // json_schema response format it occasionally returns the SCHEMA instead
+    // of an instance, and that was rendered into the chat as a text block.
+    const echoed = JSON.stringify({
+      type: "object",
+      properties: { blocks: { type: "array", items: { type: "object", description: "One UI block." } } },
+    });
+    expect(isStructuredNotProse(echoed)).toBe(true);
+  });
+
+  it("recognises any other machine artefact", () => {
+    expect(isStructuredNotProse('{"blocks":[]}')).toBe(true);
+    expect(isStructuredNotProse("  [1,2,3] ")).toBe(true);
+  });
+
+  it("leaves real prose alone", () => {
+    // A plain-text answer is still worth showing, so this must not swallow it.
+    expect(isStructuredNotProse("Alibaba ranks 59 because its budget is confirmed.")).toBe(false);
+    expect(isStructuredNotProse("")).toBe(false);
+    expect(isStructuredNotProse("{ this is not json")).toBe(false);
+    expect(isStructuredNotProse("The result is {a: 1} roughly")).toBe(false);
   });
 });

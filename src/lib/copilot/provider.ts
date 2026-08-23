@@ -781,6 +781,7 @@ class FoundryCopilotProvider implements CopilotProvider {
       { role: "user", content: message },
     ];
     const runs: ToolRun[] = [];
+    let retriedComposition = false;
 
     for (let step = 0; step < 6; step++) {
       const body: Record<string, unknown> = {
@@ -803,8 +804,32 @@ class FoundryCopilotProvider implements CopilotProvider {
 
       const toolCalls = (msg.tool_calls as { id: string; function: { name: string; arguments: string } }[]) ?? [];
       if (toolCalls.length === 0) {
-        const blocks = parseBlocks(safeJson(String(msg.content ?? "")));
-        return { blocks: blocks.length ? blocks : [b.text(String(msg.content ?? ""))], toolRuns: runs, provider: this.name };
+        const raw = String(msg.content ?? "");
+        const blocks = parseBlocks(safeJson(raw));
+        if (blocks.length) return { blocks, toolRuns: runs, provider: this.name };
+
+        // Nothing valid came back. If the content is JSON at all it is not an
+        // answer - under a json_schema response format the usual failure is
+        // the model echoing the SCHEMA back, and a wall of
+        // {"type":"object","properties":... in a chat window is worse than
+        // saying nothing. Ask once more; a schema echo is not deterministic.
+        if (isStructuredNotProse(raw)) {
+          if (!retriedComposition) {
+            retriedComposition = true;
+            messages.push({
+              role: "system",
+              content:
+                "That reply was not a valid blocks object - it looked like the schema rather than an answer. Reply again with the ANSWER itself, as an instance of the schema.",
+            });
+            continue;
+          }
+          return {
+            blocks: [b.text("I couldn't compose that answer. Ask me again, or rephrase it slightly.")],
+            toolRuns: runs,
+            provider: this.name,
+          };
+        }
+        return { blocks: [b.text(raw)], toolRuns: runs, provider: this.name };
       }
       for (const call of toolCalls) {
         let args: Record<string, unknown> = {};
@@ -828,6 +853,19 @@ function safeJson(s: string): unknown {
   } catch {
     return null;
   }
+}
+
+/**
+ * Is this reply a data structure rather than something written for a person?
+ *
+ * Only asked once a reply has already failed block validation. Prose is not
+ * JSON, so anything that parses is a machine artefact - in practice the schema
+ * echoed back - and must never be printed into a chat window.
+ */
+export function isStructuredNotProse(raw: string): boolean {
+  const t = raw.trim();
+  if (!t.startsWith("{") && !t.startsWith("[")) return false;
+  return safeJson(t) !== null;
 }
 
 export function isFoundryConfigured(): boolean {
