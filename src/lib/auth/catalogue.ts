@@ -77,6 +77,7 @@ export const PERMISSIONS = [
 
   // ---- Reminders ----------------------------------------------------------
   { key: "reminder:read", category: "Reminders", label: "View reminders", scoped: true },
+  { key: "reminder:create", category: "Reminders", label: "Set reminders", scoped: false, help: "Schedule a nudge for yourself, in the app and by email." },
   { key: "reminder:update", category: "Reminders", label: "Reschedule reminders", scoped: true },
   { key: "reminder:complete", category: "Reminders", label: "Complete reminders", scoped: true },
 

@@ -45,7 +45,7 @@ const SALES_REP_KEYS: PermissionKey[] = [
   "agent:read", "agent:create", "agent:update", "agent:delete",
   "proposal:read", "proposal:manage",
   "outreach:read", "outreach:compose", "outreach:cancel",
-  "reminder:read", "reminder:update", "reminder:complete",
+  "reminder:read", "reminder:create", "reminder:update", "reminder:complete",
   "view:read", "view:create", "view:delete",
   "scoring:read", "industry:read", "tam:read", "quality:read",
   "copilot:use", "copilot:tool:write", "copilot:websearch", "copilot:documents",

@@ -31,6 +31,12 @@ const PRE_AUTH_ALLOWLIST: readonly { route: string; handlers: readonly string[];
     reason:
       "Auth.js itself - the sign-in, callback and session endpoints. This is what creates a session, so it cannot require one.",
   },
+  {
+    route: "src/app/api/reminders/dispatch/route.ts",
+    handlers: ["POST"],
+    reason:
+      "Called by a scheduler, not a person, so there is no session to hold a permission. Guarded instead by REMINDER_DISPATCH_KEY, compared in constant time, and it refuses outright when that key is unset - an open endpoint that sends email is a spam relay, so the default is deny.",
+  },
 ];
 
 // ---------------------------------------------------------------------------
