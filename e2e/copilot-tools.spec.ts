@@ -297,6 +297,93 @@ test.describe("copilot knows the caller and can send a drafted message", () => {
   });
 });
 
+test.describe("copilot finishes a request before it acts", () => {
+  test("check_request blocks on what the call needs and warns about the rest", async ({ request }) => {
+    const empty = await callTool(request, "check_request", { tool: "create_lead", values: {} });
+    expect(empty.body.ok).toBe(true);
+    expect(empty.body.data!.ready).toBe(false);
+    expect((empty.body.data!.missingRequired as { field: string }[]).map((f) => f.field)).toEqual(["name"]);
+
+    const named = await callTool(request, "check_request", { tool: "create_lead", values: { name: "ZZ probe" } });
+    const d = named.body.data!;
+    expect(d.ready).toBe(true);
+    expect(d.complete).toBe(false);
+    // The point: it may proceed, and it says what proceeding costs.
+    expect((d.consequences as string[]).join(" ")).toContain("cannot be ranked at all");
+    expect((d.questions as string[]).length).toBeGreaterThan(3);
+  });
+
+  test("check_request says so plainly when a tool has no checklist", async ({ request }) => {
+    const { body } = await callTool(request, "check_request", { tool: "pipeline_summary" });
+    expect(body.ok).toBe(true);
+    expect(body.data!.known).toBe(false);
+    expect(Array.isArray(body.data!.knownTools)).toBe(true);
+  });
+
+  test("suggest_lead_fields reasons over real deals and shows its working", async ({ request }) => {
+    const { body } = await callTool(request, "suggest_lead_fields", { name: "ZZ Unknown", industry: "Finance" });
+    expect(body.ok).toBe(true);
+    const suggestions = body.data!.suggestions as { field: string; basis: string; sampleSize: number }[];
+    expect(suggestions.length).toBeGreaterThan(0);
+    for (const s of suggestions) expect(s.basis.length).toBeGreaterThan(20);
+    const value = suggestions.find((s) => s.field === "valueEur");
+    // A real median over real records, not a placeholder.
+    expect(value?.sampleSize ?? 0).toBeGreaterThan(2);
+    expect(value?.basis).toContain("Finance");
+  });
+
+  test("suggest_lead_fields will not quote a median off two records", async ({ request }) => {
+    // Fashion carries a budget on two leads. A median of two is arithmetic
+    // dressed as evidence, so it declines and says how many it found.
+    const { body } = await callTool(request, "suggest_lead_fields", { name: "ZZ Unknown", industry: "Fashion" });
+    const suggestions = body.data!.suggestions as { field: string }[];
+    expect(suggestions.find((s) => s.field === "valueEur")).toBeUndefined();
+    const gaps = body.data!.researchGaps as { field: string; why: string }[];
+    expect(gaps.find((g) => g.field === "valueEur")?.why).toContain("Too few");
+  });
+
+  test("suggest_lead_fields hands the outside world to the web", async ({ request }) => {
+    const { body } = await callTool(request, "suggest_lead_fields", { name: "ZZ Nonexistent Brand" });
+    const gaps = body.data!.researchGaps as { field: string; suggestedQuery: string }[];
+    expect(gaps.map((g) => g.field)).toContain("industry");
+    expect(gaps.every((g) => g.suggestedQuery.length > 0)).toBe(true);
+  });
+
+  test("suggest_lead_fields warns before a client gets a second record", async ({ request }) => {
+    const { body } = await callTool(request, "suggest_lead_fields", { name: "Alibaba" });
+    const dupes = body.data!.possibleDuplicates as { id: string }[];
+    expect(dupes.map((d) => d.id)).toContain("alibaba");
+  });
+});
+
+test.describe("copilot comments", () => {
+  test("add_comment records a turn without touching the notes", async ({ request }) => {
+    const before = await callTool(request, "get_lead", { id: "alibaba" });
+    const notesBefore = before.body.data!.notes ?? null;
+
+    const added = await callTool(request, "add_comment", {
+      leadId: "alibaba",
+      body: "ZZ probe - copilot wrote this",
+    });
+    expect(added.body.ok).toBe(true);
+    expect(added.body.data!.ok).toBe(true);
+
+    const listed = await callTool(request, "list_comments", { leadId: "alibaba" });
+    const comments = listed.body.data!.comments as { author: string; body: string }[];
+    expect(comments[0].body).toBe("ZZ probe - copilot wrote this");
+    expect(comments[0].author.length).toBeGreaterThan(0);
+    // The summary field is untouched, which is the whole distinction.
+    expect(listed.body.data!.notes ?? null).toEqual(notesBefore);
+  });
+
+  test("comments on a lead that does not exist are refused, not invented", async ({ request }) => {
+    const { body } = await callTool(request, "add_comment", { leadId: "no-such-lead", body: "ZZ probe" });
+    expect(body.data!.ok).toBe(false);
+    const listed = await callTool(request, "list_comments", { leadId: "no-such-lead" });
+    expect(listed.body.data!.found).toBe(false);
+  });
+});
+
 test.describe("copilot tool gating", () => {
   test("an unknown tool is a 404, not a silent success", async ({ request }) => {
     const res = await request.post("/api/copilot/tools/no_such_tool", { data: {} });
