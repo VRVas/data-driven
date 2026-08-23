@@ -7,9 +7,9 @@ import {
   completeFollowUp,
   type ReminderActionState,
 } from "@/app/actions/reminders";
-import type { Reminder } from "@/lib/reminders";
+import type { FollowUp } from "@/lib/leads/followups";
 
-function toneFor(bucket: Reminder["bucket"]): string {
+function toneFor(bucket: FollowUp["bucket"]): string {
   if (bucket === "overdue") return "var(--color-rose)";
   if (bucket === "today") return "var(--color-amber)";
   return "var(--color-ink-muted)";
@@ -21,7 +21,7 @@ function dueLabel(days: number): string {
   return `in ${days}d`;
 }
 
-export function ReminderRow({ r }: { r: Reminder }) {
+export function ReminderRow({ r }: { r: FollowUp }) {
   const [, snooze, snoozing] = useActionState<ReminderActionState, FormData>(snoozeFollowUp, undefined);
   const [, done, completing] = useActionState<ReminderActionState, FormData>(completeFollowUp, undefined);
 

@@ -1,12 +1,12 @@
 import { Reveal } from "@/components/Reveal";
 import { ReminderRow } from "@/components/ReminderRow";
 import { getVisibleBrands } from "@/lib/leads/visible";
-import { remindersFrom, type Reminder, type ReminderBucket } from "@/lib/reminders";
+import { followUpsFrom, type FollowUp, type FollowUpBucket } from "@/lib/leads/followups";
 import { ExportMenu } from "@/components/ExportMenu";
 
 export const dynamic = "force-dynamic";
 
-const SECTIONS: { bucket: ReminderBucket; title: string; blurb: string }[] = [
+const SECTIONS: { bucket: FollowUpBucket; title: string; blurb: string }[] = [
   { bucket: "overdue", title: "Overdue", blurb: "Past their follow-up date" },
   { bucket: "today", title: "Today", blurb: "Due today" },
   { bucket: "upcoming", title: "Upcoming", blurb: "Next 30 days" },
@@ -14,8 +14,8 @@ const SECTIONS: { bucket: ReminderBucket; title: string; blurb: string }[] = [
 
 export default async function RemindersPage() {
   const brands = await getVisibleBrands();
-  const reminders = remindersFrom(brands);
-  const byBucket = (b: ReminderBucket): Reminder[] => reminders.filter((r) => r.bucket === b);
+  const reminders = followUpsFrom(brands);
+  const byBucket = (b: FollowUpBucket): FollowUp[] => reminders.filter((r) => r.bucket === b);
   const dueCount = byBucket("overdue").length + byBucket("today").length;
 
   return (

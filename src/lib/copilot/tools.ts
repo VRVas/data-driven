@@ -20,7 +20,7 @@ import { budgetVariance } from "@/lib/pipeline/budget";
 import { can } from "@/lib/auth/authorize";
 import type { PermissionKey } from "@/lib/auth/catalogue";
 import type { Company } from "@/lib/crm/types";
-import { remindersFrom } from "@/lib/reminders";
+import { followUpsFrom } from "@/lib/leads/followups";
 import { advanceStage as applyStageChange, todayYmd } from "@/lib/workflow";
 import { renderTemplate, DEFAULT_TEMPLATE_ID, OUTREACH_TEMPLATES } from "@/lib/mail/templates";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
@@ -437,7 +437,7 @@ const listReminders: CopilotTool = {
   },
   async execute(args) {
     const { bucket } = z.object({ bucket: z.enum(["overdue", "today", "upcoming"]).optional() }).parse(args);
-    let reminders = remindersFrom(await getVisibleBrands());
+    let reminders = followUpsFrom(await getVisibleBrands());
     if (bucket) reminders = reminders.filter((r) => r.bucket === bucket);
     return {
       count: reminders.length,

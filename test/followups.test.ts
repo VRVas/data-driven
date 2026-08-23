@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { remindersFrom, bucketFor, countDue } from "@/lib/reminders";
+import { followUpsFrom, bucketFor, countDue } from "@/lib/leads/followups";
 import type { Brand } from "@/lib/types";
 
 function brand(o: Partial<Brand> = {}): Brand {
@@ -34,7 +34,7 @@ describe("bucketFor", () => {
   });
 });
 
-describe("remindersFrom", () => {
+describe("followUpsFrom", () => {
   it("keeps only open leads with a follow-up inside the horizon, soonest first", () => {
     const brands = [
       brand({ id: "a", followUpDate: "2026-07-05" }), // overdue
@@ -45,7 +45,7 @@ describe("remindersFrom", () => {
       brand({ id: "f", followUpDate: "2026-07-08", status: "Deal Closed" }), // closed
       brand({ id: "g", followUpDate: "2026-07-09", status: "Did not work out" }), // lost
     ];
-    const r = remindersFrom(brands, NOW);
+    const r = followUpsFrom(brands, NOW);
     expect(r.map((x) => x.brand.id)).toEqual(["a", "b", "c"]);
     expect(r[0].bucket).toBe("overdue");
     expect(r[1].bucket).toBe("today");
@@ -57,6 +57,6 @@ describe("remindersFrom", () => {
       brand({ id: "b", followUpDate: "2026-07-10" }),
       brand({ id: "c", followUpDate: "2026-07-20" }),
     ];
-    expect(countDue(remindersFrom(brands, NOW))).toBe(2);
+    expect(countDue(followUpsFrom(brands, NOW))).toBe(2);
   });
 });

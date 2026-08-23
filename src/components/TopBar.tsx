@@ -6,7 +6,7 @@ import { TourLauncher } from "@/components/tour/TourLauncher";
 import { CommandButton } from "@/components/CommandPalette";
 import { getVisibleBrands } from "@/lib/leads/visible";
 import { capabilities } from "@/lib/auth/authorize";
-import { remindersFrom, countDue } from "@/lib/reminders";
+import { followUpsFrom, countDue } from "@/lib/leads/followups";
 import { getOutreachStore } from "@/lib/store/outreach";
 
 export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; fixed?: boolean } = {}) {
@@ -20,7 +20,7 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
     : { "audit:read": false, "user:read": false, "outreach:send": false };
   if (user) {
     try {
-      dueCount = countDue(remindersFrom(await getVisibleBrands()));
+      dueCount = countDue(followUpsFrom(await getVisibleBrands()));
     } catch {
       dueCount = 0;
     }
