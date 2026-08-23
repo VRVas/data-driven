@@ -205,6 +205,10 @@ export function BrandEditor({
 
           <FormField label="Notes">
             <textarea name="notes" defaultValue={brand?.notes ?? ""} rows={4} className="auth-input resize-none" />
+            <span className="mt-1 block text-xs text-[var(--color-ink-faint)]">
+              The standing summary of this lead. Saving REPLACES it - to add to the story without losing
+              anyone else&rsquo;s, leave a comment on the lead instead.
+            </span>
           </FormField>
 
           {state?.error && (
