@@ -1,4 +1,5 @@
 import "server-only";
+import { randomUUID } from "node:crypto";
 import { z } from "zod";
 import { getDataQuality } from "@/lib/data";
 import { getVisibleBrands, visibleLead, writableLead } from "@/lib/leads/visible";
@@ -10,6 +11,10 @@ import { getCrmGraph } from "@/lib/crm/graph";
 import { recordProposal, syncLeadValue } from "@/lib/crm/proposals";
 import { mergeCompanyInto } from "@/lib/crm/merge";
 import { blankLead, freeLeadId } from "@/lib/leads/create";
+import { getReminderStore, type Reminder } from "@/lib/store/reminders";
+import { claim, contextFor, deliver } from "@/lib/reminders/dispatch";
+import { composeReminderCancellation } from "@/lib/reminders/compose";
+import { getEmailProvider } from "@/lib/mail/provider";
 import { modelSpec, workedExample } from "./model-spec";
 import { duplicateCandidates, currentProposals } from "@/lib/crm/logic";
 import { completeFollowUp, snoozeFollowUp } from "@/lib/leads/followups";
@@ -450,6 +455,198 @@ const explainModel: CopilotTool = {
     const brand = await visibleLead(leadId);
     if (!brand) return { model: spec, example: null, note: "That lead was not found, so the spec is returned on its own." };
     return { model: spec, example: workedExample(brand) };
+  },
+};
+
+const setReminder: CopilotTool = {
+  name: "set_reminder",
+  permission: "reminder:create",
+  write: true,
+  description:
+    "Schedule a reminder for the person you are talking to, or send it to them immediately. It arrives as an in-app notification, an email, or both. Attach a lead id and the email carries that lead's whole CRM state - stage, owner, value and where the figure came from, who owes the next move, the latest proposal, the client's rollup - so it is useful without opening the app. Ask for holdMinutes and a calendar invitation is attached, blocking that much time rather than merely noting it. Use for 'remind me tomorrow at 9 to chase Alleanza', 'block 30 minutes on Friday to work on the Poste proposal', or 'email me everything on BMW China now'. A reminder is always for the caller: there is no reminding somebody else.",
+  parameters: {
+    type: "object",
+    properties: {
+      title: { type: "string", description: "What to do, in the user's words" },
+      dueAt: {
+        type: "string",
+        description: "ISO 8601 timestamp, or the literal 'now' to deliver immediately",
+      },
+      topic: { type: "string", description: "The discussion or topic it is about" },
+      notes: { type: "string" },
+      leadId: { type: "string", description: "Lead to pull CRM context from" },
+      email: { type: "boolean", description: "Send by email. Default true." },
+      inApp: { type: "boolean", description: "Raise an in-app notification. Default true." },
+      holdMinutes: {
+        type: "integer",
+        minimum: 5,
+        maximum: 480,
+        description: "Attach a calendar invitation blocking this many minutes",
+      },
+    },
+    required: ["title", "dueAt"],
+  },
+  async execute(args, ctx) {
+    const a = z
+      .object({
+        title: z.string().trim().min(1).max(160),
+        dueAt: z.string().trim().min(1),
+        topic: z.string().trim().max(400).optional(),
+        notes: z.string().trim().max(4000).optional(),
+        leadId: z.string().trim().min(1).optional(),
+        email: z.boolean().optional(),
+        inApp: z.boolean().optional(),
+        holdMinutes: z.number().int().min(5).max(480).optional(),
+      })
+      .parse(args);
+
+    const due = a.dueAt.toLowerCase() === "now" ? new Date() : new Date(a.dueAt);
+    if (Number.isNaN(due.getTime())) {
+      return { ok: false, error: "dueAt must be an ISO 8601 timestamp or 'now'." };
+    }
+    if (!ctx.user.email) return { ok: false, error: "Your account has no email address to send to." };
+
+    let brandName: string | null = null;
+    if (a.leadId) {
+      const lead = await visibleLead(a.leadId);
+      if (!lead) return { ok: false, error: "Lead not found." };
+      brandName = lead.name;
+    }
+
+    const now = new Date().toISOString();
+    const reminder: Reminder = {
+      id: `rem-${randomUUID()}`,
+      ownerId: ctx.user.id,
+      ownerName: ctx.user.name,
+      ownerEmail: ctx.user.email,
+      title: a.title,
+      topic: a.topic ?? null,
+      notes: a.notes ?? null,
+      brandId: a.leadId ?? null,
+      brandName,
+      dueAt: due.toISOString(),
+      channels: { inApp: a.inApp ?? true, email: a.email ?? true },
+      holdMinutes: a.holdMinutes ?? null,
+      status: "scheduled",
+      sequence: 0,
+      sentAt: null,
+      error: null,
+      attempts: 0,
+      createdById: ctx.user.id,
+      createdByName: ctx.user.name,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await getReminderStore().create(reminder);
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "reminder.create",
+      entity: "reminder",
+      entityId: reminder.id,
+      summary: `Set a reminder "${reminder.title}" for ${reminder.dueAt.slice(0, 16).replace("T", " ")}`,
+    });
+
+    // Same delivery path as a scheduled one, so "now" cannot behave differently.
+    let delivered = false;
+    if (due.getTime() <= Date.now()) {
+      const claimed = await claim(reminder.id);
+      if (claimed) delivered = (await deliver(claimed)).ok;
+    }
+
+    return {
+      ok: true,
+      id: reminder.id,
+      title: reminder.title,
+      dueAt: reminder.dueAt,
+      delivered,
+      channels: reminder.channels,
+      holdMinutes: reminder.holdMinutes,
+      lead: brandName,
+      note: reminder.holdMinutes
+        ? `A calendar invitation for ${reminder.holdMinutes} minutes is attached, so the time is held rather than noted.`
+        : undefined,
+    };
+  },
+};
+
+const listReminders: CopilotTool = {
+  name: "list_my_reminders",
+  permission: "reminder:read",
+  description:
+    "The caller's own scheduled and recently delivered reminders, with their status and channels. Use before setting a near-duplicate, and for 'what have I got set?'. This is NOT the follow-up list derived from lead follow-up dates - list_reminders is that.",
+  parameters: {
+    type: "object",
+    properties: { includeDone: { type: "boolean", description: "Include cancelled and completed. Default false." } },
+  },
+  async execute(args, ctx) {
+    const { includeDone } = z.object({ includeDone: z.boolean().optional() }).parse(args);
+    const all = await getReminderStore().listForUser(ctx.user.id, 100);
+    const rows = includeDone ? all : all.filter((r) => r.status !== "cancelled" && r.status !== "done");
+
+    return {
+      count: rows.length,
+      reminders: rows.map((r) => ({
+        id: r.id,
+        title: r.title,
+        topic: r.topic,
+        dueAt: r.dueAt,
+        status: r.status,
+        channels: r.channels,
+        holdMinutes: r.holdMinutes,
+        leadId: r.brandId,
+        lead: r.brandName,
+        error: r.error,
+      })),
+    };
+  },
+};
+
+const cancelReminderTool: CopilotTool = {
+  name: "cancel_reminder",
+  permission: "reminder:update",
+  write: true,
+  description:
+    "Withdraw a reminder the caller set. Get the id from list_my_reminders. If it had blocked calendar time and the invitation already went out, a cancellation is emailed so the time is released rather than left held.",
+  parameters: {
+    type: "object",
+    properties: { reminderId: { type: "string" } },
+    required: ["reminderId"],
+  },
+  async execute(args, ctx) {
+    const { reminderId } = z.object({ reminderId: z.string().min(1) }).parse(args);
+    const store = getReminderStore();
+    const reminder = await store.get(reminderId);
+    if (!reminder) return { ok: false, error: "That reminder no longer exists." };
+    // Ownership, not scope: a reminder is personal.
+    if (reminder.ownerId !== ctx.user.id) return { ok: false, error: "That reminder is not yours." };
+    if (reminder.status === "cancelled") return { ok: true, id: reminderId, note: "Already cancelled." };
+
+    await store.update({ ...reminder, status: "cancelled", updatedAt: new Date().toISOString() });
+
+    let released = false;
+    if (reminder.holdMinutes && reminder.status === "sent" && reminder.channels.email) {
+      const mail = composeReminderCancellation(await contextFor(reminder));
+      const result = await getEmailProvider().send({
+        to: reminder.ownerEmail,
+        toName: reminder.ownerName,
+        subject: mail.subject,
+        body: mail.body,
+        attachments: mail.attachments,
+      });
+      released = result.ok;
+    }
+
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "reminder.cancel",
+      entity: "reminder",
+      entityId: reminderId,
+      summary: `Cancelled reminder "${reminder.title}"`,
+    });
+    return { ok: true, id: reminderId, title: reminder.title, calendarTimeReleased: released };
   },
 };
 
@@ -1259,6 +1456,9 @@ export const EXTRA_TOOLS: CopilotTool[] = [
   recordProposalTool,
   setStrategicValue,
   setBudget,
+  setReminder,
+  listReminders,
+  cancelReminderTool,
   explainModel,
   createLead,
   updateLead,
