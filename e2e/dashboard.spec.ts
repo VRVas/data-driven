@@ -72,19 +72,50 @@ test.describe("dashboard", () => {
   test("pipeline table filters as you search", async ({ page }) => {
     await page.goto("/dashboard/pipeline");
     const search = page.getByPlaceholder(/search brand/i);
+    const counter = page.locator("text=/^\\d+ of \\d+$/");
     await expect(search).toBeVisible();
-    await expect(page.getByText("64 of 64")).toBeVisible();
 
-    await search.fill("Alibaba");
-    await expect(page.getByText("64 of 64")).toBeHidden();
-    await expect(page.getByRole("link", { name: /alibaba/i })).toBeVisible();
+    // Counts are read off the page: earlier specs move leads between stages, so
+    // any hard-coded total is only true until something else runs.
+    const initial = (await counter.textContent())!;
+    const [shown, total] = initial.match(/^(\d+) of (\d+)$/)!.slice(1).map(Number);
+    // Finished deals sit behind the Show filter by default.
+    expect(shown).toBeLessThan(total);
+
+    await search.fill("Armani");
+    await expect(counter).toHaveText(`1 of ${total}`);
+    await expect(page.getByRole("link", { name: /armani/i })).toBeVisible();
 
     await search.clear();
-    await expect(page.getByText("64 of 64")).toBeVisible();
+    await expect(counter).toHaveText(initial);
+  });
+
+  test("searching a finished deal offers it rather than coming up empty", async ({ page }) => {
+    // Hiding closed deals must not make a client you know exists unfindable.
+    await page.goto("/dashboard/pipeline");
+
+    const won = page.getByRole("button", { name: /^Won/ });
+    const wonCount = Number((await won.textContent())?.match(/(\d+)\s*$/)?.[1] ?? "0");
+    test.skip(wonCount === 0, "no won deals to search for");
+
+    // Take the name from a won deal rather than assuming which brand is closed.
+    await won.click();
+    const name = (await page.locator("tbody tr td a").first().textContent())!.trim();
+
+    await page.getByRole("button", { name: /^Active/ }).click();
+    await page.getByPlaceholder(/search brand/i).fill(name);
+
+    const showAll = page.getByRole("button", { name: /show everything/i }).first();
+    await expect(showAll).toBeVisible();
+    await showAll.click();
+    await expect(page.getByRole("link", { name: new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i") }).first()).toBeVisible();
   });
 
   test("a lead detail page opens from the pipeline", async ({ page }) => {
     await page.goto("/dashboard/pipeline");
+    // Everything first: the lead may or may not be closed depending on what
+    // other specs have moved.
+    await page.getByRole("button", { name: /^Everything/ }).click();
     await page.getByRole("link", { name: /alibaba/i }).first().click();
     await expect(page).toHaveURL(/\/dashboard\/pipeline\/alibaba/);
     await expect(page.getByText(/alibaba/i).first()).toBeVisible();

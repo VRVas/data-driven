@@ -150,6 +150,24 @@ export function BrandTable({
     return r;
   }, [brands, health, q, status, owner, healthFilter, lifecycle, sort]);
 
+  // Leads the Show filter is holding back that match everything else the user
+  // typed. Without this, searching a client who happens to be won or lost
+  // returns an empty table and no reason why.
+  const hiddenByLifecycle = useMemo(() => {
+    if (lifecycle === "everything") return 0;
+    return brands.filter((b) => {
+      const hay = `${b.name} ${b.poc ?? ""} ${b.notes ?? ""} ${b.industry ?? ""}`.toLowerCase();
+      const h = health[b.id];
+      return (
+        !matchesLifecycle(b, lifecycle) &&
+        hay.includes(q.toLowerCase()) &&
+        (status === "All" || b.status === status) &&
+        (owner === "All" || b.owner === owner) &&
+        (healthFilter === "all" || !!h?.[healthFilter])
+      );
+    }).length;
+  }, [brands, health, q, status, owner, healthFilter, lifecycle]);
+
   const toggleSort = (key: SortKey) =>
     setSort((s) => ({ key, dir: s.key === key && s.dir === 1 ? -1 : 1 }));
 
@@ -271,6 +289,20 @@ export function BrandTable({
         <span className="text-sm text-[var(--color-ink-muted)]">{rows.length} of {brands.length}</span>
       </div>
 
+      {hiddenByLifecycle > 0 && q.trim() !== "" && (
+        <p className="mb-3 flex flex-wrap items-center gap-2 text-sm text-[var(--color-ink-muted)]">
+          {hiddenByLifecycle} finished {hiddenByLifecycle === 1 ? "deal also matches" : "deals also match"}{" "}
+          <span className="text-[var(--color-ink)]">“{q}”</span>.
+          <button
+            type="button"
+            onClick={() => setLifecycle("everything")}
+            className="rounded-full border border-[var(--color-border-strong)] px-2.5 py-0.5 text-xs text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-brand)] hover:text-[var(--color-ink)]"
+          >
+            Show everything
+          </button>
+        </p>
+      )}
+
       <div className="overflow-x-auto rounded-xl border border-[var(--color-border)]">
         <table className="w-full text-sm">
           <thead className="bg-[var(--color-surface)]">
@@ -292,8 +324,18 @@ export function BrandTable({
                   <p className="text-sm text-[var(--color-ink-muted)]">
                     {brands.length === 0
                       ? "No leads yet — add your first one to start building the pipeline."
-                      : "No leads match your filters."}
+                      : hiddenByLifecycle > 0
+                        ? `No active lead matches, but ${hiddenByLifecycle} finished ${hiddenByLifecycle === 1 ? "one does" : "ones do"}.`
+                        : "No leads match your filters."}
                   </p>
+                  {brands.length > 0 && hiddenByLifecycle > 0 && (
+                    <button
+                      onClick={() => setLifecycle("everything")}
+                      className="mt-3 rounded-full border border-[var(--color-border-strong)] px-4 py-1.5 text-sm text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-brand)] hover:text-[var(--color-ink)]"
+                    >
+                      Show everything
+                    </button>
+                  )}
                   {brands.length === 0 && (
                     <button
                       onClick={() => setEditing(null)}

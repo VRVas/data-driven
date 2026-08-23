@@ -88,7 +88,8 @@ test.describe("pipeline health", () => {
 
     await won.click();
     await expect(counter).toHaveText(new RegExp(`^${wonCount} of `));
-    await expect(page.getByText("Deal Closed").first()).toBeVisible();
+    // Scoped to the table: "Deal Closed" is also an <option> in the status filter.
+    await expect(page.locator("tbody").getByText("Deal Closed").first()).toBeVisible();
   });
 });
 
