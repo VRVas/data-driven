@@ -7,6 +7,7 @@ import { CommandButton } from "@/components/CommandPalette";
 import { getVisibleBrands } from "@/lib/leads/visible";
 import { capabilities } from "@/lib/auth/authorize";
 import { followUpsFrom, countDue } from "@/lib/leads/followups";
+import { getNotificationStore } from "@/lib/store/notifications";
 import { getOutreachStore } from "@/lib/store/outreach";
 
 export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; fixed?: boolean } = {}) {
@@ -20,9 +21,17 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
     : { "audit:read": false, "user:read": false, "outreach:send": false };
   if (user) {
     try {
+      // The bell counts anything wanting attention: follow-ups that are due,
+      // and reminders that have already fired and not been dismissed.
       dueCount = countDue(followUpsFrom(await getVisibleBrands()));
     } catch {
       dueCount = 0;
+    }
+    try {
+      const unread = (await getNotificationStore().listForUser(user.id as string, 50)).filter((n) => !n.readAt);
+      dueCount += unread.length;
+    } catch {
+      // A notification store that is unavailable must not blank the top bar.
     }
     if (caps["outreach:send"]) {
       try {
