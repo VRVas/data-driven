@@ -31,7 +31,8 @@ test.describe("product tour", () => {
       const title = (await dialog.locator("h3").textContent().catch(() => ""))?.trim() ?? "";
       if (title && title !== last) {
         seen.push(title);
-        if (await dialog.getByText("New in v1.1").isVisible().catch(() => false)) badges += 1;
+        // Regex, not the literal: the badge is versioned and bumps each wave.
+        if (await dialog.getByText(/^New in v/).isVisible().catch(() => false)) badges += 1;
         last = title;
       }
       if (/^Pipeline/.test(title)) await shot(page, "tour-02-pipeline");

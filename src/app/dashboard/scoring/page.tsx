@@ -159,7 +159,7 @@ export default async function ScoringPage() {
       </div>
 
       <Reveal>
-        <div className="glass p-6">
+        <div data-tour="scoring-reference" className="glass p-6">
           <div className="eyebrow mb-2">Reference</div>
           <h2 className="font-display text-xl font-semibold tracking-tight">How the numbers are worked out</h2>
           <p className="mb-6 mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">

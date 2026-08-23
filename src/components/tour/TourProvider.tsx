@@ -13,7 +13,7 @@ import {
 import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { gsap, ScrollSmoother } from "@/lib/gsap/register";
-import { TOUR_STEPS, type TourStep } from "@/lib/tour/steps";
+import { TOUR_STEPS, TOUR_NEW_BADGE, type TourStep } from "@/lib/tour/steps";
 
 const DONE_KEY = "oovie.tour.v1.done";
 const PAD = 8;
@@ -276,7 +276,7 @@ function TourOverlay({
             </span>
             {step.isNew && (
               <span className="rounded-full border border-[var(--color-brand)] bg-[color-mix(in_srgb,var(--color-brand)_18%,transparent)] px-2 py-0.5 font-mono text-[9px] uppercase tracking-[0.14em] text-[var(--color-ink)]">
-                New in v1.1
+                {TOUR_NEW_BADGE}
               </span>
             )}
           </div>

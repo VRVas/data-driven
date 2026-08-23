@@ -9,6 +9,9 @@
 
 export type TourPlacement = "top" | "bottom" | "left" | "right" | "center";
 
+/** One label, so the badge and the copy that refers to it cannot disagree. */
+export const TOUR_NEW_BADGE = "New in v1.2";
+
 export interface TourStep {
   id: string;
   route: string;
@@ -17,7 +20,7 @@ export interface TourStep {
   body: string;
   /** How this maps back to the source sheet. */
   sheet?: string;
-  /** Badged "New in v1.1" so returning users can see what changed. */
+  /** Badged as new so returning users can see what changed. */
   isNew?: boolean;
   placement?: TourPlacement;
   optional?: boolean;
@@ -28,7 +31,7 @@ export const TOUR_STEPS: TourStep[] = [
     id: "welcome",
     route: "/dashboard",
     title: "Welcome to BD Intelligence",
-    body: "This is your Client Segmentation sheet, turned into a live, scored, searchable workspace. Let's walk through everything — it takes about a minute. Steps badged “New in v1.1” are what changed since you last looked.",
+    body: `This is your Client Segmentation sheet, turned into a live, scored, searchable workspace. Let's walk through everything — it takes about a minute. Steps badged “${TOUR_NEW_BADGE}” are what changed since you last looked.`,
     sheet: "Everything here is built from the 6 tabs of the workbook.",
     placement: "center",
   },
@@ -54,7 +57,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard",
     selector: '[data-tour="kpis"]',
     title: "Headline metrics",
-    body: "Four numbers at a glance: total pipeline, probability-weighted value, deals closed, and how much of the pipeline is scored.",
+    body: "Four numbers at a glance: how many leads you hold, the probability-weighted value of the live ones, deals closed, and how much of the pipeline is scored. Weighted value counts OPEN deals only — a won deal has a 100% chance of closing, so including it would add money already banked to a figure about what might still come in.",
     sheet: "Rolled up from Brands Operative (status) + Brand Data (scores).",
     placement: "bottom",
   },
@@ -128,12 +131,21 @@ export const TOUR_STEPS: TourStep[] = [
     placement: "bottom",
   },
   {
+    id: "pipe-lifecycle",
+    route: "/dashboard/pipeline",
+    selector: '[data-tour="pipe-lifecycle"]',
+    title: "Only what is still live",
+    body: "The list opens on Active, so finished deals stop crowding a view about what to do next — but they are one chip away, not gone: Won, Lost and Everything sit right here with their counts. Search still reaches them; if you look for a client who happens to be won, the table says so and offers to show it rather than coming up empty.",
+    isNew: true,
+    placement: "bottom",
+  },
+  {
     id: "pipe-health",
     route: "/dashboard/pipeline",
     selector: '[data-tour="pipe-health"]',
-    title: "Who owes the next move",
-    body: "New. Four headlines answer the question the sheet never could: how many leads are late because WE owe them something, how many because they owe US, how much money is sitting in proposals awaiting a greenlight, and how many nobody has triaged at all. Each headline is a filter \u2014 click it and the table below drops to just those leads. The Waiting-on column shows the side and how many days overdue.",
-    sheet: "Inferred where you have not said: a proposal out for decision means the ball is with them; a lone follow-up date means it is with us. Neither, and the lead is reported as untriaged rather than quietly filed under one side.",
+    title: "What the book is worth, and who owes the next move",
+    body: "Five headlines answer what the sheet never could: the total value of the live pipeline, the value of proposals sent and still unanswered, how many leads are late because WE owe a reply, how many because they owe US a decision, and how many nobody has triaged at all. Each count is also a filter — click it and the table drops to just those leads. The Waiting-on column shows the side and how many days overdue.",
+    sheet: "Inferred where you have not said: a proposal out for decision means the ball is with them; a lone follow-up date means it is with us. An inferred side is marked with a “?” you can hover for the reason, so “Us, 142 days late” never looks like something a person decided when it was not. Neither signal, and the lead is reported as untriaged rather than quietly filed under one side.",
     isNew: true,
     placement: "bottom",
   },
@@ -151,8 +163,8 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard/pipeline",
     selector: '[data-tour="pipe-edit"]',
     title: "What a lead page now holds",
-    body: "New on every lead: who owes the next move and by when, how long the deal is actually taking versus what you expected, and the budget shown as a guess or a fact \u2014 accepting a proposal writes the real number in and keeps the original estimate so you can see how good the guess was. Plus a strategic value, which is how a cheap or free project can still rank: a logo you can name, a referral source, a reference case.",
-    sheet: "Deleting a lead lives at the bottom of that same edit dialog, behind a confirm. It is permanent and needs the delete permission.",
+    body: "Everything about a lead in one place: who owes the next move and by when, how long the deal is actually taking versus what you expected, its proposals and their status, and its commercial value — labelled with where that figure came from, because an accepted offer, an ask still sitting with the client and a number somebody typed at the start are three different kinds of true. Accepting a proposal writes the real number in and keeps the original estimate, so you can see how good the guess was. Plus a strategic value, which is how a cheap or free project can still rank: a logo you can name, a referral source, a reference case.",
+    sheet: "The edit dialog holds the rest — status, priority, owner, contacts, dates, commercial value and the four 0–5 judgements behind the score. Deleting lives at the bottom of it, behind a confirm. It is permanent and needs the delete permission.",
     isNew: true,
     placement: "left",
     optional: true,
@@ -166,6 +178,15 @@ export const TOUR_STEPS: TourStep[] = [
     sheet: "Brand Data, re-weighted. Ease of delivery is still reported — but it is no longer blended in, because being easy is not a reason to want a deal.",
     isNew: true,
     placement: "bottom",
+  },
+  {
+    id: "scoring-reference",
+    route: "/dashboard/scoring",
+    selector: '[data-tour="scoring-reference"]',
+    title: "The model, written out in full",
+    body: "Every term, every weight, both quadrant thresholds, the grade bands — and an explicit list of what has NO effect on the ranking. Expected duration is on that list: changing it will never move a bubble, because how long a deal takes is a cost of running it, not a reason to want it or a reason it closes. It also answers when the score recalculates: on every read, nothing cached, and recency decays on its own so an untouched lead drifts down without anybody editing it. The whole page renders from the same constants the ranking uses, so it cannot drift from the code.",
+    isNew: true,
+    placement: "top",
   },
   {
     id: "companies",
@@ -200,8 +221,9 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard/quality",
     selector: '[data-tour="nav"]',
     title: "Data quality",
-    body: "Keeps the pipeline clean — flags missing fields, unscored leads and stale contacts so nothing slips through.",
+    body: "Keeps the pipeline clean — flags missing fields, unscored leads and stale contacts so nothing slips through. Rows whose imported outcome contradicts their stage get their own review card, and you can close one by confirming the stage is the right answer. That figure came from the original spreadsheet's outcome column and had no control anywhere, so a lead you correctly marked “Did not work out” used to stay flagged forever.",
     sheet: "Continuous checks against the Brands Operative / Brand Data structure.",
+    isNew: true,
     placement: "bottom",
   },
   {
@@ -264,8 +286,8 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard/copilot",
     selector: '[data-tour="copilot-input"]',
     title: "It can act, too — 41 tools now",
-    body: "It went from 14 tools to 41, and the gap it closed was everything the screens could do and the chat could not. It can now add a lead, edit its fields, set its commercial value, move it through the stages, record a proposal, merge two companies, link or unlink a deal, complete or snooze a follow-up, set strategic value, reassign an owner, cancel a draft and send outreach — as well as report data quality, deal pace, budget accuracy, the audit trail for one lead, dormant clients worth revisiting and the money going cold. It can also read out the scoring model exactly as the code implements it, weights and all. Every one of them runs as you, with your permissions.",
-    sheet: "Every tool runs as you and checks the same permission the screens check, so the chat is never a way round the rules. Writes are logged, outreach still needs approval, and it will not delete anything.",
+    body: "It went from 14 tools to 41, and the gap it closed was everything the screens could do and the chat could not. It can add a lead, edit its fields, set its commercial value, move it through the stages, record or remove a proposal, merge two companies, link or unlink a deal, complete or snooze a follow-up, set strategic value, reassign an owner, cancel a draft, send outreach and delete a lead — as well as report data quality, deal pace, budget accuracy, the audit trail for one lead, dormant clients worth revisiting and the money going cold. Ask it how anything works and it reads the scoring model and the platform back to you exactly as the code implements them, weights and all.",
+    sheet: "Every tool runs as you and checks the same permission the screens check, so the chat is never a way round the rules — if you cannot delete a lead on screen, asking nicely will not do it either. Writes are logged as yours “via copilot”, and anything irreversible — deleting, merging, sending — arrives as a button you press, never fired off because a sentence sounded like a request.",
     isNew: true,
     placement: "top",
   },
