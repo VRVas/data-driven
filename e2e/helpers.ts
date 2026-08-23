@@ -21,10 +21,10 @@ export function trackConsole(page: Page): string[] {
 }
 
 /** Log in through the real UI and land on the dashboard. */
-export async function login(page: Page) {
+export async function login(page: Page, who: { email: string; password: string } = TEST_USER) {
   await page.goto("/login");
-  await page.locator('input[name="email"]').fill(TEST_USER.email);
-  await page.locator('input[name="password"]').fill(TEST_USER.password);
+  await page.locator('input[name="email"]').fill(who.email);
+  await page.locator('input[name="password"]').fill(who.password);
   await page.getByRole("button", { name: /sign in/i }).click();
   await page.waitForURL("**/dashboard");
   await expect(page.getByRole("heading", { level: 1, name: "Overview" })).toBeVisible();

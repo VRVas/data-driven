@@ -1,5 +1,5 @@
 import { test as setup } from "@playwright/test";
-import { STORAGE_STATE } from "./constants";
+import { STORAGE_STATE, SCOPED_STORAGE_STATE, SCOPED_USER } from "./constants";
 import { login } from "./helpers";
 
 // Every route the suite touches - warmed once here (authenticated, sequential)
@@ -36,4 +36,18 @@ setup("authenticate", async ({ page }) => {
   for (const route of ROUTES) {
     await page.request.get(route).catch(() => undefined);
   }
+});
+
+/**
+ * A second session for the record-scoped account, in its own context so the
+ * two never share a cookie jar.
+ */
+setup("authenticate the scoped account", async ({ browser }) => {
+  setup.setTimeout(120_000);
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await login(page, SCOPED_USER);
+  await page.evaluate(() => localStorage.setItem("oovie.tour.v1.done", "1"));
+  await context.storageState({ path: SCOPED_STORAGE_STATE });
+  await context.close();
 });

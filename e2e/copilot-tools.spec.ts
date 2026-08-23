@@ -33,7 +33,11 @@ test.describe("copilot read tools", () => {
   test("data_quality reports what is missing or contradictory", async ({ request }) => {
     const { body } = await callTool(request, "data_quality");
     expect(body.ok).toBe(true);
-    expect(Array.isArray(body.data!.issues)).toBe(true);
+    // Live findings and the frozen migration log are separate keys on purpose:
+    // one is today's backlog, the other is a record of the original import.
+    expect(Array.isArray(body.data!.liveFindings)).toBe(true);
+    expect(typeof (body.data!.liveSummary as { total: number }).total).toBe("number");
+    expect(typeof (body.data!.migrationNotes as { count: number }).count).toBe("number");
     expect(Array.isArray(body.data!.outcomeConflicts)).toBe(true);
     expect(typeof body.data!.openLeadsWithoutFollowUp).toBe("number");
   });
