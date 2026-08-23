@@ -16,6 +16,8 @@ import { claim, contextFor, deliver } from "@/lib/reminders/dispatch";
 import { composeReminderCancellation } from "@/lib/reminders/compose";
 import { getEmailProvider } from "@/lib/mail/provider";
 import { modelSpec, workedExample } from "./model-spec";
+import { checkIntake, INTAKE_SPECS } from "./intake";
+import { suggestLeadFields } from "./suggest";
 import { duplicateCandidates, currentProposals } from "@/lib/crm/logic";
 import { completeFollowUp, snoozeFollowUp } from "@/lib/leads/followups";
 import { sendExistingOutreach } from "@/lib/outreach/send";
@@ -1449,7 +1451,80 @@ const sendOutreachTool: CopilotTool = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// Intake - what a complete request needs, and what to fill it with
+// ---------------------------------------------------------------------------
+
+const checkRequest: CopilotTool = {
+  name: "check_request",
+  permission: "copilot:use",
+  description:
+    "Before making a change, check whether you have enough to make it well. Give the tool you intend to call and every value gathered so far; it returns what is still missing, split into what the call REQUIRES, what it merely accepts but the record is broken without, and what is simply nice to have - each with the question to ask and what leaving it out actually costs. Call this first for create_lead, record_proposal, set_reminder, draft_outreach, set_next_move, set_budget, set_strategic_value and assign_lead. It reads nothing and changes nothing.",
+  parameters: {
+    type: "object",
+    properties: {
+      tool: { type: "string", description: "The write tool you are preparing to call, e.g. 'create_lead'" },
+      values: {
+        type: "object",
+        description: "Everything you have so far, keyed by the tool's own parameter names. Omit what you do not have.",
+        additionalProperties: true,
+      },
+    },
+    required: ["tool"],
+  },
+  async execute(args) {
+    const a = z
+      .object({ tool: z.string().min(1), values: z.record(z.unknown()).optional() })
+      .parse(args);
+    const check = checkIntake(a.tool, a.values ?? {});
+    if (!check) {
+      return {
+        tool: a.tool,
+        known: false,
+        knownTools: INTAKE_SPECS.map((s) => s.tool),
+        note: "No intake checklist for this tool - its schema is the whole requirement. Call it directly.",
+      };
+    }
+    return check;
+  },
+};
+
+const suggestLeadValues: CopilotTool = {
+  name: "suggest_lead_fields",
+  permission: "lead:read",
+  description:
+    "Propose values for a new lead's blank fields, reasoned from the pipeline itself: a value from the median of comparable deals with its quartiles, an owner from who actually works that segment, a duration measured from deals that have finished, and a warning if a lead for the same client already exists. Every proposal carries its evidence and sample size. It also returns what the CRM genuinely cannot know - what the brand does, what it is spending on, what is happening there right now - as research gaps with a query ready for web_search. Use whenever someone asks what to put in a field, or for your best guess.",
+  parameters: {
+    type: "object",
+    properties: {
+      name: { type: "string", description: "Brand name, if known" },
+      industry: { type: "string", enum: [...INDUSTRIES], description: "Narrows every comparison to that segment" },
+      owner: { type: "string" },
+      valueEur: { type: "number" },
+      status: { type: "string", enum: [...BRAND_STATUSES] },
+      priority: { type: "string", enum: [...PRIORITIES] },
+    },
+    required: [],
+  },
+  async execute(args) {
+    const a = z
+      .object({
+        name: z.string().trim().max(120).optional(),
+        industry: z.string().trim().optional(),
+        owner: z.string().trim().optional(),
+        valueEur: z.number().optional(),
+        status: z.string().trim().optional(),
+        priority: z.string().trim().optional(),
+      })
+      .parse(args);
+    const brands = await getVisibleBrands();
+    return suggestLeadFields(brands, a);
+  },
+};
+
 export const EXTRA_TOOLS: CopilotTool[] = [
+  checkRequest,
+  suggestLeadValues,
   setNextMove,
   completeFollowUpTool,
   snoozeFollowUpTool,

@@ -104,6 +104,7 @@ export function platformSpec(tools: ToolSummary[]) {
       recordScope: "Anything taking a lead id re-resolves it through the same visibility rules the pages use. A lead out of scope answers 'not found', which is also what a lead that does not exist answers, so a reply never confirms a record the caller cannot open.",
       audit: "Every write is logged as that person, marked '(via copilot)'.",
       irreversible: "Deleting a lead, merging companies and sending outreach arrive as a button the user presses, with a confirm naming what will happen. They are never fired straight from a sentence.",
+      intake: "A half-finished request is finished before it is acted on. check_request compares what has been gathered against what the record actually needs, and returns the missing questions with the cost of leaving each one blank; they are asked together in one message, never drip-fed. Saying it is fine as it stands ends the questions immediately. Asking what to put triggers suggest_lead_fields, which reasons from comparable deals - the median value for that segment with its quartiles, who owns the live deals there, how long finished ones really took - and hands anything the pipeline cannot know to web_search. Nothing is ever invented to fill a blank.",
       answering: "Answers are composed as typed UI blocks - headings, metrics, charts, tables, lead cards, score breakdowns, callouts, actions - not plain prose.",
       toolCount: tools.length,
       writeToolCount: tools.filter((t) => t.write).length,
