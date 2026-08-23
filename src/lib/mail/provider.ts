@@ -11,11 +11,19 @@ import "server-only";
  *
  * Switching is automatic based on env - the rest of the app never changes.
  */
+export interface EmailAttachment {
+  name: string;
+  /** MIME type. ACS validates this against its supported list - .ics is text/calendar. */
+  contentType: string;
+  contentInBase64: string;
+}
+
 export interface EmailMessage {
   to: string;
   toName?: string;
   subject: string;
   body: string; // plain text
+  attachments?: EmailAttachment[];
 }
 
 export interface SendResult {
@@ -64,6 +72,7 @@ class AcsEmailProvider implements EmailProvider {
         senderAddress: sender,
         content: { subject: msg.subject, plainText: msg.body },
         recipients: { to: [{ address: msg.to, displayName: msg.toName }] },
+        ...(msg.attachments?.length ? { attachments: msg.attachments } : {}),
       });
       const result = await poller.pollUntilDone();
       return { ok: result.status === "Succeeded", provider: this.name, messageId: result.id };
