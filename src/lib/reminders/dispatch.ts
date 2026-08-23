@@ -11,6 +11,7 @@ import { healthOf } from "@/lib/pipeline/health";
 import { priorityOf } from "@/lib/priority";
 import { winProbability } from "@/lib/scoring";
 import { logAudit } from "@/lib/store/audit";
+import { getCommentStore } from "@/lib/store/comments";
 import {
   composeReminderEmail,
   composeReminderNotification,
@@ -62,6 +63,11 @@ export async function leadContextFor(brandId: string): Promise<ReminderLeadConte
   const siblings = (await getBrandStore().list()).filter((b) => siblingIds.has(b.id));
   const rollup = rollupFor(migrateBrands(siblings, prob).deals, prob, overlay.proposals);
 
+  // A store that is unavailable costs the email its comments, not the email.
+  const comments = await getCommentStore()
+    .listForRecord(brandId, 3)
+    .catch(() => []);
+
   return {
     id: brand.id,
     name: brand.name,
@@ -83,6 +89,7 @@ export async function leadContextFor(brandId: string): Promise<ReminderLeadConte
     lastContact: brand.lastContact,
     followUpDate: brand.followUpDate,
     notes: brand.notes,
+    recentComments: comments.map((c) => ({ author: c.authorName, at: c.createdAt, body: c.body })),
     company: {
       name: companyName,
       openPipelineEur: rollup.openPipelineValue,

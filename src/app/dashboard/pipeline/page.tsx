@@ -5,6 +5,7 @@ import { getVisibleBrands } from "@/lib/leads/visible";
 import { getSessionUser } from "@/lib/auth/guards";
 import { can } from "@/lib/auth/authorize";
 import { getViewStore } from "@/lib/store/views";
+import { getCommentStore } from "@/lib/store/comments";
 import { getCrmGraph, getPipelineMoney } from "@/lib/crm/graph";
 import { pipelineHealth, withHealth, type LeadHealth } from "@/lib/pipeline/health";
 
@@ -15,6 +16,8 @@ export default async function PipelinePage() {
   const me = await getSessionUser();
   const isAdmin = await can("lead:delete");
   const views = me ? await getViewStore().listForUser(me.id) : [];
+  // One aggregate for the whole table - a count per row would be 60 queries.
+  const commentCounts = await getCommentStore().countByRecord().catch(() => ({}));
 
   const health = pipelineHealth(brands, graph.proposals);
   const byLead: Record<string, LeadHealth> = Object.fromEntries(
@@ -64,7 +67,7 @@ export default async function PipelinePage() {
 
       <Reveal>
         <div className="glass p-6">
-          <BrandTable brands={brands} health={byLead} canDelete={isAdmin} views={views} />
+          <BrandTable brands={brands} health={byLead} canDelete={isAdmin} views={views} commentCounts={commentCounts} />
         </div>
       </Reveal>
     </div>

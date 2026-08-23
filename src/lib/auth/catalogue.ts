@@ -55,6 +55,8 @@ export const PERMISSIONS = [
   { key: "lead:update", category: "Pipeline", label: "Edit leads", scoped: true },
   { key: "lead:stage:advance", category: "Pipeline", label: "Move leads between stages", scoped: true },
   { key: "lead:assign", category: "Pipeline", label: "Change lead owner", scoped: true },
+  { key: "lead:comment", category: "Pipeline", label: "Comment on leads", scoped: true, help: "Adding to the discussion, which is separate from editing the record." },
+  { key: "lead:comment:delete", category: "Pipeline", label: "Delete comments", scoped: true, help: "Own comments are always removable. This is for anybody else's." },
   { key: "lead:delete", category: "Pipeline", label: "Delete leads", scoped: true, risk: "high", help: "Permanent." },
   { key: "company:merge", category: "Pipeline", label: "Merge companies", scoped: false, risk: "high", help: "Moves every deal onto the surviving company. Undone one deal at a time." },
 

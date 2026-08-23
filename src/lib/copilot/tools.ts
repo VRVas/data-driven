@@ -83,6 +83,7 @@ function leadBrief(b: Brand) {
     weightedValueEur: Math.round(weightedValue(b)),
     waitingOn: b.waitingOn ?? null,
     nextStep: b.nextStep ?? null,
+    notes: b.notes,
     followUpDate: b.followUpDate,
     lastContact: b.lastContact,
   };

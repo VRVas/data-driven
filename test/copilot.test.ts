@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { isPermissionKey } from "@/lib/auth/catalogue";
+import { isPermissionKey, PERMISSIONS } from "@/lib/auth/catalogue";
 import { COPILOT_TOOLS, getToolByName, toolSchemas } from "@/lib/copilot/tools";
 
 describe("copilot tool registry", () => {
@@ -47,6 +47,23 @@ describe("copilot tool registry", () => {
     // "went from 14 tools to 33" - the historical figure is allowed to stay,
     // the current one has to be right.
     expect(Math.max(...quoted)).toBe(COPILOT_TOOLS.length);
+  });
+
+  it("quotes the real number of permissions everywhere it quotes one", () => {
+    // Same failure as the tool count, one file over: three separate prose
+    // copies of "44 permissions" outlived the catalogue reaching 47. A number
+    // written by hand in four places is a number that is wrong in at least one.
+    const files = [
+      "src/lib/copilot/provider.ts",
+      "infra/resources.bicep",
+      "scripts/create-agent.sh",
+    ];
+    for (const f of files) {
+      const text = readFileSync(path.join(process.cwd(), f), "utf8");
+      const quoted = [...text.matchAll(/(\d+) permissions/g)].map((m) => Number(m[1]));
+      expect(quoted.length, `${f} quotes no permission count`).toBeGreaterThan(0);
+      for (const n of quoted) expect(n, `${f} is stale`).toBe(PERMISSIONS.length);
+    }
   });
 });
 

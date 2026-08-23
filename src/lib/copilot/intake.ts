@@ -355,6 +355,26 @@ export const INTAKE_SPECS: readonly IntakeSpec[] = [
       },
     ],
   },
+  {
+    tool: "add_comment",
+    purpose: "A dated, attributed turn in the record's discussion, which the next person to open it will read.",
+    fields: [
+      {
+        field: "leadId",
+        label: "Lead",
+        need: "required",
+        why: "A comment belongs to one record.",
+        ask: "Which lead is this about?",
+      },
+      {
+        field: "body",
+        label: "The comment",
+        need: "required",
+        why: "There is nothing to record without it.",
+        ask: "What would you like to put on the record?",
+      },
+    ],
+  },
 ];
 
 const BY_TOOL = new Map<string, IntakeSpec>(INTAKE_SPECS.map((s) => [s.tool, s]));

@@ -121,6 +121,14 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                           <div className="mt-0.5 text-[11px] text-[var(--color-ink-faint)] sm:hidden">
                             {d.stage} - {d.dealType}
                           </div>
+                          {d.notes && (
+                            <div
+                              className="mt-0.5 max-w-[20rem] truncate text-[11px] text-[var(--color-ink-faint)]"
+                              title={d.notes}
+                            >
+                              {d.notes}
+                            </div>
+                          )}
                         </td>
                         <td className="hidden px-4 py-3 text-[var(--color-ink-muted)] sm:table-cell sm:px-6">
                           {d.stage}

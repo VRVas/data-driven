@@ -27,7 +27,8 @@ export function platformSpec(tools: ToolSummary[]) {
     what: "OOVIE BD Intelligence - the team's 'Business Development / Client Segmentation' workbook rebuilt as a live, scored, permissioned workspace. Six spreadsheet tabs became a pipeline you can edit, a scoring model you can interrogate, a client view that adds up repeat business, and a chat that can do all of it for you.",
 
     dataModel: {
-      lead: "One engagement, and the row the sheet used to hold. Carries a name, stage, priority label, industry, owner, point of contact, contact dates, follow-up, who owes the next move, expected duration, notes, strategic value and a commercial value with a confidence.",
+      lead: "One engagement, and the row the sheet used to hold. Carries a name, stage, priority label, industry, owner, point of contact, contact dates, follow-up, who owes the next move, expected duration, notes, a comment thread, strategic value and a commercial value with a confidence.",
+      notesVsComments: "Notes is the standing summary of what the lead IS - one field, replaced by whoever edits next, carried into exports and reminder emails. Comments are the discussion: append-only, each with an author and a date, so nothing anyone wrote is overwritten. Anything that happened is a comment.",
       company: "The client relationship. Projected from its deals on every read, so it can never fall out of step with an edit. Rolls up lifetime value, repeat value beyond the first win, open pipeline and a deal win rate.",
       deal: "A lead, seen from the company's side. Same record, one engagement.",
       proposal: "A commercial document with its own value, revision and status. A re-quote adds a revision rather than overwriting, so the history survives.",

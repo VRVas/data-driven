@@ -41,7 +41,7 @@ const READ_KEYS = PERMISSION_KEYS.filter((k) => k.endsWith(":read"));
 
 /** Everything a `member` can do today - the calibration target for migration. */
 const SALES_REP_KEYS: PermissionKey[] = [
-  "lead:read", "lead:create", "lead:update", "lead:stage:advance", "lead:assign",
+  "lead:read", "lead:create", "lead:update", "lead:stage:advance", "lead:assign", "lead:comment",
   "agent:read", "agent:create", "agent:update", "agent:delete",
   "proposal:read", "proposal:manage",
   "outreach:read", "outreach:compose", "outreach:cancel",
@@ -55,6 +55,7 @@ const SALES_REP_KEYS: PermissionKey[] = [
 const SALES_MANAGER_KEYS: PermissionKey[] = [
   ...SALES_REP_KEYS,
   "lead:delete",
+  "lead:comment:delete",
   "company:merge",
   "outreach:approve", "outreach:send",
   "audit:read", "audit:export",

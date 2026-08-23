@@ -9,12 +9,14 @@ import { OutreachItem } from "@/components/OutreachItem";
 import { LeadToolbar } from "@/components/LeadToolbar";
 import { LinkCompanyButton } from "@/components/crm/LinkCompanyButton";
 import { CompanyProposals } from "@/components/crm/CompanyProposals";
+import { CommentThread } from "@/components/comments/CommentThread";
 import { getBrand } from "@/lib/data";
 import { getCrmGraph, getDealWithCompany } from "@/lib/crm/graph";
 import { ownerIdResolver } from "@/lib/crm/owners";
 import { getSessionUser } from "@/lib/auth/guards";
 import { can, requirePermission } from "@/lib/auth/authorize";
 import { getOutreachStore } from "@/lib/store/outreach";
+import { getCommentStore } from "@/lib/store/comments";
 import { allowedTransitions } from "@/lib/workflow";
 import {
   STATUS_TOKEN,
@@ -67,7 +69,12 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     can("proposal:read"),
     can("proposal:manage"),
   ]);
+  const [canComment, canDeleteAnyComment] = await Promise.all([
+    can("lead:comment"),
+    can("lead:comment:delete"),
+  ]);
   const outreach = await getOutreachStore().listForBrand(brand.id);
+  const comments = await getCommentStore().listForRecord(brand.id);
 
   const [crm, graph] = await Promise.all([getDealWithCompany(brand.id), getCrmGraph()]);
   const dealsPerCompany = graph.deals.reduce<Map<string, number>>(
@@ -301,14 +308,37 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         </Reveal>
       </div>
 
-      {brand.notes && (
+      {brand.notes ? (
         <Reveal>
           <section className="glass p-6">
-            <h2 className="mb-3 font-display text-lg font-semibold">Notes</h2>
+            <h2 className="mb-1 font-display text-lg font-semibold">Notes</h2>
+            <p className="mb-3 text-xs text-[var(--color-ink-faint)]">
+              The standing summary of this lead. Edit replaces it - use a comment to add to the story.
+            </p>
             <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-ink-muted)]">{brand.notes}</p>
           </section>
         </Reveal>
+      ) : (
+        <Reveal>
+          <section className="glass p-6">
+            <h2 className="mb-1 font-display text-lg font-semibold">Notes</h2>
+            <p className="text-sm text-[var(--color-ink-muted)]">
+              Nothing recorded. Use Edit to add the standing summary - what this lead is, how it came in, what
+              to be careful of. It travels with the lead into exports and reminder emails.
+            </p>
+          </section>
+        </Reveal>
       )}
+
+      <Reveal>
+        <CommentThread
+          leadId={brand.id}
+          comments={comments}
+          meId={me?.id ?? ""}
+          canComment={canComment}
+          canDeleteAny={canDeleteAnyComment}
+        />
+      </Reveal>
 
       {outreach.length > 0 && (
         <Reveal>
