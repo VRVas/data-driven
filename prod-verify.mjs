@@ -92,10 +92,12 @@ try {
   check("turn 5 knows which two", !t5.error && /poste/i.test(t5.text) && /alibaba/i.test(t5.text),
     t5.error ?? t5.text.slice(0, 220));
 
-  // An incomplete write should be questioned, never guessed at.
+  // An incomplete write should be questioned, never guessed at. The contract is
+  // that it names what is missing and offers to proceed anyway - not that it
+  // happens to contain a question mark.
   const t6 = await ask(request, "add a new lead called Northwind Traders", t1.conversationId);
-  check("an incomplete write is questioned, not guessed", !t6.error && /\?/.test(t6.text),
-    t6.error ?? t6.text.slice(0, 260));
+  const namesGaps = /(value|budget|owner|industry|stage|missing|weak|basics)/i.test(t6.text);
+  check("an incomplete write names what is missing", !t6.error && namesGaps, t6.error ?? t6.text.slice(0, 260));
   check("and nothing claims to have been created", !/(^|\W)(created|added)\b.*northwind/i.test(t6.text));
   check("turn 6 is an answer, not the schema echoed back", !isSchemaEcho(t6.text), t6.text.slice(0, 140));
 
