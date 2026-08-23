@@ -118,7 +118,7 @@ const searchLeads: CopilotTool = {
   name: "search_leads",
   permission: "lead:read",
   description:
-    "Search and rank leads by any combination of status, priority, industry, owner or free text. Returns compact summaries with the priority score (0-100), its A-D grade, the Pursue/Invest/Quick win/Park quadrant, and expected value in euros. Ranked by priority by default. Ranks only live deals unless asked otherwise: pass outcome='won'/'lost'/'any' to include finished ones.",
+    "Search and rank leads by any combination of status, priority, industry, owner or free text. Returns compact summaries with the priority score (0-100), its A-D grade, the Pursue/Invest/Quick win/Park quadrant, and expected value in euros. Ranked by priority by default. An UNQUALIFIED ranking covers live deals only - but a free-text query or an explicit status is a search, and searches everything including won and lost. The reply reports which filter was applied as outcomeFilter: read it before describing the result as live pipeline, and pass outcome='open' when you mean only live deals.",
   parameters: {
     type: "object",
     properties: {

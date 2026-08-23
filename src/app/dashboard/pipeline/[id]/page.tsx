@@ -135,8 +135,13 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <Metric label="Budget" value={s?.budget ? eur(s.budget) : "-"} accent="var(--color-amber)" />
         <Metric
           label="Expected value"
-          value={p ? eur(Math.round(p.expectedValueEur)) : eur(weightedValue(brand))}
-          hint={`${Math.round(winProbability(brand.status) * 100)}% win prob.`}
+          // No value stated is not a value of zero, and "€0" reads as a claim.
+          value={s?.budget == null ? "-" : eur(Math.round(p ? p.expectedValueEur : weightedValue(brand)))}
+          hint={
+            s?.budget == null
+              ? "set a value to see this"
+              : `${Math.round(winProbability(brand.status) * 100)}% win prob.`
+          }
           accent="var(--color-mint)"
         />
       </Reveal>
