@@ -57,7 +57,9 @@ test.describe("product tour", () => {
     // v1.1 surfaces the tour previously said nothing about.
     expect(seen.some((t) => /owes the next move/i.test(t))).toBeTruthy();
     expect(seen.some((t) => /Companies/i.test(t))).toBeTruthy();
-    expect(seen.some((t) => /31 tools/i.test(t))).toBeTruthy();
+    // The count itself is checked against the real registry in copilot.test.ts;
+    // here it only has to be a step that quotes one.
+    expect(seen.some((t) => /\d+ tools/i.test(t))).toBeTruthy();
     // The badge has to actually render, not just exist in the data.
     expect(badges).toBeGreaterThanOrEqual(4);
   });

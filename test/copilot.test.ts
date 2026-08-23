@@ -37,6 +37,17 @@ describe("copilot tool registry", () => {
     expect(schemas.every((s) => s.type === "function" && !!s.function.name)).toBe(true);
     expect(schemas.some((s) => s.function.name === "draft_outreach")).toBe(true);
   });
+
+  it("is described to users with the number of tools it actually has", () => {
+    // The tour quotes the count in prose. Written by hand, it had already been
+    // wrong twice and an E2E assertion was pinned to the stale figure.
+    const steps = readFileSync(path.join(process.cwd(), "src/lib/tour/steps.ts"), "utf8");
+    const quoted = [...steps.matchAll(/(\d+) tools/g)].map((m) => Number(m[1]));
+    expect(quoted.length).toBeGreaterThan(0);
+    // "went from 14 tools to 33" — the historical figure is allowed to stay,
+    // the current one has to be right.
+    expect(Math.max(...quoted)).toBe(COPILOT_TOOLS.length);
+  });
 });
 
 // ---------------------------------------------------------------------------
