@@ -3,10 +3,53 @@ import {
   allowedTransitions,
   canTransition,
   statusSideEffects,
+  advanceStage,
   addDays,
   STATUS_FLOW,
   ENTRY_STATUSES,
 } from "@/lib/workflow";
+import { outcomeConflictOf } from "@/lib/lifecycle";
+import type { Brand } from "@/lib/types";
+
+const leadAt = (status: Brand["status"], over: Partial<Brand> = {}): Brand => ({
+  id: "l", name: "L", aliases: [], status, priority: null,
+  owner: null, poc: null, email: null, industry: null, industryRaw: null,
+  initialContact: null, lastContact: null, followUpDate: null, closingFailed: null,
+  notes: null, scored: false,
+  ...over,
+});
+
+describe("advanceStage", () => {
+  it("refuses a move the flow graph does not allow", () => {
+    const result = advanceStage(leadAt("Still to open"), "Deal Closed", "2026-08-23");
+    expect(result).toEqual({ error: "Can't move from Still to open to Deal Closed." });
+  });
+
+  it("applies the date side effects of arriving", () => {
+    const next = advanceStage(leadAt("Advanced"), "Deal Closed", "2026-08-23") as Brand;
+    expect(next.status).toBe("Deal Closed");
+    expect(next.lastContact).toBe("2026-08-23");
+    expect(next.closingFailed).toBe("2026-08-23");
+  });
+
+  it("clears the stale imported outcome the move contradicts", () => {
+    // The screens and the copilot both move leads. Assembling this by hand in
+    // two places had already drifted: chat left this conflict flagged where the
+    // UI cleared it.
+    const flagged = leadAt("Advanced", {
+      scored: true,
+      scores: {
+        tempoMonths: null, tempoScore: null, closing: null, process: "Open", dealsClosed: null,
+        budget: null, assumption: null, budgetScore: null, customizationScore: null,
+        accessibilityRaw: null, accessibilityScore: null, receptivityScore: null,
+        alignmentScore: null, industry: "Other", economicalEfficiency: null, easeOfAccess: null,
+      },
+    });
+    const next = advanceStage(flagged, "Deal Closed", "2026-08-23") as Brand;
+    expect(next.scores!.process).toBe("Closed");
+    expect(outcomeConflictOf(next)).toBeNull();
+  });
+});
 
 describe("workflow transitions", () => {
   it("offers entry statuses when there is no current status", () => {

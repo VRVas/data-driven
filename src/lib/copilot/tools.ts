@@ -21,7 +21,7 @@ import { can } from "@/lib/auth/authorize";
 import type { PermissionKey } from "@/lib/auth/catalogue";
 import type { Company } from "@/lib/crm/types";
 import { remindersFrom } from "@/lib/reminders";
-import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
+import { advanceStage as applyStageChange, todayYmd } from "@/lib/workflow";
 import { renderTemplate, DEFAULT_TEMPLATE_ID, OUTREACH_TEMPLATES } from "@/lib/mail/templates";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import type { Brand, BrandStatus } from "@/lib/types";
@@ -611,11 +611,13 @@ const advanceStage: CopilotTool = {
     if (!brand) return { ok: false, error: "Lead not found." };
     const target = to as BrandStatus;
     if (brand.status === target) return { ok: true, id, status: target, note: "Already at that stage." };
-    if (!canTransition(brand.status, target)) {
-      return { ok: false, error: `Illegal transition ${brand.status ?? "unset"} → ${target}.` };
+
+    const next = applyStageChange(brand, target, todayYmd());
+    if ("error" in next) {
+      return { ok: false, error: `Illegal transition ${brand.status ?? "unset"} \u2192 ${target}.` };
     }
-    const patch = statusSideEffects(brand, target, todayYmd());
-    await store.save({ ...brand, status: target, ...patch });
+
+    await store.save(next);
     await logAudit({
       actorId: ctx.user.id,
       actorName: `${ctx.user.name} (via copilot)`,

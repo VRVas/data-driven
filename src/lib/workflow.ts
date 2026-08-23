@@ -1,3 +1,4 @@
+import { reconcileImportedOutcome } from "./lifecycle";
 import type { Brand, BrandStatus } from "./types";
 
 /**
@@ -61,4 +62,24 @@ export function statusSideEffects(
     patch.followUpDate = addDays(today, 7);
   }
   return patch;
+}
+
+/**
+ * A stage move, whole: legality, date side-effects and the stale imported
+ * outcome, in one decision.
+ *
+ * The screens and the copilot both move leads, and assembling this by hand in
+ * two places had already drifted — chat left the imported-outcome conflict
+ * flagged where the UI cleared it, so the same move produced two different
+ * records depending on where it was made.
+ */
+export function advanceStage(
+  brand: Brand,
+  to: BrandStatus,
+  today: string = todayYmd(),
+): Brand | { error: string } {
+  if (!canTransition(brand.status, to)) {
+    return { error: `Can't move from ${brand.status ?? "unset"} to ${to}.` };
+  }
+  return reconcileImportedOutcome({ ...brand, status: to, ...statusSideEffects(brand, to, today) });
 }

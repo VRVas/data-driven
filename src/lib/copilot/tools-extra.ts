@@ -12,7 +12,7 @@ import { duplicateCandidates, currentProposals } from "@/lib/crm/logic";
 import { completeFollowUp, snoozeFollowUp } from "@/lib/leads/followups";
 import { sendExistingOutreach } from "@/lib/outreach/send";
 import { requirePermission } from "@/lib/auth/authorize";
-import { budgetVariance } from "@/lib/pipeline/budget";
+import { budgetVariance, writeBudget } from "@/lib/pipeline/budget";
 import { withHealth } from "@/lib/pipeline/health";
 import { effectiveTempoMonths } from "@/lib/scoring";
 import { STRATEGIC_REASONS, priorityOf } from "@/lib/priority";
@@ -167,7 +167,7 @@ const recordProposalTool: CopilotTool = {
   permission: "proposal:manage",
   write: true,
   description:
-    "Log a commercial proposal against a lead: its value, and whether it is a draft, has been sent, or has been accepted/rejected/expired/withdrawn. Each call adds a revision, so a re-quote is recorded rather than overwriting the first number. Accepting one also confirms the lead's budget and keeps the original estimate for comparison. Use for 'we sent Alleanza 52k' or 'Fastweb accepted at 40k'.",
+    "Log a commercial proposal against a lead: its value, and whether it is a draft, has been sent, or has been accepted/rejected/expired/withdrawn. Each call adds a revision, so a re-quote is recorded rather than overwriting the first number. The lead's own value follows the paperwork — a live ask becomes its estimate, an accepted one becomes its confirmed budget, and the original guess is kept for comparison. Use for 'we sent Alleanza 52k' or 'Fastweb accepted at 40k'.",
   parameters: {
     type: "object",
     properties: {
@@ -268,6 +268,66 @@ const setStrategicValue: CopilotTool = {
       summary: `Strategic value for ${brand.name} set to ${a.value}${a.reason ? ` (${a.reason})` : ""}`,
     });
     return { ok: true, id: brand.id, name: brand.name, strategicValue: a.value, strategicReason: a.reason ?? null };
+  },
+};
+
+const setBudget: CopilotTool = {
+  name: "set_budget",
+  permission: "lead:update",
+  write: true,
+  description:
+    "Set what a lead is expected to be worth, in euros. This is the estimate the ranking uses until a proposal replaces it — a lead with no value cannot be ranked at all, because zero opportunity is fatal in the priority formula. Use for 'Fastweb is looking like about 60k'. Do NOT use this to record an offer that was actually sent or accepted: record_proposal does that, and it updates the figure itself.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Lead id" },
+      valueEur: { type: "number", minimum: 0, description: "The expected value in euros" },
+      confidence: {
+        type: "string",
+        enum: ["Estimated", "Confirmed"],
+        description: "Confirmed only when the client has actually agreed the figure. Defaults to Estimated.",
+      },
+    },
+    required: ["id", "valueEur"],
+  },
+  async execute(args, ctx) {
+    const a = z
+      .object({
+        id: z.string().min(1),
+        valueEur: z.number().min(0).max(1_000_000_000),
+        confidence: z.enum(["Estimated", "Confirmed"]).optional(),
+      })
+      .parse(args);
+
+    const brand = await writableLead(a.id, "lead:update");
+    if (!brand) return { ok: false, error: "Lead not found." };
+
+    const before = brand.scores?.budget ?? null;
+    // The same writer the form uses, so a lead given a value in chat becomes
+    // rankable exactly as one given a value on screen.
+    const next = writeBudget(brand, a.valueEur, a.confidence ?? "Estimated");
+    await getBrandStore().save(next);
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "lead.budget",
+      entity: "brand",
+      entityId: brand.id,
+      summary: `Value for ${brand.name} set to €${a.valueEur.toLocaleString()} (${a.confidence ?? "Estimated"})${before == null ? "" : `, was €${before.toLocaleString()}`}`,
+    });
+
+    const p = priorityOf(next);
+    return {
+      ok: true,
+      id: brand.id,
+      name: brand.name,
+      previousEur: before,
+      valueEur: a.valueEur,
+      confidence: a.confidence ?? "Estimated",
+      priority: p?.priority ?? null,
+      grade: p?.grade ?? null,
+      note: "A proposal recorded later replaces this figure — an accepted one makes it Confirmed.",
+    };
   },
 };
 
@@ -787,6 +847,7 @@ export const EXTRA_TOOLS: CopilotTool[] = [
   snoozeFollowUpTool,
   recordProposalTool,
   setStrategicValue,
+  setBudget,
   linkCompany,
   assignLead,
   sendOutreachTool,

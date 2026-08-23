@@ -8,7 +8,7 @@ import { getCrmOverlayStore } from "@/lib/store/crm";
 import { getCrmGraph } from "@/lib/crm/graph";
 import { authorizeLead } from "@/lib/leads/visible";
 import { logAudit } from "@/lib/store/audit";
-import { canTransition, statusSideEffects, todayYmd } from "@/lib/workflow";
+import { advanceStage, todayYmd } from "@/lib/workflow";
 import { reconcileImportedOutcome } from "@/lib/lifecycle";
 import { writeBudget } from "@/lib/pipeline/budget";
 import { writeRubric } from "@/lib/pipeline/rubric";
@@ -305,12 +305,11 @@ export async function changeBrandStatus(
 
   const from = brand.status;
   if (from === to) return { ok: true };
-  if (!canTransition(from, to)) {
-    return { error: `Can't move from ${from ?? "unset"} to ${to}.` };
-  }
 
-  const patch = statusSideEffects(brand, to, todayYmd());
-  await store.save(reconcileImportedOutcome({ ...brand, status: to, ...patch }));
+  const next = advanceStage(brand, to, todayYmd());
+  if ("error" in next) return { error: next.error };
+
+  await store.save(next);
   await logAudit({
     actorId: user.id,
     actorName: user.name,
