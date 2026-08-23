@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import bcrypt from "bcryptjs";
 import { TEST_USER } from "./constants";
+import { purgeProbeData } from "./probe-data";
 
 /**
  * Global setup — plant the E2E account into the local file store the same way
@@ -31,6 +32,9 @@ export default async function globalSetup() {
   });
 
   await fs.writeFile(usersFile, JSON.stringify(others, null, 2), "utf8");
+  // A run killed before teardown would otherwise leave a probe lead behind,
+  // and wiring.spec.ts asserts on totals it would move.
+  await purgeProbeData();
   // eslint-disable-next-line no-console
   console.log(`\n[seed] e2e account ready: ${email}`);
 }
