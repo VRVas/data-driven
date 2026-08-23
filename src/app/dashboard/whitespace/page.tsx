@@ -1,23 +1,12 @@
 import { Reveal } from "@/components/Reveal";
 import { KpiCard } from "@/components/KpiCard";
+import { ChartCard } from "@/components/ChartCard";
 import { WhitespaceBars } from "@/components/viz/WhitespaceBars";
 import { OpportunityMap } from "@/components/viz/OpportunityMap";
 import { MarketSizingBars } from "@/components/viz/MarketSizingBars";
 import { getDataset, getLiveIndustries } from "@/lib/data";
 import { rankByOpportunity, whitespace as whitespaceOf, penetration as penetrationOf, opportunityScore } from "@/lib/tam";
 import { ExportMenu } from "@/components/ExportMenu";
-
-function Panel({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
-  return (
-    <section className="glass p-6">
-      <div className="mb-5">
-        <h2 className="font-display text-lg font-semibold">{title}</h2>
-        {subtitle && <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{subtitle}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 export const dynamic = "force-dynamic";
 
@@ -76,21 +65,21 @@ export default async function WhitespacePage() {
       </Reveal>
 
       <Reveal>
-        <Panel title="Whitespace by industry" subtitle="Ranked by opportunity (value × untapped share) - fill = share approached">
+        <ChartCard id="ws-bars" title="Whitespace by industry" subtitle="Ranked by opportunity (value × untapped share) - fill = share approached">
           <WhitespaceBars industries={ranked} />
-        </Panel>
+        </ChartCard>
       </Reveal>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Reveal>
-          <Panel title="Opportunity map" subtitle="Low penetration + high efficiency = prime whitespace - bubble = market size">
+        <Reveal className="h-full">
+          <ChartCard id="ws-map" title="Opportunity map" subtitle="Low penetration + high efficiency = prime whitespace - bubble = market size">
             <OpportunityMap industries={industries} />
-          </Panel>
+          </ChartCard>
         </Reveal>
-        <Reveal>
-          <Panel title="Restricted / closed sectors" subtitle="Adjacent TAM not yet open - sized by market value (USD bn)">
+        <Reveal className="h-full">
+          <ChartCard id="ws-restricted" title="Restricted / closed sectors" subtitle="Adjacent TAM not yet open - sized by market value (USD bn)">
             <MarketSizingBars sectors={ds.marketSizing} />
-          </Panel>
+          </ChartCard>
         </Reveal>
       </div>
     </div>

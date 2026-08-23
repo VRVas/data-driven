@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/Reveal";
 import { IndustryHeatmap } from "@/components/viz/IndustryHeatmap";
+import { ChartCard } from "@/components/ChartCard";
 import { Badge } from "@/components/Badge";
 import { getDataset, getLiveIndustries } from "@/lib/data";
 import { valuationToken } from "@/lib/scoring";
@@ -55,9 +56,13 @@ export default async function IndustriesPage() {
       </Reveal>
 
       <Reveal>
-        <div className="glass p-6">
+        <ChartCard
+          id="industries-heatmap"
+          title="Industry scorecard"
+          subtitle="Segment-level model, recomputed from the raw data"
+        >
           <IndustryHeatmap industries={industries} />
-        </div>
+        </ChartCard>
       </Reveal>
 
       <Reveal stagger className="grid gap-4 md:grid-cols-2">

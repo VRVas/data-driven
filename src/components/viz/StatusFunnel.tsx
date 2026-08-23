@@ -36,7 +36,9 @@ export function StatusFunnel({ rows }: { rows: FunnelRow[] }) {
   );
 
   return (
-    <div ref={ref} className="space-y-2.5">
+    // Spreads to fill the card so the funnel carries the same visual weight as
+    // whatever it is paired with, rather than floating in the middle of it.
+    <div ref={ref} className="flex flex-1 flex-col justify-between gap-2.5">
       {rows.map((r) => (
         <div key={r.label} className="flex items-center gap-3">
           <div className="w-32 shrink-0 text-right text-sm text-[var(--color-ink-muted)]">

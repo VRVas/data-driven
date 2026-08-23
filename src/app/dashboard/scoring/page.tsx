@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/Reveal";
 import { Badge } from "@/components/Badge";
+import { ChartCard } from "@/components/ChartCard";
 import { PriorityQuadrant, type QuadPoint } from "@/components/viz/PriorityQuadrant";
 import { ScoringExplainer } from "@/components/ScoringExplainer";
 import { getVisibleScoredBrands } from "@/lib/leads/visible";
@@ -122,22 +123,22 @@ export default async function ScoringPage() {
       </Reveal>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Reveal>
-          <div className="glass p-6">
-            <h2 className="font-display text-lg font-semibold">Priority quadrant</h2>
-            <p className="mb-4 mt-1 text-sm text-[var(--color-ink-muted)]">
-              {points.length} open leads - won and lost deals are excluded
-            </p>
+        <Reveal className="h-full">
+          <ChartCard
+            id="scoring-quadrant"
+            title="Priority quadrant"
+            subtitle={`${points.length} open leads - won and lost deals are excluded`}
+          >
             <PriorityQuadrant points={points} />
-          </div>
+          </ChartCard>
         </Reveal>
 
-        <Reveal>
-          <div className="glass p-6">
-            <h2 className="font-display text-lg font-semibold">Top-ranked leads</h2>
-            <p className="mb-4 mt-1 text-sm text-[var(--color-ink-muted)]">
-              Where to spend effort next - won and lost deals are excluded
-            </p>
+        <Reveal className="h-full">
+          <ChartCard
+            id="scoring-ranked"
+            title="Top-ranked leads"
+            subtitle="Where to spend effort next - won and lost deals are excluded"
+          >
             <ol className="space-y-1.5">
               {ranked.slice(0, 12).map(({ brand, p }, i) => (
                 <li key={brand.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-[var(--color-surface)]">
@@ -154,7 +155,7 @@ export default async function ScoringPage() {
                 </li>
               ))}
             </ol>
-          </div>
+          </ChartCard>
         </Reveal>
       </div>
 

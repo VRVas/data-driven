@@ -31,7 +31,9 @@ export function MarketSizingBars({ sectors }: { sectors: MarketSizing[] }) {
   );
 
   return (
-    <div ref={ref} className="space-y-3">
+    // Spreads to fill the card, so a bar list paired with a chart carries the
+    // same weight instead of huddling in the middle of it.
+    <div ref={ref} className="flex flex-1 flex-col justify-between gap-3">
       {rows.map((s) => (
         <div key={s.sector}>
           <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">

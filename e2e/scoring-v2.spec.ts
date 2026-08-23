@@ -26,7 +26,7 @@ test.describe("scoring model", () => {
   });
 
   test("ranks by priority with a grade, not by the old 0-5 average", async ({ page }) => {
-    const panel = page.locator("div").filter({ hasText: "Top-ranked leads" }).last();
+    const panel = page.locator('[data-panel="scoring-ranked"]');
     const first = panel.locator("ol > li").first();
     await expect(first).toBeVisible();
     await expect(first).toContainText(/Pursue|Invest|Quick win|Park/);

@@ -1,5 +1,6 @@
 import { Reveal } from "@/components/Reveal";
 import { KpiCard } from "@/components/KpiCard";
+import { ChartCard } from "@/components/ChartCard";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { StatusFunnel, type FunnelRow } from "@/components/viz/StatusFunnel";
 import { IndustryHeatmap } from "@/components/viz/IndustryHeatmap";
@@ -25,19 +26,6 @@ const STATUS_ORDER: BrandStatus[] = [
   "Still to open",
   "Did not work out",
 ];
-
-function Panel({ eyebrow, title, subtitle, children, className, tour }: { eyebrow?: string; title: string; subtitle?: string; children: React.ReactNode; className?: string; tour?: string }) {
-  return (
-    <section data-tour={tour} className={`glass p-6 ${className ?? ""}`}>
-      <div className="mb-5">
-        {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
-        <h2 className="font-display text-lg font-semibold">{title}</h2>
-        {subtitle && <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{subtitle}</p>}
-      </div>
-      {children}
-    </section>
-  );
-}
 
 export default async function DashboardOverview() {
   const ds = getDataset();
@@ -94,23 +82,23 @@ export default async function DashboardOverview() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Reveal>
-          <Panel eyebrow="Funnel" title="Pipeline by stage" subtitle="Lead count across the sales funnel" tour="funnel">
+        <Reveal className="h-full">
+          <ChartCard id="overview-funnel" eyebrow="Funnel" title="Pipeline by stage" subtitle="Lead count across the sales funnel" tour="funnel">
             <StatusFunnel rows={funnel} />
-          </Panel>
+          </ChartCard>
         </Reveal>
 
-        <Reveal>
-          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Open leads - opportunity × winnability - bubble = budget" tour="quadrant">
+        <Reveal className="h-full">
+          <ChartCard id="overview-quadrant" eyebrow="Targeting" title="Priority quadrant" subtitle="Open leads - opportunity × winnability - bubble = budget" tour="quadrant">
             <PriorityQuadrant points={points} />
-          </Panel>
+          </ChartCard>
         </Reveal>
       </div>
 
       <Reveal>
-        <Panel eyebrow="Segments" title="Industry scorecard" subtitle="Segment-level model, recomputed from the raw data" tour="heatmap">
+        <ChartCard id="overview-heatmap" eyebrow="Segments" title="Industry scorecard" subtitle="Segment-level model, recomputed from the raw data" tour="heatmap">
           <IndustryHeatmap industries={industries} />
-        </Panel>
+        </ChartCard>
       </Reveal>
     </div>
   );
