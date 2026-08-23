@@ -312,7 +312,8 @@ export function BrandTable({
               {th("name", "Brand")}
               {th("status", "Status")}
               {th("waitingOn", "Waiting on")}
-              {th("priority", "Priority", "hidden sm:table-cell")}              {th("owner", "Owner", "hidden lg:table-cell")}
+              {th("priority", "Priority", "hidden sm:table-cell")}
+              {th("owner", "Owner", "hidden lg:table-cell")}
               {th("industry", "Industry", "hidden md:table-cell")}
               {th("budget", "Budget", "hidden text-right sm:table-cell")}
               {th("lastContact", "Last contact", "hidden xl:table-cell")}
