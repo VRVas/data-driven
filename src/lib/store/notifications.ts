@@ -1,7 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
+import { mutateJsonArray, readJsonArray } from "./local-json";
 
 /**
  * In-app notifications - the other half of a reminder's delivery.
@@ -38,16 +38,8 @@ const DATA_DIR = path.join(process.cwd(), ".data");
 const FILE = path.join(DATA_DIR, "notifications.json");
 
 class LocalNotificationStore implements NotificationStore {
-  private async readAll(): Promise<Notification[]> {
-    try {
-      return JSON.parse(await fs.readFile(FILE, "utf8")) as Notification[];
-    } catch {
-      return [];
-    }
-  }
-  private async writeAll(rows: Notification[]): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(FILE, JSON.stringify(rows, null, 2), "utf8");
+  private readAll(): Promise<Notification[]> {
+    return readJsonArray<Notification>(FILE);
   }
   async listForUser(userId: string, limit = 50): Promise<Notification[]> {
     return (await this.readAll())
@@ -56,29 +48,25 @@ class LocalNotificationStore implements NotificationStore {
       .slice(0, limit);
   }
   async create(n: Notification): Promise<Notification> {
-    const all = await this.readAll();
-    all.push(n);
-    await this.writeAll(all);
+    await mutateJsonArray<Notification>(FILE, (rows) => [...rows, n]);
     return n;
   }
   async markRead(id: string, userId: string): Promise<void> {
-    const all = await this.readAll();
-    const row = all.find((n) => n.id === id && n.userId === userId);
-    if (!row) return;
-    row.readAt = new Date().toISOString();
-    await this.writeAll(all);
+    const now = new Date().toISOString();
+    await mutateJsonArray<Notification>(FILE, (rows) =>
+      rows.map((n) => (n.id === id && n.userId === userId ? { ...n, readAt: n.readAt ?? now } : n)),
+    );
   }
   async markAllRead(userId: string): Promise<number> {
-    const all = await this.readAll();
     const now = new Date().toISOString();
     let count = 0;
-    for (const n of all) {
-      if (n.userId === userId && !n.readAt) {
-        n.readAt = now;
+    await mutateJsonArray<Notification>(FILE, (rows) =>
+      rows.map((n) => {
+        if (n.userId !== userId || n.readAt) return n;
         count += 1;
-      }
-    }
-    if (count) await this.writeAll(all);
+        return { ...n, readAt: now };
+      }),
+    );
     return count;
   }
 }

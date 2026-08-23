@@ -1,7 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
+import { mutateJsonArray, readJsonArray } from "./local-json";
 
 /**
  * A reminder somebody created on purpose.
@@ -65,16 +65,8 @@ const DATA_DIR = path.join(process.cwd(), ".data");
 const FILE = path.join(DATA_DIR, "reminders.json");
 
 class LocalReminderStore implements ReminderStore {
-  private async readAll(): Promise<Reminder[]> {
-    try {
-      return JSON.parse(await fs.readFile(FILE, "utf8")) as Reminder[];
-    } catch {
-      return [];
-    }
-  }
-  private async writeAll(rows: Reminder[]): Promise<void> {
-    await fs.mkdir(DATA_DIR, { recursive: true });
-    await fs.writeFile(FILE, JSON.stringify(rows, null, 2), "utf8");
+  private readAll(): Promise<Reminder[]> {
+    return readJsonArray<Reminder>(FILE);
   }
   async listForUser(userId: string, limit = 200): Promise<Reminder[]> {
     return (await this.readAll())
@@ -92,21 +84,23 @@ class LocalReminderStore implements ReminderStore {
     return (await this.readAll()).find((r) => r.id === id) ?? null;
   }
   async create(r: Reminder): Promise<Reminder> {
-    const all = await this.readAll();
-    all.push(r);
-    await this.writeAll(all);
+    await mutateJsonArray<Reminder>(FILE, (rows) => [...rows, r]);
     return r;
   }
   async update(r: Reminder): Promise<Reminder> {
-    const all = await this.readAll();
-    const i = all.findIndex((x) => x.id === r.id);
-    if (i >= 0) all[i] = r;
-    else all.push(r);
-    await this.writeAll(all);
+    // Re-read inside the lock: the dispatch loop writes this file from a timer,
+    // so an update computed from an earlier read would clobber its change.
+    await mutateJsonArray<Reminder>(FILE, (rows) => {
+      const i = rows.findIndex((x) => x.id === r.id);
+      if (i < 0) return [...rows, r];
+      const next = [...rows];
+      next[i] = r;
+      return next;
+    });
     return r;
   }
   async remove(id: string): Promise<void> {
-    await this.writeAll((await this.readAll()).filter((r) => r.id !== id));
+    await mutateJsonArray<Reminder>(FILE, (rows) => rows.filter((r) => r.id !== id));
   }
 }
 
