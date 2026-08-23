@@ -404,6 +404,12 @@ var containers = [
   { name: 'documents', pk: '/userId', ttl: null }
   { name: 'crm', pk: '/companyId', ttl: null }
   { name: 'profiles', pk: '/id', ttl: null }
+  // Scheduled reminders. Partitioned by owner because every read but the
+  // dispatcher's is "this person's reminders"; the dispatcher deliberately
+  // queries across partitions, since it works for everybody.
+  { name: 'reminders', pk: '/ownerId', ttl: null }
+  // In-app notifications, partitioned the same way for the same reason.
+  { name: 'notifications', pk: '/userId', ttl: null }
   // Login codes and reset tokens. Partitioned by email because every read is
   // "the challenges for this address". defaultTtl -1 turns TTL ON with no
   // default: without it Cosmos IGNORES the per-item ttl the app writes, and
