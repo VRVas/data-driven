@@ -55,6 +55,12 @@ export async function purgeProbeData(): Promise<void> {
   await rewrite<Array<{ body: string }>>(path.join(dataDir, "comments.json"), (rows) =>
     rows.filter((c) => !PROBE_TITLE.test(c.body)),
   );
+
+  // Conversations are titled from their first message, which the memory spec
+  // prefixes for exactly this reason.
+  await rewrite<Array<{ title: string }>>(path.join(dataDir, "conversations.json"), (rows) =>
+    rows.filter((c) => !/^ZZQA/.test(c.title)),
+  );
 }
 
 export default purgeProbeData;

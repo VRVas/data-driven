@@ -4,6 +4,7 @@ import { runTool, type ToolRun } from "./dispatch";
 import { toolSchemas } from "./tools";
 import { b, parseBlocks, type Block, type LeadCardData } from "./blocks";
 import { blocksResponseSchema } from "./schema";
+import type { ChatTurn } from "./history";
 import type { SessionUser } from "@/lib/auth/guards";
 import { OUTREACH_TEMPLATES } from "@/lib/mail/templates";
 
@@ -15,6 +16,8 @@ export interface CopilotTurn {
 
 export interface AskOptions {
   reasoning?: boolean;
+  /** Earlier turns of this conversation, oldest first. Without it every turn is the first. */
+  history?: ChatTurn[];
 }
 
 export interface CopilotProvider {
@@ -149,13 +152,30 @@ function toLeadCard(x: Record<string, unknown>): LeadCardData {
 class LocalCopilotProvider implements CopilotProvider {
   readonly name = "local-preview";
 
-  private async resolveLead(message: string): Promise<{ id: string; name: string } | null> {
+  /**
+   * The lead this message is about.
+   *
+   * Falls back to the most recent lead named in the conversation, so "why does
+   * it rank there?" after "tell me about Alibaba" resolves rather than asking
+   * who "it" is. Only when the message itself names nobody.
+   */
+  private async resolveLead(message: string, history: ChatTurn[] = []): Promise<{ id: string; name: string } | null> {
     const brands = await getVisibleBrands();
-    const lower = message.toLowerCase();
-    const hit = brands
-      .filter((br) => lower.includes(br.name.toLowerCase()))
-      .sort((a, c) => c.name.length - a.name.length)[0];
-    return hit ? { id: hit.id, name: hit.name } : null;
+    const find = (text: string) => {
+      const lower = text.toLowerCase();
+      return brands
+        .filter((br) => lower.includes(br.name.toLowerCase()))
+        .sort((a, c) => c.name.length - a.name.length)[0];
+    };
+
+    const direct = find(message);
+    if (direct) return { id: direct.id, name: direct.name };
+
+    for (let i = history.length - 1; i >= 0; i--) {
+      const hit = find(history[i].content);
+      if (hit) return { id: hit.id, name: hit.name };
+    }
+    return null;
   }
 
   async ask(message: string, user: SessionUser, opts: AskOptions = {}): Promise<CopilotTurn> {
@@ -192,7 +212,7 @@ class LocalCopilotProvider implements CopilotProvider {
 
     // explain score
     if (/(why|explain|how).*(score|scored|rated|rating)/.test(m) || /score.*(of|for)\s/.test(m)) {
-      const lead = await this.resolveLead(message);
+      const lead = await this.resolveLead(message, opts.history ?? []);
       if (!lead) return done([b.text("Which lead's score should I explain? Name the brand.")]);
       const d = await run("explain_score", { id: lead.id });
       if (!d || d.scored === false) return done([b.callout(`**${lead.name}** hasn't been scored yet.`, "warning")]);
@@ -242,7 +262,7 @@ class LocalCopilotProvider implements CopilotProvider {
 
     // draft outreach
     if (/(draft|write|compose|prepare).*(outreach|email|message|intro|note)/.test(m)) {
-      const lead = await this.resolveLead(message);
+      const lead = await this.resolveLead(message, opts.history ?? []);
       if (!lead) return done([b.text("Who should I draft outreach to? Name the lead.")]);
       const template = OUTREACH_TEMPLATES.find((t) => m.includes(t.id) || m.includes(t.label.toLowerCase()))?.id;
       const d = await run("draft_outreach", { id: lead.id, ...(template ? { template } : {}) });
@@ -260,7 +280,7 @@ class LocalCopilotProvider implements CopilotProvider {
 
     // advance stage
     if (/(move|advance|progress|change|set).*(stage|status|to\s)/.test(m)) {
-      const lead = await this.resolveLead(message);
+      const lead = await this.resolveLead(message, opts.history ?? []);
       if (!lead) return done([b.text("Which lead should I move, and to which stage?")]);
       const { BRAND_STATUSES } = await import("@/lib/vocab");
       const to = BRAND_STATUSES.find((st) => m.includes(st.toLowerCase()));
@@ -543,7 +563,7 @@ class LocalCopilotProvider implements CopilotProvider {
     }
 
     // fallback - lead lookup or search
-    const lead = await this.resolveLead(message);
+    const lead = await this.resolveLead(message, opts.history ?? []);
     if (lead) {
       const d = (await run("get_lead", { id: lead.id })) as Record<string, unknown> | undefined;
       if (d?.found) {
@@ -705,6 +725,7 @@ class FoundryCopilotProvider implements CopilotProvider {
     const messages: Record<string, unknown>[] = [
       { role: "system", content: SYSTEM_PROMPT },
       { role: "system", content: callerContext(user) },
+      ...(opts.history ?? []).map((t) => ({ role: t.role, content: t.content })),
       { role: "user", content: message },
     ];
     const runs: ToolRun[] = [];

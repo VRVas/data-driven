@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { apiPermission } from "@/lib/auth/api";
 import { streamTurn, wantsReasoning } from "@/lib/copilot/stream";
 import { getConversationStore } from "@/lib/copilot/threads";
+import { toModelHistory, type ChatTurn } from "@/lib/copilot/history";
 import { logAudit } from "@/lib/store/audit";
 import type { Block } from "@/lib/copilot/blocks";
 
@@ -27,6 +28,18 @@ export async function POST(req: NextRequest) {
   if (!message) return new Response("Bad request", { status: 400 });
   const deep = reasoning || wantsReasoning(message);
 
+  // Read the thread back before answering. It has always been WRITTEN here;
+  // never reading it is what made every turn the model's first.
+  let history: ChatTurn[] = [];
+  if (conversationId) {
+    try {
+      const prior = await getConversationStore().get(conversationId, user.id);
+      if (prior) history = toModelHistory(prior.messages, message);
+    } catch {
+      // A conversation we cannot load costs continuity, not the answer.
+    }
+  }
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
@@ -35,7 +48,7 @@ export async function POST(req: NextRequest) {
       const collected: Block[] = [];
       let provider = "local-preview";
       try {
-        for await (const ev of streamTurn(message, user, { reasoning: deep })) {
+        for await (const ev of streamTurn(message, user, { reasoning: deep, history })) {
           if (ev.type === "block") {
             collected.push(ev.block);
             send("block", ev.block);
