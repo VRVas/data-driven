@@ -4,7 +4,7 @@ import { z } from "zod";
  * The generative-UI block protocol.
  *
  * The copilot composes a response as an ordered array of typed blocks. The
- * frontend renders each block with a Midnight-themed component — no HTML, no
+ * frontend renders each block with a Midnight-themed component - no HTML, no
  * iframes, no Plotly. The same schema drives (a) the local preview provider,
  * (b) runtime validation of model output, and (c) the Foundry structured-output
  * JSON schema. Anything that fails validation is dropped, so a malformed block
@@ -57,7 +57,7 @@ const companyShape = z.object({
   wonDealCount: z.number().nullish(),
   openPipelineEur: z.number().nullish(),
   lifetimeValueEur: z.number().nullish(),
-  /** Won beyond the first deal — the number that shows a relationship compounding. */
+  /** Won beyond the first deal - the number that shows a relationship compounding. */
   repeatValueEur: z.number().nullish(),
   dealWinRate: z.number().nullish(),
   lastContact: z.string().nullish(),
@@ -172,7 +172,7 @@ const companyCardBlock = companyShape.extend({ type: z.literal("companyCard") })
  * Why a lead ranks where it does.
  *
  * Priority is a geometric mean of two axes with a third deliberately left out,
- * which a bare number cannot convey — and "we need to understand how the
+ * which a bare number cannot convey - and "we need to understand how the
  * scoring works" was the original complaint.
  */
 const scoreBreakdownBlock = z.object({
@@ -231,7 +231,7 @@ const actionBlock = z.object({
     .max(4),
 });
 
-// Cited web/document sources — clickable external links (used by web grounding).
+// Cited web/document sources - clickable external links (used by web grounding).
 const sourcesBlock = z.object({
   type: z.literal("sources"),
   title: z.string().nullish(),
@@ -328,7 +328,7 @@ export function parseBlocks(input: unknown): Block[] {
   return out;
 }
 
-/** Convenience builders for the local provider — keeps composition terse + typed. */
+/** Convenience builders for the local provider - keeps composition terse + typed. */
 export const b = {
   heading: (title: string, opts: { eyebrow?: string; subtitle?: string } = {}): Block => ({
     type: "heading",

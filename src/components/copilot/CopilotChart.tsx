@@ -5,7 +5,7 @@ import { toneVar } from "@/lib/copilot/blocks";
 
 type ChartBlock = Extract<Block, { type: "chart" }>;
 
-/** Bespoke, themed SVG charts — bar, donut, scatter, line, progress. */
+/** Bespoke, themed SVG charts - bar, donut, scatter, line, progress. */
 export function CopilotChart({ block }: { block: ChartBlock }) {
   return (
     <figure className="my-1">

@@ -45,7 +45,7 @@ export function renderTemplate(
   switch (templateId) {
     case "follow-up":
       return {
-        subject: `Following up — OOVIE × ${brand.name}`,
+        subject: `Following up - OOVIE × ${brand.name}`,
         body:
           `Hi ${hi},\n\n` +
           `Circling back on my note about bringing OOVIE's AI-native music and video work to ${brand.name}. ` +
@@ -65,7 +65,7 @@ export function renderTemplate(
       };
     case "re-engage":
       return {
-        subject: `Reviving our conversation — OOVIE × ${brand.name}`,
+        subject: `Reviving our conversation - OOVIE × ${brand.name}`,
         body:
           `Hi ${hi},\n\n` +
           `It's been a while since we last spoke about ${brand.name}. A lot has moved on our side, and I still think ` +
@@ -75,7 +75,7 @@ export function renderTemplate(
     case "intro":
     default:
       return {
-        subject: `OOVIE × ${brand.name} — a quick idea`,
+        subject: `OOVIE × ${brand.name} - a quick idea`,
         body:
           `Hi ${hi},\n\n` +
           `I'm ${senderName} from OOVIE Studios. We craft AI-native music and video experiences for ${industryPhrase(brand)}, ` +

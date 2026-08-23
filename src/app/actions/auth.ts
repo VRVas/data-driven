@@ -22,7 +22,7 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
     });
     return undefined;
   } catch (error) {
-    // A successful sign-in throws a redirect (not an AuthError) — rethrow it.
+    // A successful sign-in throws a redirect (not an AuthError) - rethrow it.
     if (error instanceof AuthError) return { error: "Invalid email or password." };
     throw error;
   }
@@ -52,7 +52,7 @@ export async function signupAction(_prev: AuthState, formData: FormData): Promis
     await signIn("credentials", { email, password, redirectTo: "/dashboard" });
     return undefined;
   } catch (error) {
-    if (error instanceof AuthError) return { error: "Account created — please sign in." };
+    if (error instanceof AuthError) return { error: "Account created - please sign in." };
     throw error;
   }
 }
@@ -67,7 +67,7 @@ export async function signupAction(_prev: AuthState, formData: FormData): Promis
 
 const emailSchema = z.object({ email: z.string().trim().toLowerCase().email("Enter a valid email.") });
 
-/** Same words either way — anything else turns this into an account oracle. */
+/** Same words either way - anything else turns this into an account oracle. */
 const SENT = "If that address has an account, a message is on its way.";
 
 /** Email a one-time sign-in code. */

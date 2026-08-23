@@ -16,16 +16,16 @@ import { BRAND_STATUSES, PRIORITIES, AGENT_STATUSES } from "@/lib/vocab";
 import type { Brand } from "@/lib/types";
 
 describe("component scores", () => {
-  it("tempoScore inverts months (fresher = higher), clamped 0–5", () => {
+  it("tempoScore inverts months (fresher = higher), clamped 0-5", () => {
     expect(tempoScore(0)).toBe(5);
     expect(tempoScore(8)).toBe(0);
     expect(tempoScore(4)).toBeCloseTo(2.5);
     expect(tempoScore(100)).toBe(0);
   });
 
-  it("budgetScore maps €0–80k onto 0–5", () => {
+  it("budgetScore maps €0-80k onto 0-5", () => {
     expect(budgetScore(0)).toBe(0);
-    expect(budgetScore(10000)).toBe(0.5); // 1–16k band
+    expect(budgetScore(10000)).toBe(0.5); // 1-16k band
     expect(budgetScore(80000)).toBe(5);
     expect(budgetScore(40000)).toBeCloseTo(2.5);
   });

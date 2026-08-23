@@ -22,5 +22,5 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   };
 }
 
-// The old requireUser/requireAdmin guards are gone — authorization now goes
+// The old requireUser/requireAdmin guards are gone - authorization now goes
 // through requirePermission() in ./authorize so every call names a capability.

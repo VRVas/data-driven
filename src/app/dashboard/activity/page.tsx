@@ -32,7 +32,7 @@ export default async function ActivityPage() {
             <div className="eyebrow mb-2">Audit trail</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Activity</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
-              Every change, who made it and when — {entries.length} recent {entries.length === 1 ? "event" : "events"}.
+              Every change, who made it and when - {entries.length} recent {entries.length === 1 ? "event" : "events"}.
             </p>
           </div>
           {entries.length > 0 && (
@@ -73,7 +73,7 @@ export default async function ActivityPage() {
                       </span>
                     </div>
                     <div className="mt-0.5 text-xs text-[var(--color-ink-muted)]">
-                      {e.actorName} · <time dateTime={e.at} title={e.at}>{relativeTime(e.at)}</time>
+                      {e.actorName} - <time dateTime={e.at} title={e.at}>{relativeTime(e.at)}</time>
                     </div>
                   </div>
                 </li>

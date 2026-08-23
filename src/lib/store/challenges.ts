@@ -18,7 +18,7 @@ export interface ChallengeStore {
   recent(email: string, kind: ChallengeKind): Promise<Challenge[]>;
   /** Verifies, counts the attempt, and burns the challenge on success. */
   redeem(email: string, kind: ChallengeKind, supplied: string): Promise<{ ok: boolean; reason?: string }>;
-  /** Called after a password change — any outstanding link must stop working. */
+  /** Called after a password change - any outstanding link must stop working. */
   revokeAll(email: string): Promise<void>;
 }
 
@@ -66,7 +66,7 @@ class LocalChallengeStore implements ChallengeStore {
 
   private async write(rows: Challenge[]): Promise<void> {
     await fs.mkdir(DATA_DIR, { recursive: true });
-    // Expired rows are noise, not history — drop them on every write.
+    // Expired rows are noise, not history - drop them on every write.
     const keep = rows.filter((c) => Date.parse(c.expiresAt) > Date.now() - 86_400_000);
     await fs.writeFile(FILE, JSON.stringify(keep, null, 2), "utf8");
   }

@@ -73,12 +73,12 @@ export default async function IndustriesPage() {
               </div>
               <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-[var(--color-ink-muted)]">
                 <span>Opened <b className="text-[var(--color-ink)]">{ind.opened}</b>/{ind.companiesEU ?? "?"}</span>
-                <span>Approached <b className="text-[var(--color-ink)]">{ind.approachedMarket != null ? `${(ind.approachedMarket * 100).toFixed(1)}%` : "—"}</b></span>
+                <span>Approached <b className="text-[var(--color-ink)]">{ind.approachedMarket != null ? `${(ind.approachedMarket * 100).toFixed(1)}%` : "-"}</b></span>
                 {ind.avgBudget != null && <span>Avg budget <b className="text-[var(--color-ink)]">€{ind.avgBudget.toLocaleString()}</b></span>}
               </div>
               {p?.valueProposition && (
                 <p className="mt-4 whitespace-pre-line text-sm leading-relaxed text-[var(--color-ink-muted)]">
-                  <span className="font-medium text-[var(--color-ink)]">Value proposition · </span>
+                  <span className="font-medium text-[var(--color-ink)]">Value proposition - </span>
                   {p.valueProposition}
                 </p>
               )}

@@ -9,7 +9,7 @@ export async function listConversations(): Promise<ConversationHeader[]> {
   return getConversationStore().listForUser(user.id);
 }
 
-/** Load a full conversation (messages) — scoped to the owner. */
+/** Load a full conversation (messages) - scoped to the owner. */
 export async function loadConversation(id: string): Promise<Conversation | null> {
   const { user } = await requirePermission("copilot:use");
   return getConversationStore().get(id, user.id);

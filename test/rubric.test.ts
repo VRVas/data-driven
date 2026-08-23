@@ -45,7 +45,7 @@ describe("writeRubric", () => {
   });
 
   it("leaves economical efficiency unknown until budget and pace exist too", () => {
-    // It averages budget, customization and tempo — two of the three are set
+    // It averages budget, customization and tempo - two of the three are set
     // elsewhere, and averaging over what happens to be present would invent a
     // number.
     expect(writeRubric(lead(), ALL_THREE).scores!.economicalEfficiency).toBeNull();

@@ -17,7 +17,7 @@ export interface Challenge {
   id: string;
   email: string;
   kind: ChallengeKind;
-  /** bcrypt of the code/token — never the value itself. */
+  /** bcrypt of the code/token - never the value itself. */
   secretHash: string;
   createdAt: string;
   expiresAt: string;

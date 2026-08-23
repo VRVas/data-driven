@@ -1,7 +1,7 @@
 import "server-only";
 
 // ---------------------------------------------------------------------------
-// Speech provider — keyless (Entra/managed-identity) STT + TTS on our Foundry
+// Speech provider - keyless (Entra/managed-identity) STT + TTS on our Foundry
 // AIServices account. Verified live in Sweden Central (2026-07-12):
 //   TTS: POST {base}/tts/cognitiveservices/v1  (SSML, MAI-Voice-2 "Luca")
 //   STT: POST {base}/speechtotext/transcriptions:transcribe?api-version=2024-11-15
@@ -9,7 +9,7 @@ import "server-only";
 // (same managed identity the copilot uses; works with disableLocalAuth).
 // ---------------------------------------------------------------------------
 
-const DEFAULT_VOICE = "it-IT-Luca:MAI-Voice-2"; // Luca — multilingual, reads any language
+const DEFAULT_VOICE = "it-IT-Luca:MAI-Voice-2"; // Luca - multilingual, reads any language
 const STT_API_VERSION = "2024-11-15";
 
 /** Base URL of the Speech-capable account (defaults to the OpenAI endpoint host). */

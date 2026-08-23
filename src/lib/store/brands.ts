@@ -30,7 +30,7 @@ export interface BrandStore {
 }
 
 // --------------------------------------------------------------------------
-// Local file store (development) — .data/brands.json, seeded from the ETL
+// Local file store (development) - .data/brands.json, seeded from the ETL
 // --------------------------------------------------------------------------
 const DATA_DIR = path.join(process.cwd(), ".data");
 const BRANDS_FILE = path.join(DATA_DIR, "brands.json");
@@ -67,7 +67,7 @@ class LocalBrandStore implements BrandStore {
 }
 
 // --------------------------------------------------------------------------
-// Cosmos DB store (production) — container "brands", partition key /id
+// Cosmos DB store (production) - container "brands", partition key /id
 // --------------------------------------------------------------------------
 class CosmosBrandStore implements BrandStore {
   // Seed the empty container at most once per process (parity with LocalBrandStore).

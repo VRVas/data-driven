@@ -40,7 +40,7 @@ export function MarketSizingBars({ sectors }: { sectors: MarketSizing[] }) {
             </span>
             <span className="shrink-0 text-[var(--color-ink-muted)]">
               <span className="font-semibold text-[var(--color-cyan)]">${s.marketSizeUsdBn}B</span>
-              <span className="text-[var(--color-ink-faint)]"> · {s.companies}&nbsp;cos.</span>
+              <span className="text-[var(--color-ink-faint)]"> - {s.companies}&nbsp;cos.</span>
             </span>
           </div>
           <div className="relative h-3 w-full overflow-hidden rounded-full bg-[var(--color-surface)]">

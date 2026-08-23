@@ -1,12 +1,12 @@
 /**
- * Permission profiles — reusable bundles of grants that get assigned to users.
+ * Permission profiles - reusable bundles of grants that get assigned to users.
  *
  * Client-importable (the admin editor renders these as starting points).
  *
  * The seeded profiles below are the migration contract: `Sales rep` is
  * calibrated to reproduce exactly what a `member` can do today, and
  * `Administrator` to reproduce `admin`. Scopes are deliberately left at `all`
- * so switching the system on cannot take access away from anyone — narrowing
+ * so switching the system on cannot take access away from anyone - narrowing
  * to own/team is a later, deliberate decision per profile.
  */
 import {
@@ -22,7 +22,7 @@ export interface Profile {
   name: string;
   description: string;
   permissions: PermissionMap;
-  /** Bypasses the permission map entirely — never expressed as a wildcard grant. */
+  /** Bypasses the permission map entirely - never expressed as a wildcard grant. */
   superuser?: boolean;
   /** Seeded profiles cannot be deleted, and the admin one cannot be edited. */
   system: boolean;
@@ -39,7 +39,7 @@ const grant = (keys: readonly PermissionKey[], scope: Scope = "all"): Permission
 
 const READ_KEYS = PERMISSION_KEYS.filter((k) => k.endsWith(":read"));
 
-/** Everything a `member` can do today — the calibration target for migration. */
+/** Everything a `member` can do today - the calibration target for migration. */
 const SALES_REP_KEYS: PermissionKey[] = [
   "lead:read", "lead:create", "lead:update", "lead:stage:advance", "lead:assign",
   "agent:read", "agent:create", "agent:update", "agent:delete",
@@ -81,7 +81,7 @@ export const SYSTEM_PROFILES: Profile[] = [
   {
     id: "sales-manager",
     name: "Sales manager",
-    description: "Runs the pipeline end to end — including approving and sending outreach.",
+    description: "Runs the pipeline end to end - including approving and sending outreach.",
     permissions: grant(SALES_MANAGER_KEYS),
     system: true,
   },
@@ -115,7 +115,7 @@ export function systemProfile(id: string): Profile | null {
 /** What a user is granted: profiles plus optional per-user adjustments. */
 export interface Assignment {
   profileIds: string[];
-  /** Added on top of the profiles — the "custom on the spot" case. */
+  /** Added on top of the profiles - the "custom on the spot" case. */
   grantOverrides?: PermissionMap;
   /** Removed regardless of what the profiles grant. Deny always wins. */
   denyOverrides?: PermissionKey[];

@@ -15,7 +15,7 @@ import type { Deal, Proposal } from "@/lib/crm/types";
  * Money totals resolve a deal's value through its proposals; the score, the
  * quadrant bubble and every per-lead figure read the budget stored on the lead.
  * Those are two different reads of the same thing, so they are only equal
- * because the write path keeps them equal — which is exactly the kind of
+ * because the write path keeps them equal - which is exactly the kind of
  * agreement that rots silently.
  */
 

@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * PillButton — the platform's signature ghost pill. A frosted-cream label
+ * PillButton - the platform's signature ghost pill. A frosted-cream label
  * inside a hairline pill that inverts to a solid fill on hover, with an
  * optional magnetic pull toward the cursor. Renders a Next `Link` when `href`
  * is set, otherwise a `<button>`.

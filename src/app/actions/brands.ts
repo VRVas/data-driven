@@ -28,7 +28,7 @@ const optionalDate = z.preprocess(
   z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD").optional(),
 );
 
-/** The rubric is a 0–5 judgement, half-points included, as the workbook had it. */
+/** The rubric is a 0-5 judgement, half-points included, as the workbook had it. */
 const rubricScore = z.preprocess(
   emptyToUndef,
   z.coerce.number().min(0, "Scores run from 0 to 5").max(5, "Scores run from 0 to 5").optional(),
@@ -184,7 +184,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
  * Accept the current stage as the answer, closing an imported-outcome conflict.
  *
  * The alternative reading is that the row holds two engagements, which is
- * resolved by creating the second lead — not here.
+ * resolved by creating the second lead - not here.
  */
 export async function resolveOutcomeConflict(
   _prev: BrandActionState,

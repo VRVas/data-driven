@@ -36,8 +36,8 @@ export function ReminderRow({ r }: { r: Reminder }) {
         </Link>
         <div className="mt-0.5 text-xs">
           <span style={{ color: toneFor(r.bucket) }}>{dueLabel(r.days)}</span>
-          <span className="text-[var(--color-ink-faint)]"> · {r.date}</span>
-          {r.brand.owner && <span className="text-[var(--color-ink-faint)]"> · {r.brand.owner}</span>}
+          <span className="text-[var(--color-ink-faint)]"> - {r.date}</span>
+          {r.brand.owner && <span className="text-[var(--color-ink-faint)]"> - {r.brand.owner}</span>}
         </div>
       </div>
       <div className="flex items-center gap-1.5">

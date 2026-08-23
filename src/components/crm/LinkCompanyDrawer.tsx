@@ -76,7 +76,7 @@ export function LinkCompanyDrawer({
 
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-5 sm:px-6">
               <p className="text-sm text-[var(--color-ink-muted)]">
-                This deal will be counted under the company you pick — which is how repeat business is tracked.
+                This deal will be counted under the company you pick - which is how repeat business is tracked.
               </p>
 
               <Labelled label="Find a company">
@@ -169,7 +169,7 @@ function UnlinkControl({ dealId, onUnlinked }: { dealId: string; onUnlinked: () 
   return (
     <form action={action} className="flex flex-wrap items-center justify-between gap-2">
       <input type="hidden" name="dealId" value={dealId} />
-      <span className="text-sm text-[var(--color-ink-faint)]">Linked by hand — it can stand on its own again.</span>
+      <span className="text-sm text-[var(--color-ink-faint)]">Linked by hand - it can stand on its own again.</span>
       <button
         type="submit"
         disabled={pending}

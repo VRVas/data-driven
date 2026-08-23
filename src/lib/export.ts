@@ -1,5 +1,5 @@
 /**
- * Pure serializers for data export. No DOM — safe to unit-test and to import
+ * Pure serializers for data export. No DOM - safe to unit-test and to import
  * anywhere. The browser side (Blob download, clipboard) lives in `download.ts`.
  */
 export interface Column {
@@ -32,7 +32,7 @@ export function stampName(base: string, now: Date = new Date()): string {
 }
 
 // ---------------------------------------------------------------------------
-//  Binary formats — .xlsx (Office Open XML) and .pdf, hand-rolled so the app
+//  Binary formats - .xlsx (Office Open XML) and .pdf, hand-rolled so the app
 //  stays dependency-free (same philosophy as the RFC-4180 CSV above). Both
 //  return raw bytes; the browser side (`download.ts`) wraps them in a Blob.
 // ---------------------------------------------------------------------------
@@ -68,7 +68,7 @@ function crc32(bytes: Uint8Array): number {
   return (crc ^ 0xffffffff) >>> 0;
 }
 
-/** Minimal ZIP writer (STORED / no compression) — enough for a valid .xlsx. */
+/** Minimal ZIP writer (STORED / no compression) - enough for a valid .xlsx. */
 function zipSync(entries: { name: string; data: Uint8Array }[]): Uint8Array {
   const enc = new TextEncoder();
   const locals: Uint8Array[] = [];
@@ -161,7 +161,7 @@ export function toXlsx(columns: Column[], rows: Record<string, unknown>[]): Uint
 
 /** Latin-1 encode (each char -> one byte). Callers keep content ASCII. */
 const latin1 = (s: string) => Uint8Array.from(s, (ch) => ch.charCodeAt(0) & 0xff);
-const sanitizePdf = (s: string) => String(s ?? "").replace(/[^\x20-\x7E]/g, (ch) => (ch === "—" || ch === "–" ? "-" : "?"));
+const sanitizePdf = (s: string) => String(s ?? "").replace(/[^\x20-\x7E]/g, (ch) => (ch === "-" || ch === "-" ? "-" : "?"));
 const escPdf = (s: string) => s.replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 
 /** Build a paginated, landscape `.pdf` table (Helvetica, no font embedding). */

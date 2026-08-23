@@ -82,7 +82,7 @@ export default async function CompaniesPage() {
 
           {companies.length === 0 ? (
             <p className="px-4 py-6 text-sm text-[var(--color-ink-muted)] sm:px-6">
-              No companies yet — they appear as soon as there are leads.
+              No companies yet - they appear as soon as there are leads.
             </p>
           ) : (
             <CompanyTable companies={companies} />
@@ -103,7 +103,7 @@ export default async function CompaniesPage() {
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
               <dt className="text-sm font-medium">Open pipeline</dt>
               <dd className="mt-0.5 text-sm text-[var(--color-ink-muted)]">
-                Deals still open — every stage except Deal Closed and Did not work out.
+                Deals still open - every stage except Deal Closed and Did not work out.
               </dd>
             </div>
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
@@ -139,7 +139,7 @@ export default async function CompaniesPage() {
             <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
               {duplicates.length > 0 ? (
                 <>
-                  These names look alike, which is not the same as being the same client —
+                  These names look alike, which is not the same as being the same client -
                   &ldquo;Allianz Bank&rdquo; and &ldquo;Allianz CH&rdquo; may well be two customers. Nothing is
                   ever merged automatically.
                 </>
@@ -159,7 +159,7 @@ export default async function CompaniesPage() {
                   >
                     {group.map((c, i) => (
                       <span key={c.id} className="flex items-center gap-2">
-                        {i > 0 && <span className="text-[var(--color-ink-faint)]">·</span>}
+                        {i > 0 && <span className="text-[var(--color-ink-faint)]">-</span>}
                         <Link href={`/dashboard/companies/${c.id}`} className="hover:text-[var(--color-brand)]">
                           {c.name}
                         </Link>
@@ -173,7 +173,7 @@ export default async function CompaniesPage() {
               <MergeCompanies companies={mergeChoices} />
             ) : (
               <p className="mt-3 text-sm text-[var(--color-ink-faint)]">
-                Open them and link the deals yourself if they belong together — merging is restricted.
+                Open them and link the deals yourself if they belong together - merging is restricted.
               </p>
             )}
           </section>
@@ -196,7 +196,7 @@ function EmptyKpi({ label, hint, accent }: { label: string; hint: string; accent
         {label}
       </div>
       <div className="mt-2 font-display text-xl font-semibold tracking-tight tabular-nums sm:text-2xl lg:text-3xl">
-        —
+        -
       </div>
       <div className="mt-1.5 text-sm text-[var(--color-ink-muted)]">{hint}</div>
     </div>

@@ -23,7 +23,7 @@ const SCOPE_OPTIONS: Array<{ value: Scope; short: string; label: string }> = [
 
 const CATEGORIES = permissionsByCategory();
 
-/** Mounted only while open — remounting gives each session fresh action state. */
+/** Mounted only while open - remounting gives each session fresh action state. */
 export function ProfileEditor({
   profile,
   onClose,
@@ -139,7 +139,7 @@ export function ProfileEditor({
                   </span>
                 </div>
                 <p className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs text-[var(--color-ink-faint)]">
-                  Own and team scopes are saved with the profile, but records aren&apos;t filtered by owner yet — on
+                  Own and team scopes are saved with the profile, but records aren&apos;t filtered by owner yet - on
                   leads they currently behave like full access. Per-record scoping is coming.
                 </p>
 

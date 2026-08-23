@@ -2,7 +2,7 @@ name: CI
 
 # Quality gate for pushes to main and pull requests: type-check, unit tests,
 # a production build, and the Playwright end-to-end suite. No Azure access is
-# required — the app runs against its dev file-store during tests/build.
+# required - the app runs against its dev file-store during tests/build.
 
 on:
   push:

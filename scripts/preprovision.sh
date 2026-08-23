@@ -1,6 +1,6 @@
 #!/usr/bin/env sh
 # ---------------------------------------------------------------------------
-# azd preprovision hook — makes `azd up` genuinely one command.
+# azd preprovision hook - makes `azd up` genuinely one command.
 #
 # AUTH_SECRET is a required Bicep parameter (the Auth.js session key, injected
 # as a Container Apps secret). It used to be a documented manual step, which
@@ -11,7 +11,7 @@
 # session on the next deploy.
 #
 # Reads the azd store rather than the ambient environment, because that is what
-# main.parameters.json substitutes ${AUTH_SECRET} from — a stray system variable
+# main.parameters.json substitutes ${AUTH_SECRET} from - a stray system variable
 # of the same name would otherwise make this skip generation and leave the
 # parameter empty.
 #
@@ -25,7 +25,7 @@ if azd env get-value AUTH_SECRET >/dev/null 2>&1; then
 fi
 
 if [ -n "$existing" ]; then
-  echo "AUTH_SECRET already set for this environment — leaving it untouched."
+  echo "AUTH_SECRET already set for this environment - leaving it untouched."
   exit 0
 fi
 

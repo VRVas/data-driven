@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
     // Server Actions compare the `origin` header against `x-forwarded-host` to
     // block CSRF. A dev tunnel (Codespaces, VS Code port forwarding) rewrites
     // the host, so the two legitimately disagree and every action 500s with
-    // "Invalid Server Actions request". DEV ONLY — in Container Apps the two
+    // "Invalid Server Actions request". DEV ONLY - in Container Apps the two
     // already agree, so production keeps the check exactly as it was.
     ...(process.env.NODE_ENV === "production"
       ? {}

@@ -18,13 +18,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
               Business development, as an operating system.
             </h2>
             <p className="mt-4 max-w-md text-[var(--color-ink-muted)]">
-              Pipeline, lead scoring, industry strategy and an AI copilot — one
+              Pipeline, lead scoring, industry strategy and an AI copilot - one
               intelligent workspace for the OOVIE team.
             </p>
           </div>
 
           <p className="text-sm text-[var(--color-ink-faint)]">
-            © OOVIE Studios · Business Development Intelligence
+            © OOVIE Studios - Business Development Intelligence
           </p>
         </div>
       </div>

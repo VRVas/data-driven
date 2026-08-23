@@ -8,7 +8,7 @@ import type { Brand } from "@/lib/types";
 import { STRATEGIC_REASONS } from "@/lib/priority";
 import { RUBRIC_FIELDS } from "@/lib/pipeline/rubric";
 
-/** Mounted only while open — remounting gives each session fresh action state. */
+/** Mounted only while open - remounting gives each session fresh action state. */
 export function BrandEditor({
   brand,
   onClose,
@@ -106,9 +106,9 @@ export function BrandEditor({
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Waiting on">
               <select name="waitingOn" defaultValue={brand?.waitingOn ?? ""} className="auth-input">
-                <option value="">— not decided —</option>
-                <option value="us">Us — we owe the next move</option>
-                <option value="them">Them — we are waiting</option>
+                <option value="">- not decided -</option>
+                <option value="us">Us - we owe the next move</option>
+                <option value="them">Them - we are waiting</option>
               </select>
             </FormField>
             <FormField label="Expected duration (months)">
@@ -151,7 +151,7 @@ export function BrandEditor({
                 name="assumption"
                 defaultValue={brand?.scores?.assumption ?? ""}
                 options={["Estimated", "Confirmed"]}
-                placeholder="— estimated —"
+                placeholder="- estimated -"
               />
             </FormField>
           </div>
@@ -162,15 +162,15 @@ export function BrandEditor({
           <div className="grid grid-cols-2 gap-3">
             <FormField label="Strategic value">
               <select name="strategicValue" defaultValue={String(brand?.strategicValue ?? 0)} className="auth-input">
-                <option value="0">0 — none beyond the invoice</option>
-                <option value="1">1 — some</option>
-                <option value="2">2 — significant</option>
-                <option value="3">3 — flagship</option>
+                <option value="0">0 - none beyond the invoice</option>
+                <option value="1">1 - some</option>
+                <option value="2">2 - significant</option>
+                <option value="3">3 - flagship</option>
               </select>
             </FormField>
             <FormField label="Why strategic">
               <select name="strategicReason" defaultValue={brand?.strategicReason ?? ""} className="auth-input">
-                <option value="">— none —</option>
+                <option value="">- none -</option>
                 {STRATEGIC_REASONS.map((r) => (
                   <option key={r} value={r}>{r}</option>
                 ))}
@@ -180,7 +180,7 @@ export function BrandEditor({
 
           <fieldset className="rounded-xl border border-[var(--color-border)] p-3">
             <legend className="px-1 text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]">
-              Scoring (0–5)
+              Scoring (0-5)
             </legend>
             <p className="mb-3 text-xs text-[var(--color-ink-faint)]">
               Your judgement of the lead. Budget and pace are worked out from the fields above.
@@ -228,7 +228,7 @@ export function BrandEditor({
               <DeleteControl id={brand!.id} onDeleted={onClose} />
             ) : (
               <p className="text-sm text-[var(--color-ink-faint)]">
-                Deleting a lead is restricted to admins — ask an admin to remove it.
+                Deleting a lead is restricted to admins - ask an admin to remove it.
               </p>
             )}
           </footer>
@@ -286,7 +286,7 @@ function SelectField({
   name,
   defaultValue,
   options,
-  placeholder = "—",
+  placeholder = "-",
 }: {
   name: string;
   defaultValue: string;

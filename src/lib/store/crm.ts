@@ -5,16 +5,16 @@ import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import type { Proposal } from "@/lib/crm/types";
 
 /**
- * CRM overlay — the parts of the new model that are genuinely NEW data.
+ * CRM overlay - the parts of the new model that are genuinely NEW data.
  *
  * Companies and deals are derived from the live brand store rather than stored
  * again (see `src/lib/crm/graph.ts`), because keeping a second copy while lead
  * edits still write to `brands` would let the two drift apart. Only what has no
  * existing source of truth is persisted here:
  *
- *  - `links`     — a human asserting "this deal belongs to that company", the
+ *  - `links`     - a human asserting "this deal belongs to that company", the
  *                  one thing we refuse to infer from names.
- *  - `proposals` — commercial documents with their own value and lifecycle.
+ *  - `proposals` - commercial documents with their own value and lifecycle.
  */
 export interface CompanyLink {
   dealId: string;

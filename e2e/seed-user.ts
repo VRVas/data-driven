@@ -5,7 +5,7 @@ import { TEST_USER } from "./constants";
 import { purgeProbeData } from "./probe-data";
 
 /**
- * Global setup — plant the E2E account into the local file store the same way
+ * Global setup - plant the E2E account into the local file store the same way
  * the app's own store writes it (email lower-cased, bcrypt hash cost 12).
  * Non-destructive: any other local accounts are preserved.
  */

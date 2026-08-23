@@ -1,5 +1,5 @@
 /**
- * Motion vocabulary — "Midnight kinetic canvas".
+ * Motion vocabulary - "Midnight kinetic canvas".
  *
  * Pure data (no GSAP import) so it is safe to read from server or client.
  * These are the canonical eases, durations and staggers every animation in
@@ -9,7 +9,7 @@
 
 /** Cubic-bezier control points, keyed by brand name. */
 export const curves = {
-  /** Assertive entrance — overshoots slightly, then settles. */
+  /** Assertive entrance - overshoots slightly, then settles. */
   brandSnap: [0.22, 1, 0.36, 1],
   /** Calm, material settle. */
   brandSettle: [0.4, 0, 0.2, 1],

@@ -1,7 +1,7 @@
 /**
  * Stand-in for `@/auth` in unit tests.
  *
- * The real module boots NextAuth, which imports `next/server` — unresolvable
+ * The real module boots NextAuth, which imports `next/server` - unresolvable
  * under the plain Node test environment. Unit tests only need the auth-aware
  * modules to *load*; anything that actually asserts on permissions builds its
  * own context and calls the pure helpers in `@/lib/auth/effective` directly.

@@ -77,7 +77,7 @@ export async function recordProposal(
   await getCrmOverlayStore().saveProposal(proposal);
 
   // The lead carries the deal's value for everything that is not a money
-  // total — the priority axes, the quadrant bubble, exports, the copilot's
+  // total - the priority axes, the quadrant bubble, exports, the copilot's
   // per-lead figures. Leaving it behind meant one deal was worth its proposal
   // in the pipeline totals and its opening guess in the score.
   const others = graph.proposals.filter((p) => p.dealId === input.dealId && p.id !== proposal.id);

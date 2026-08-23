@@ -20,7 +20,7 @@ function dealSummary(r: CompanyRollup): string {
   if (r.openDealCount) parts.push(`${r.openDealCount} open`);
   if (r.wonDealCount) parts.push(`${r.wonDealCount} won`);
   if (r.lostDealCount) parts.push(`${r.lostDealCount} lost`);
-  return parts.join(" · ") || "—";
+  return parts.join(" - ") || "-";
 }
 
 export function CompanyTable({ companies }: { companies: CompanyRow[] }) {
@@ -114,7 +114,7 @@ export function CompanyTable({ companies }: { companies: CompanyRow[] }) {
                 </div>
               </td>
               <td className="hidden px-4 py-3 text-[var(--color-ink-muted)] sm:table-cell sm:px-6">
-                {c.industry ?? "—"}
+                {c.industry ?? "-"}
               </td>
               <td className="px-4 py-3 text-[var(--color-ink-muted)] sm:px-6">{dealSummary(c.rollup)}</td>
               <td className="px-4 py-3 text-right tabular-nums sm:px-6">{eur(c.rollup.openPipelineValue)}</td>
@@ -125,7 +125,7 @@ export function CompanyTable({ companies }: { companies: CompanyRow[] }) {
                 {c.rollup.repeatValue > 0 ? (
                   <span className="text-[var(--color-mint)]">{eur(c.rollup.repeatValue)}</span>
                 ) : (
-                  <span className="text-[var(--color-ink-faint)]">—</span>
+                  <span className="text-[var(--color-ink-faint)]">-</span>
                 )}
               </td>
             </tr>

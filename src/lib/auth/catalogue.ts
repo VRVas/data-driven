@@ -1,13 +1,13 @@
 /**
- * Permission catalogue — the single source of truth for what can be granted.
+ * Permission catalogue - the single source of truth for what can be granted.
  *
  * Deliberately NOT `server-only`: the admin profile editor and the capability
  * helpers render these labels in the browser. It contains no secrets, only the
  * vocabulary.
  *
  * Naming is `resource:action`. A permission is either:
- *  - SCOPED  — answers "over which records?" (none | own | team | all)
- *  - BOOLEAN — a flat capability, held or not (modelled as none | all)
+ *  - SCOPED  - answers "over which records?" (none | own | team | all)
+ *  - BOOLEAN - a flat capability, held or not (modelled as none | all)
  */
 
 export const SCOPES = ["none", "own", "team", "all"] as const;
@@ -43,7 +43,7 @@ export interface PermissionDef {
   label: string;
   /** Scoped permissions expose a none/own/team/all selector; booleans are on/off. */
   scoped: boolean;
-  /** Surfaced in the editor as a warning — irreversible or externally visible. */
+  /** Surfaced in the editor as a warning - irreversible or externally visible. */
   risk?: "high";
   help?: string;
 }
@@ -71,7 +71,7 @@ export const PERMISSIONS = [
   // ---- Outreach -----------------------------------------------------------
   { key: "outreach:read", category: "Outreach", label: "View outreach", scoped: true },
   { key: "outreach:compose", category: "Outreach", label: "Draft outreach", scoped: false },
-  { key: "outreach:approve", category: "Outreach", label: "Approve outreach", scoped: false, help: "Pairs with sending — keep them apart for review." },
+  { key: "outreach:approve", category: "Outreach", label: "Approve outreach", scoped: false, help: "Pairs with sending - keep them apart for review." },
   { key: "outreach:send", category: "Outreach", label: "Send outreach", scoped: true, risk: "high", help: "Leaves the building. Cannot be recalled." },
   { key: "outreach:cancel", category: "Outreach", label: "Cancel outreach", scoped: true },
 
@@ -98,7 +98,7 @@ export const PERMISSIONS = [
   // ---- Team & access ------------------------------------------------------
   { key: "user:read", category: "Team & access", label: "View team members", scoped: false },
   { key: "user:create", category: "Team & access", label: "Create user accounts", scoped: false, risk: "high" },
-  { key: "user:update", category: "Team & access", label: "Edit user details", scoped: false, help: "Name and email only — never permissions." },
+  { key: "user:update", category: "Team & access", label: "Edit user details", scoped: false, help: "Name and email only - never permissions." },
   { key: "user:deactivate", category: "Team & access", label: "Deactivate users", scoped: false, risk: "high" },
   { key: "profile:read", category: "Team & access", label: "View permission profiles", scoped: false },
   { key: "profile:create", category: "Team & access", label: "Create permission profiles", scoped: false, risk: "high" },
@@ -158,7 +158,7 @@ export function permissionsByCategory(): Array<{ category: PermissionCategory; p
 /** A profile's grants. Absent key = not granted (deny by default). */
 export type PermissionMap = Partial<Record<PermissionKey, Scope>>;
 
-/** Grant every permission at full scope — only used for the Administrator profile. */
+/** Grant every permission at full scope - only used for the Administrator profile. */
 export function allPermissions(): PermissionMap {
   return Object.fromEntries(PERMISSION_KEYS.map((k) => [k, "all"])) as PermissionMap;
 }

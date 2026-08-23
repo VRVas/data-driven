@@ -1,7 +1,7 @@
 /** Human-friendly relative time, e.g. "3 hours ago", "in 2 days". */
 export function relativeTime(iso: string, now: number = Date.now()): string {
   const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return "—";
+  if (Number.isNaN(t)) return "-";
   const diff = t - now; // negative = past
   const abs = Math.abs(diff);
   const MIN = 60_000, HR = 60 * MIN, DAY = 24 * HR;

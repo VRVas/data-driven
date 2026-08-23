@@ -226,7 +226,7 @@ function Metrics({ items }: { items: Extract<Block, { type: "metrics" }>["items"
 function TableBlock({ block }: { block: Extract<Block, { type: "table" }> }) {
   const toast = useToast();
   const fmtCell = (v: string | number | null, kind?: string | null) => {
-    if (v == null) return "—";
+    if (v == null) return "-";
     if (kind === "currency" && typeof v === "number") return new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(v);
     if (kind === "percent" && typeof v === "number") return `${Math.round(v)}%`;
     return String(v);
@@ -312,7 +312,7 @@ function LeadCard({ lead }: { lead: LeadCardData }) {
         <div className="min-w-0">
           <div className="truncate font-display font-semibold text-[var(--color-ink)]">{lead.name}</div>
           <div className="mt-0.5 truncate text-xs text-[var(--color-ink-faint)]">
-            {[lead.industry, lead.status].filter(Boolean).join(" · ") || "—"}
+            {[lead.industry, lead.status].filter(Boolean).join(" - ") || "-"}
           </div>
         </div>
         {lead.score != null && (
@@ -362,7 +362,7 @@ function CompanyCard({ company }: { company: Extract<Block, { type: "companyCard
         <div className="min-w-0">
           <div className="truncate font-medium">{company.name}</div>
           <div className="mt-0.5 truncate text-xs text-[var(--color-ink-muted)]">
-            {[company.industry, company.owner].filter(Boolean).join(" · ") || "—"}
+            {[company.industry, company.owner].filter(Boolean).join(" - ") || "-"}
           </div>
         </div>
         {company.repeatValueEur != null && company.repeatValueEur > 0 && (
@@ -374,8 +374,8 @@ function CompanyCard({ company }: { company: Extract<Block, { type: "companyCard
       <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
         {stat("Open deals", String(company.openDealCount ?? 0))}
         {stat("Won", String(company.wonDealCount ?? 0))}
-        {stat("Lifetime", company.lifetimeValueEur != null ? eur0(company.lifetimeValueEur) : "—")}
-        {stat("Repeat", company.repeatValueEur != null ? eur0(company.repeatValueEur) : "—")}
+        {stat("Lifetime", company.lifetimeValueEur != null ? eur0(company.lifetimeValueEur) : "-")}
+        {stat("Repeat", company.repeatValueEur != null ? eur0(company.repeatValueEur) : "-")}
       </div>
     </Link>
   );
@@ -405,7 +405,7 @@ function ScoreBreakdown({ block }: { block: Extract<Block, { type: "scoreBreakdo
         <div>
           <div className="font-medium">{block.name}</div>
           <div className="mt-0.5 text-xs text-[var(--color-ink-muted)]">
-            {[block.grade ? `grade ${block.grade}` : null, block.quadrant].filter(Boolean).join(" · ")}
+            {[block.grade ? `grade ${block.grade}` : null, block.quadrant].filter(Boolean).join(" - ")}
           </div>
         </div>
         <div className="text-right">
@@ -426,7 +426,7 @@ function ScoreBreakdown({ block }: { block: Extract<Block, { type: "scoreBreakdo
 
       {(block.ease != null || block.expectedValueEur != null) && (
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--color-border)] pt-3 text-xs text-[var(--color-ink-muted)]">
-          {block.ease != null && <span>Ease {Math.round(block.ease)} — reported, never blended in</span>}
+          {block.ease != null && <span>Ease {Math.round(block.ease)} - reported, never blended in</span>}
           {block.expectedValueEur != null && <span className="tabular-nums">Expected value {eur0(block.expectedValueEur)}</span>}
         </div>
       )}
@@ -435,7 +435,7 @@ function ScoreBreakdown({ block }: { block: Extract<Block, { type: "scoreBreakdo
         <ul className="mt-3 space-y-1 text-xs text-[var(--color-ink-muted)]">
           {block.drivers.map((d, i) => (
             <li key={i}>
-              <span className="text-[var(--color-ink)]">{d.label}</span> — {d.detail}
+              <span className="text-[var(--color-ink)]">{d.label}</span> - {d.detail}
             </li>
           ))}
         </ul>

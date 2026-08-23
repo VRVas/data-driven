@@ -4,7 +4,7 @@ import { test, expect } from "./fixtures";
 import { STORAGE_STATE } from "./constants";
 
 /**
- * UI AUDIT harness — captures an abundant set of full-page screenshots across a
+ * UI AUDIT harness - captures an abundant set of full-page screenshots across a
  * wide viewport matrix and every route, for a self-driven responsive + bug pass.
  * Run explicitly:  npx playwright test audit.spec.ts
  * Output:          e2e-artifacts/audit/<route>__<viewport>.png
@@ -56,7 +56,7 @@ async function capture(page: import("@playwright/test").Page, slug: string, vp: 
   await page.screenshot({ path: path.join(AUDIT_DIR, `${slug}__${vp}.png`), fullPage: true });
 }
 
-test.describe("audit — public", () => {
+test.describe("audit - public", () => {
   for (const route of PUBLIC_ROUTES) {
     for (const vp of VIEWPORTS) {
       test(`${route.slug} @ ${vp.name}`, async ({ page }) => {
@@ -69,7 +69,7 @@ test.describe("audit — public", () => {
   }
 });
 
-test.describe("audit — dashboard", () => {
+test.describe("audit - dashboard", () => {
   test.use({ storageState: STORAGE_STATE });
 
   for (const route of DASHBOARD_ROUTES) {

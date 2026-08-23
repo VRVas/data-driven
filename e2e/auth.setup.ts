@@ -2,7 +2,7 @@ import { test as setup } from "@playwright/test";
 import { STORAGE_STATE } from "./constants";
 import { login } from "./helpers";
 
-// Every route the suite touches — warmed once here (authenticated, sequential)
+// Every route the suite touches - warmed once here (authenticated, sequential)
 // so `next dev` compiles them ahead of time instead of in a burst mid-test.
 const ROUTES = [
   "/",
@@ -31,7 +31,7 @@ setup("authenticate", async ({ page }) => {
   await page.context().storageState({ path: STORAGE_STATE });
 
   // Pre-compile every route via lightweight HTTP requests (the browser context's
-  // session cookie rides along, so protected pages compile too) — no renderer,
+  // session cookie rides along, so protected pages compile too) - no renderer,
   // so this warms `next dev` without the memory cost of rendering each page.
   for (const route of ROUTES) {
     await page.request.get(route).catch(() => undefined);

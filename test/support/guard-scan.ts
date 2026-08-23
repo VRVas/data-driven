@@ -5,7 +5,7 @@ import { isPermissionKey } from "@/lib/auth/catalogue";
  *
  * Server actions and route handlers are both POST endpoints with no page in
  * front of them, so both need proving rather than trusting. There is no
- * TypeScript parser available here, so the analysis is textual — but only
+ * TypeScript parser available here, so the analysis is textual - but only
  * after comments, strings, template text and regex literals have been blanked
  * out, so a brace or the word "requirePermission" inside any of them cannot be
  * mistaken for code. Anything the scanner cannot delimit is reported as a
@@ -70,7 +70,7 @@ export function maskLiterals(source: string): string {
 
   /**
    * Walks code, masking as it goes. With `stopAtBrace`, returns the index of the
-   * first `}` that closes something it did not open — how a `${...}` ends.
+   * first `}` that closes something it did not open - how a `${...}` ends.
    */
   const scanCode = (start: number, stopAtBrace: boolean): number => {
     let i = start;
@@ -215,7 +215,7 @@ function trimSpan(s: Span): Span {
 
 export interface ScannedAction {
   name: string;
-  /** null when the scanner could not delimit the body — reported, never passed. */
+  /** null when the scanner could not delimit the body - reported, never passed. */
   body: Span | null;
 }
 
@@ -395,7 +395,7 @@ export function guardViolations(
     if (exempt.has(action.name)) continue;
 
     if (!action.body) {
-      problems.push(`${where} could not be read by the guard scanner — it refuses to assume the action is safe`);
+      problems.push(`${where} could not be read by the guard scanner - it refuses to assume the action is safe`);
       continue;
     }
 
@@ -407,12 +407,12 @@ export function guardViolations(
 
     for (const guard of guards) {
       if (guard.kind === "unawaited") {
-        problems.push(`${where} calls ${called}(${guard.text}) without awaiting it — the guard cannot block the call`);
+        problems.push(`${where} calls ${called}(${guard.text}) without awaiting it - the guard cannot block the call`);
       } else if (guard.kind === "unverifiable") {
-        problems.push(`${where} calls ${called}(${guard.text}) with a permission that is not a literal — it cannot be checked against the catalogue`);
+        problems.push(`${where} calls ${called}(${guard.text}) with a permission that is not a literal - it cannot be checked against the catalogue`);
       } else if (guard.kind === "unknown-key") {
         const bogus = guard.permissions.filter((p) => !isPermissionKey(p));
-        problems.push(`${where} guards with ${called}("${bogus.join('", "')}") — not in the permission catalogue`);
+        problems.push(`${where} guards with ${called}("${bogus.join('", "')}") - not in the permission catalogue`);
       }
     }
   }

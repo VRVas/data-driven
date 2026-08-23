@@ -112,7 +112,7 @@ export function AssignAccessDrawer({
 
           {person.isSelf && (
             <p className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-xs text-[var(--color-ink-faint)]">
-              You can&apos;t change your own access — ask another administrator.
+              You can&apos;t change your own access - ask another administrator.
             </p>
           )}
 
@@ -323,7 +323,7 @@ function ProfileChecklist({
         Permission profiles<span className="text-[var(--color-rose)]"> *</span>
       </legend>
       <p className="mb-2 text-xs text-[var(--color-ink-faint)]">
-        Grants add up — someone holding two profiles gets the stronger of the two.
+        Grants add up - someone holding two profiles gets the stronger of the two.
       </p>
       <div className="space-y-2">
         {profiles.map((profile) => (

@@ -4,12 +4,12 @@ import "server-only";
  * Email delivery behind a provider seam.
  *
  *  - Local dev / no cloud: `LocalOutboxProvider` captures the message (the
- *    outreach store is the outbox) and reports success — nothing leaves the box.
+ *    outreach store is the outbox) and reports success - nothing leaves the box.
  *  - Production: `AcsEmailProvider` sends via Azure Communication Services.
  *    Prefers managed identity (ACS_ENDPOINT + DefaultAzureCredential, keyless /
  *    MCAPS-friendly); falls back to ACS_CONNECTION_STRING when provided.
  *
- * Switching is automatic based on env — the rest of the app never changes.
+ * Switching is automatic based on env - the rest of the app never changes.
  */
 export interface EmailMessage {
   to: string;
@@ -33,7 +33,7 @@ export interface EmailProvider {
 class LocalOutboxProvider implements EmailProvider {
   readonly name = "local-outbox";
   async send(msg: EmailMessage): Promise<SendResult> {
-    // No real delivery — the outreach record IS the outbox entry.
+    // No real delivery - the outreach record IS the outbox entry.
     return { ok: true, provider: this.name, messageId: `outbox-${Date.now().toString(36)}` };
   }
 }

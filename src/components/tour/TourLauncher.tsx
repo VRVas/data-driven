@@ -8,7 +8,7 @@ export function TourLauncher() {
   return (
     <button
       onClick={start}
-      title="Tutorial — take the tour"
+      title="Tutorial - take the tour"
       aria-label="Start the tutorial"
       data-tour="launcher"
       className="hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"

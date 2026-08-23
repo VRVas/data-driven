@@ -15,7 +15,7 @@ import "server-only";
  *  - https://learn.microsoft.com/azure/foundry/agents/how-to/memory-usage
  *
  * Local dev uses a no-op; the Foundry implementation activates when
- * FOUNDRY_MEMORY_STORE_ID is set (wired on deploy — the preview API is not
+ * FOUNDRY_MEMORY_STORE_ID is set (wired on deploy - the preview API is not
  * exercised offline).
  */
 export interface MemoryContext {
@@ -44,7 +44,7 @@ class FoundryMemory implements CopilotMemory {
 
   async recall(_userId: string): Promise<MemoryContext> {
     // TODO(deploy): retrieve user-profile memories (scope=user) from the Memory
-    // Store and map them to profile[]. Preview API — wired at deploy time.
+    // Store and map them to profile[]. Preview API - wired at deploy time.
     return { profile: [] };
   }
 

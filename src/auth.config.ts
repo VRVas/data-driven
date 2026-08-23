@@ -3,7 +3,7 @@ import type { UserRole } from "@/lib/auth/roles";
 
 /**
  * Edge-safe auth config (no DB / bcrypt imports) so it can run in middleware.
- * The Credentials provider lives in ./auth.ts (Node runtime) — this is the
+ * The Credentials provider lives in ./auth.ts (Node runtime) - this is the
  * documented NextAuth v5 "split config" pattern for credentials + middleware.
  */
 export const authConfig = {

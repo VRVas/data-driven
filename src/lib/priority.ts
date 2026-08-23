@@ -3,9 +3,9 @@ import { monthsBetween } from "./time";
 import type { Brand, BrandStatus } from "./types";
 
 /**
- * Priority — the two-axis replacement for the single averaged lead score.
+ * Priority - the two-axis replacement for the single averaged lead score.
  *
- * The old score averaged six 0–5 rubric numbers, which made budget worth
+ * The old score averaged six 0-5 rubric numbers, which made budget worth
  * 0.55/3 = 18.3% of the result: €80,000 of revenue counted for about six
  * points of brand-message alignment, and a €0 project could average its way to
  * third place. Averaging also let a strong axis paper over a fatal one.
@@ -15,12 +15,12 @@ import type { Brand, BrandStatus } from "./types";
  *
  *   OI  what is this worth       money, plus capped strategic value
  *   WI  will it actually close   stage, freshness, reachability, receptivity
- *   EI  what will it cost to run — reported, deliberately NEVER blended
+ *   EI  what will it cost to run - reported, deliberately NEVER blended
  *
- * `priority = round(sqrt(OI * WI))` — a geometric mean, so weakness on one
+ * `priority = round(sqrt(OI * WI))` - a geometric mean, so weakness on one
  * axis cannot be averaged away by strength on the other. A zero opportunity is
  * fatal outright, which is precisely the €0 case. Winnability cannot reach
- * zero, because its recency term is floored at a quarter — so an unwinnable
+ * zero, because its recency term is floored at a quarter - so an unwinnable
  * deal bottoms out near 6 and crushes the priority rather than nulling it,
  * which is right: a large deal going nowhere is still worth a glance.
  *
@@ -44,7 +44,7 @@ export const CONFIDENCE: Record<"Confirmed" | "Estimated" | "unstated", number> 
 export const RECENCY_HALF_LIFE_MONTHS = 6;
 export const RECENCY_FLOOR = 0.25;
 
-/** Normalising WI's stage term by the strongest *open* stage puts it on 0–1. */
+/** Normalising WI's stage term by the strongest *open* stage puts it on 0-1. */
 const OPEN_STAGE_MAX = STAGE_PROBABILITY.Recurring;
 
 export const PURSUE_OI = 35;
@@ -128,7 +128,7 @@ export function quadrantFor(opportunity: number, winnability: number): PriorityQ
   return winnability >= PURSUE_WI ? "Quick win" : "Park";
 }
 
-/** Null when the lead has never been scored — there is nothing to rank. */
+/** Null when the lead has never been scored - there is nothing to rank. */
 export function priorityOf(brand: Brand, now: Date = new Date()): PriorityBreakdown | null {
   const s = brand.scores;
   if (!s) return null;

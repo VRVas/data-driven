@@ -13,7 +13,7 @@ import { OTP_TTL_MINUTES, RESET_TTL_MINUTES } from "@/lib/auth/challenge";
 
 function devDeliver(label: string, to: string, value: string): void {
   if (process.env.NODE_ENV === "production") return;
-  console.info(`\n  [dev] ${label} for ${to}: ${value}\n  (no ACS configured — set ACS_ENDPOINT + ACS_SENDER_ADDRESS to send real mail)\n`);
+  console.info(`\n  [dev] ${label} for ${to}: ${value}\n  (no ACS configured - set ACS_ENDPOINT + ACS_SENDER_ADDRESS to send real mail)\n`);
 }
 
 export interface DeliveryResult {
@@ -38,7 +38,7 @@ export async function sendLoginCode(to: string, name: string, code: string): Pro
       `Your sign-in code is ${code}`,
       "",
       `It expires in ${OTP_TTL_MINUTES} minutes and can be used once.`,
-      "If you did not ask to sign in, you can ignore this — nobody can get in without the code.",
+      "If you did not ask to sign in, you can ignore this - nobody can get in without the code.",
     ].join("\n"),
   });
   return { ok: res.ok, error: res.error };
@@ -60,7 +60,7 @@ export async function sendResetLink(to: string, name: string, url: string): Prom
       url,
       "",
       `The link expires in ${RESET_TTL_MINUTES} minutes and works once.`,
-      "If you did not ask for this, ignore it — your password has not changed.",
+      "If you did not ask for this, ignore it - your password has not changed.",
     ].join("\n"),
   });
   return { ok: res.ok, error: res.error };

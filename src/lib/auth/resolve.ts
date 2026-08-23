@@ -19,7 +19,7 @@ export interface AuthzContext {
   user: SessionUser;
   effective: EffectivePermissions;
   superuser: boolean;
-  /** Profiles the user currently holds — used to stop self-escalation via editing. */
+  /** Profiles the user currently holds - used to stop self-escalation via editing. */
   profileIds: string[];
   /** Reserved for team-scoped grants; empty until teams exist. */
   teamIds: string[];
@@ -79,7 +79,7 @@ async function resolveForUser(user: SessionUser): Promise<AuthzContext> {
     const stored = await getUserStore().findById(user.id);
     assignment = stored?.assignment ?? assignmentForLegacyRole(stored?.role ?? user.role);
   } catch {
-    // Store unreachable — fall back to the session's own role rather than denying.
+    // Store unreachable - fall back to the session's own role rather than denying.
     assignment = assignmentForLegacyRole(user.role);
   }
 

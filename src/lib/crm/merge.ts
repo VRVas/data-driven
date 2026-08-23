@@ -13,7 +13,7 @@ import type { Authorized } from "@/lib/auth/authorize";
  * unlink.
  *
  * The screens and the copilot both offer this, and the authorisation rule is
- * the part that must not be reimplemented — see below.
+ * the part that must not be reimplemented - see below.
  */
 export interface MergeResult {
   sourceName: string;

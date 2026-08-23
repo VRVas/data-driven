@@ -1,5 +1,5 @@
 /**
- * CRM entities — Company → Deal → Proposal.
+ * CRM entities - Company → Deal → Proposal.
  *
  * The flat `Brand` record conflated three things: the company we sell to, the
  * engagement we're running, and the commercial terms of that engagement. One
@@ -55,7 +55,7 @@ export interface CompanyRollup {
   weightedPipelineValue: number;
   /** Total won across every deal, ever. */
   lifetimeValue: number;
-  /** Won value beyond the first deal — what the relationship earned us after landing it. */
+  /** Won value beyond the first deal - what the relationship earned us after landing it. */
   repeatValue: number;
   dealWinRate: number | null;
   firstWonAt: string | null;
@@ -99,7 +99,7 @@ export type DealStage =
 export type DealOutcome = "open" | "won" | "lost";
 
 /**
- * `Recurring` was a pipeline status nobody could use — a company can't be
+ * `Recurring` was a pipeline status nobody could use - a company can't be
  * simultaneously "Advanced" on a new deal and "Recurring" from an old one. As a
  * deal type it finally does the job: repeat business per company.
  */
@@ -118,7 +118,7 @@ export interface DealEconomics {
 
 export interface Deal extends CrmBase {
   type: "deal";
-  /** The old Brand.id — this is what keeps /dashboard/pipeline/{id} alive. */
+  /** The old Brand.id - this is what keeps /dashboard/pipeline/{id} alive. */
   id: string;
   /** Denormalised so a pipeline row renders without a second read. */
   companyName: string;
@@ -129,7 +129,7 @@ export interface Deal extends CrmBase {
   priority: Priority | null;
   /** Display name of the owner, as imported. */
   owner: string | null;
-  /** User id — what record-level `own`/`team` scopes actually match on. */
+  /** User id - what record-level `own`/`team` scopes actually match on. */
   ownerId: string | null;
   poc: string | null;
   email: string | null;
@@ -174,7 +174,7 @@ export interface Proposal extends CrmBase {
   createdByName: string | null;
 }
 
-/** Awaiting a decision — the set that sums to "out for greenlight". */
+/** Awaiting a decision - the set that sums to "out for greenlight". */
 export const AWAITING_DECISION: readonly ProposalStatus[] = ["sent"];
 
 export type CrmDoc = Company | Deal | Proposal;

@@ -8,7 +8,7 @@ const LABEL: Record<ValueBasis, string> = {
 };
 
 const EXPLAIN: Record<ValueBasis, string> = {
-  accepted: "From the accepted proposal — the client agreed to this figure.",
+  accepted: "From the accepted proposal - the client agreed to this figure.",
   quoted: "From the proposal currently with the client, awaiting a decision.",
   estimate: "The figure typed when the lead opened. No proposal has been sent yet.",
   none: "Nobody has put a figure on this deal.",

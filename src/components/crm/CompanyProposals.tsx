@@ -6,7 +6,7 @@ import { ProposalStatusPill } from "@/components/crm/ProposalStatusPill";
 import { eur } from "@/lib/scoring";
 import type { Proposal } from "@/lib/crm/types";
 
-const day = (v: string | null): string => (v ? v.slice(0, 10) : "—");
+const day = (v: string | null): string => (v ? v.slice(0, 10) : "-");
 
 export function CompanyProposals({
   proposals,
@@ -81,7 +81,7 @@ export function CompanyProposals({
                   <td className="px-4 py-3 sm:px-6">
                     <div className="font-medium">{dealNames.get(p.dealId) ?? p.dealId}</div>
                     <div className="mt-0.5 font-mono text-[11px] text-[var(--color-ink-faint)] sm:hidden">
-                      v{p.revision} · {day(p.sentAt)}
+                      v{p.revision} - {day(p.sentAt)}
                     </div>
                   </td>
                   <td className="hidden px-4 py-3 font-mono text-xs text-[var(--color-ink-muted)] sm:table-cell sm:px-6">

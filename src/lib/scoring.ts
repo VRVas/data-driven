@@ -3,7 +3,7 @@ import { outcomeOf } from "./lifecycle";
 import { monthsBetween } from "./time";
 
 /* ------------------------------------------------------------------ */
-/*  Scoring model — reverse-engineered from the workbook's formulas    */
+/*  Scoring model - reverse-engineered from the workbook's formulas    */
 /*  and rubric comments, re-implemented so the platform (not Excel)    */
 /*  is the source of truth.                                            */
 /* ------------------------------------------------------------------ */
@@ -15,7 +15,7 @@ export function tempoScore(months: number): number {
   return clamp((10 - (months * 10) / 8) / 2);
 }
 
-/** Budget 0–80k€ mapped to 0–5 (1–16k => 0.5, cap at 80k => 5). */
+/** Budget 0-80k€ mapped to 0-5 (1-16k => 0.5, cap at 80k => 5). */
 export function budgetScore(budget: number): number {
   const raw = budget >= 1 && budget <= 15999 ? 1 : (10 * budget) / 80000;
   return clamp(raw / 2);
@@ -40,7 +40,7 @@ export function easeOfAccess(s: {
 }
 
 /**
- * How long the deal takes — estimated while it runs, measured once it ends.
+ * How long the deal takes - estimated while it runs, measured once it ends.
  *
  * Tempo used to mean "months since last contact", which conflated how long a
  * deal takes with how long we have ignored it. It now means duration: the
@@ -81,7 +81,7 @@ export function effectiveScores(brand: Brand): BrandScores | undefined {
   return next;
 }
 
-/** Composite lead score (0–5) blending value-efficiency and access. */
+/** Composite lead score (0-5) blending value-efficiency and access. */
 export function leadScore(brand: Brand): number | null {
   const s = effectiveScores(brand);
   if (!s || s.economicalEfficiency == null || s.easeOfAccess == null) return null;
@@ -130,7 +130,7 @@ export const STATUS_TOKEN: Record<BrandStatus, string> = {
 
 const PRIORITY_ORDER: readonly Priority[] = ["Cold Lead", "Warm Lead", "Hot Lead"];
 
-/** Colour ramp aligned to PRIORITY_ORDER — green = act now, red = cold. Reverse this line to flip to hot = red. */
+/** Colour ramp aligned to PRIORITY_ORDER - green = act now, red = cold. Reverse this line to flip to hot = red. */
 const PRIORITY_RAMP: readonly string[] = ["var(--color-rose)", "var(--color-amber)", "var(--color-mint)"];
 
 export const PRIORITY_TOKEN: Record<Priority, string> = Object.fromEntries(

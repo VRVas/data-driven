@@ -1,5 +1,5 @@
 /**
- * Pure CRM logic — no I/O, so every rule here is unit-testable.
+ * Pure CRM logic - no I/O, so every rule here is unit-testable.
  */
 import type {
   Company,
@@ -41,12 +41,12 @@ export function companyNameKey(name: string): string {
 }
 
 /**
- * The leading word of a company name — a deliberately loose grouping signal.
+ * The leading word of a company name - a deliberately loose grouping signal.
  *
  * Exact key matching is useless here: the real cases ("Generali - Taverna" and
  * "Generali Bank") never match exactly, so nothing would ever be suggested.
  * This casts a wider net on purpose and WILL pair genuinely different clients
- * (Qatar Airways / Qatar Museums). That is the intended trade — it surfaces a
+ * (Qatar Airways / Qatar Museums). That is the intended trade - it surfaces a
  * question for a human, never an answer.
  */
 export function companyRoot(name: string): string {
@@ -118,7 +118,7 @@ export function currentProposals(proposals: Proposal[]): Proposal[] {
 }
 
 /**
- * Value sent to clients that nobody has answered yet — the "waiting for
+ * Value sent to clients that nobody has answered yet - the "waiting for
  * greenlight" figure.
  *
  * The newest revision is chosen before the status is read, not after: picking
@@ -132,7 +132,7 @@ export function awaitingDecisionValue(proposals: Proposal[]): number {
 }
 
 /**
- * Decided proposals only — an honest win rate, not a stage-based guess.
+ * Decided proposals only - an honest win rate, not a stage-based guess.
  *
  * One vote per deal, decided by its most recent accept/reject. Counting every
  * revision separately scores a deal that was re-quoted twice and finally won
@@ -153,8 +153,8 @@ export function proposalWinRate(proposals: Proposal[]): number | null {
 /**
  * Where a deal's commercial figure came from, strongest evidence first.
  *
- * `accepted` the client agreed to pay it · `quoted` we have asked for it and
- * are waiting · `estimate` somebody typed it when the lead opened · `none`
+ * `accepted` the client agreed to pay it - `quoted` we have asked for it and
+ * are waiting - `estimate` somebody typed it when the lead opened - `none`
  * nobody has said.
  */
 export type ValueBasis = "accepted" | "quoted" | "estimate" | "none";

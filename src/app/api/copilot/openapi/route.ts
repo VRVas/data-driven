@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * `x-api-key` header backed by COPILOT_API_KEY).
  *
  * Gated on the same credential as the tools it describes: the document is a
- * map of the internal API — every tool name, argument and description — and
+ * map of the internal API - every tool name, argument and description - and
  * publishing that to anonymous callers hands a prospective attacker the
  * reconnaissance step for free.
  */

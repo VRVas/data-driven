@@ -28,7 +28,7 @@ export function blankScores(brand: Brand): BrandScores {
   };
 }
 
-/** The four judgements a person makes about a lead, each 0–5. */
+/** The four judgements a person makes about a lead, each 0-5. */
 export interface Rubric {
   customizationScore: number | null;
   accessibilityScore: number | null;

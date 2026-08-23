@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Landing hero — the platform's showcase moment.
+ * Landing hero - the platform's showcase moment.
  *
  * A mono eyebrow, an oversized display headline whose characters resolve out of
  * a blurred spotlight (from the centre outward), a word-by-word subhead, and
- * the magnetic gradient CTA — all over a living aurora + particle canvas.
+ * the magnetic gradient CTA - all over a living aurora + particle canvas.
  * Reduced-motion users get the finished frame with no animation.
  */
 import { useRef } from "react";
@@ -34,7 +34,7 @@ export function Hero({ leadCount }: Props) {
       }
 
       // "words,chars" so characters animate individually but lines still break
-      // between words — chars alone wrapped mid-word ("t / urned").
+      // between words - chars alone wrapped mid-word ("t / urned").
       const chars = new SplitText(headline.current, { type: "words,chars", charsClass: "hero-char" });
       const words = new SplitText(sub.current, { type: "words", wordsClass: "hero-word" });
 
@@ -43,7 +43,7 @@ export function Hero({ leadCount }: Props) {
       // Put the original markup back once the animation is done. The split
       // leaves every character in its own span carrying a residual filter, and
       // a filtered child paints in its own layer, so the headline's
-      // background-clip:text gradient never reached those glyphs — "operating
+      // background-clip:text gradient never reached those glyphs - "operating
       // system." rendered fully transparent.
       let restored = false;
       const restore = () => {
@@ -107,7 +107,7 @@ export function Hero({ leadCount }: Props) {
             className="inline-block h-1.5 w-1.5 rounded-full"
             style={{ background: "var(--color-mint-burst)", boxShadow: "0 0 8px 1px var(--color-mint-burst)" }}
           />
-          OOVIE Studios · Business Development
+          OOVIE Studios - Business Development
         </p>
 
         <h1
@@ -125,7 +125,7 @@ export function Hero({ leadCount }: Props) {
           style={{ fontSize: "clamp(16px, 1.4vw, 20px)", lineHeight: 1.5 }}
         >
           A static spreadsheet held {leadCount} leads, a hidden scoring engine and a full sales
-          playbook. We turned it into a living, interactive intelligence platform — scored,
+          playbook. We turned it into a living, interactive intelligence platform - scored,
           segmented and ready to act on.
         </p>
 

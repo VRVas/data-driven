@@ -9,7 +9,7 @@ import { valuationToken } from "@/lib/scoring";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger, useGSAP);
 
-/** Map a 0–5 score to a heat colour (rose → amber → mint). */
+/** Map a 0-5 score to a heat colour (rose → amber → mint). */
 function heat(v: number | null): string {
   if (v == null) return "var(--color-surface)";
   const t = Math.max(0, Math.min(1, v / 5));
@@ -77,13 +77,13 @@ export function IndustryHeatmap({ industries }: { industries: IndustryStat[] }) 
                   bg = heat(raw);
                   text = raw.toFixed(2);
                 } else if (c.kind === "pct" && typeof raw === "number") {
-                  bg = heat(raw * 25); // 0–0.2 -> spread across scale
+                  bg = heat(raw * 25); // 0-0.2 -> spread across scale
                   text = `${(raw * 100).toFixed(1)}%`;
                 } else if (c.kind === "num" && typeof raw === "number") {
                   text = String(raw);
                 } else if (c.kind === "val") {
                   bg = valuationToken(raw as "High" | "Medium" | "Low" | null);
-                  text = (raw as string) ?? "—";
+                  text = (raw as string) ?? "-";
                 }
                 const dark = c.kind === "val";
                 return (
@@ -97,7 +97,7 @@ export function IndustryHeatmap({ industries }: { industries: IndustryStat[] }) 
                         border: dark ? `1px solid color-mix(in srgb, ${bg} 40%, transparent)` : "none",
                       }}
                     >
-                      {text || "—"}
+                      {text || "-"}
                     </span>
                   </td>
                 );

@@ -111,7 +111,7 @@ describe("effectiveScores", () => {
     expect(s.economicalEfficiency).toBeCloseTo((2.5 + 3 + tempoScore(8)) / 3, 6);
   });
 
-  it("leaves ease of access alone — tempo only feeds the economic axis", () => {
+  it("leaves ease of access alone - tempo only feeds the economic axis", () => {
     const s = effectiveScores(scored({ expectedMonths: 8 }))!;
     expect(s.easeOfAccess).toBe(3);
   });

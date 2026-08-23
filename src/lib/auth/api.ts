@@ -34,7 +34,7 @@ export async function apiPermission(
 /**
  * Compare a presented API key against the configured one without leaking its
  * contents through timing. Both sides are hashed first so the comparison is
- * over equal-length buffers — `timingSafeEqual` throws on a length mismatch,
+ * over equal-length buffers - `timingSafeEqual` throws on a length mismatch,
  * and the length of a secret is itself worth hiding.
  */
 export function apiKeyMatches(presented: string | null | undefined, expected: string | undefined): boolean {

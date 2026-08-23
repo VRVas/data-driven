@@ -37,7 +37,7 @@ export function MergeCompanies({ companies }: { companies: MergeChoice[] }) {
             onChange={(e) => setSourceId(e.target.value)}
             className="auth-input"
           >
-            <option value="">— pick a company —</option>
+            <option value="">- pick a company -</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name} ({c.dealCount})
@@ -56,7 +56,7 @@ export function MergeCompanies({ companies }: { companies: MergeChoice[] }) {
             onChange={(e) => setTargetId(e.target.value)}
             className="auth-input"
           >
-            <option value="">— pick a company —</option>
+            <option value="">- pick a company -</option>
             {companies.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.name} ({c.dealCount})

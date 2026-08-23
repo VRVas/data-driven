@@ -20,7 +20,7 @@ export interface DocRegistryStore {
 const empty = (userId: string): DocRegistry => ({ userId, vectorStoreId: null, files: [] });
 
 // --------------------------------------------------------------------------
-// Local file store (development) — .data/documents.json keyed by userId.
+// Local file store (development) - .data/documents.json keyed by userId.
 // --------------------------------------------------------------------------
 const DATA_DIR = path.join(process.cwd(), ".data");
 const FILE = path.join(DATA_DIR, "documents.json");
@@ -63,7 +63,7 @@ class LocalDocRegistryStore implements DocRegistryStore {
 }
 
 // --------------------------------------------------------------------------
-// Cosmos DB store (production) — container "documents", partition key /userId.
+// Cosmos DB store (production) - container "documents", partition key /userId.
 // --------------------------------------------------------------------------
 class CosmosDocRegistryStore implements DocRegistryStore {
   private container() {

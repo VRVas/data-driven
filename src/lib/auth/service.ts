@@ -8,7 +8,7 @@ import type { SessionUser } from "./guards";
 import type { AuthzContext } from "./resolve";
 
 /**
- * The identity behind the shared COPILOT_API_KEY — the Foundry agent asking
+ * The identity behind the shared COPILOT_API_KEY - the Foundry agent asking
  * questions about the pipeline over the OpenAPI channel.
  *
  * It is a fixed, code-defined principal rather than a row in the user store:
@@ -71,7 +71,7 @@ export function copilotServicePrincipal(): AuthzContext {
  * Who is calling the copilot API, or null if nobody proved anything.
  *
  * The session is tried first so a signed-in caller is judged as themselves
- * even if they also send the shared key — otherwise anyone holding it could
+ * even if they also send the shared key - otherwise anyone holding it could
  * launder their own actions through the service identity.
  */
 export async function copilotCaller(apiKeyHeader: string | null): Promise<AuthzContext | null> {

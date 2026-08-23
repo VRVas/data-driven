@@ -2,7 +2,7 @@
 // The production Cosmos DB is private (VNet-only), so it can only be seeded
 // from inside the app. On boot we trigger the store's idempotent first-run
 // seed so a freshly provisioned database shows the baseline dataset from the
-// sheet immediately — no login required.
+// sheet immediately - no login required.
 //
 // The node-only work is kept inside the `NEXT_RUNTIME === "nodejs"` guard so
 // the store's `node:fs`/`node:path` imports are dead-code-eliminated from the

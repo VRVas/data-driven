@@ -150,7 +150,7 @@ describe("seeded profiles", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Record gates — the half of authorization that says "this row", not "a row"
+// Record gates - the half of authorization that says "this row", not "a row"
 // ---------------------------------------------------------------------------
 
 const context = (over: Partial<AuthzContext> = {}): AuthzContext => ({

@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { STORAGE_STATE } from "./constants";
 
 // Full motion on purpose. The rest of the suite runs reduced-motion, which
-// skips these animations entirely — so under the shared fixture these tests
+// skips these animations entirely - so under the shared fixture these tests
 // would pass whether or not the charts are broken.
 test.use({ storageState: STORAGE_STATE, reducedMotion: "no-preference" });
 

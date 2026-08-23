@@ -6,7 +6,7 @@ import { LoginCodeForm } from "@/components/LoginCodeForm";
 import { requestLoginCode } from "@/app/actions/auth";
 import { otpLoginEnabled } from "@/lib/auth/challenge";
 
-export const metadata: Metadata = { title: "Sign in with a code · OOVIE" };
+export const metadata: Metadata = { title: "Sign in with a code - OOVIE" };
 
 export default async function LoginCodePage({
   searchParams,
@@ -28,7 +28,7 @@ export default async function LoginCodePage({
           <Link href="/login/code" className="text-[var(--color-brand-bright)] hover:underline">
             Use a different address
           </Link>
-          {" · "}
+          {" - "}
           <Link href="/login" className="text-[var(--color-brand-bright)] hover:underline">
             Use a password
           </Link>
@@ -41,7 +41,7 @@ export default async function LoginCodePage({
     <div>
       <h1 className="font-display text-2xl font-semibold tracking-tight">Sign in with a code</h1>
       <p className="mt-1.5 mb-8 text-sm text-[var(--color-ink-muted)]">
-        No password needed — we&apos;ll email you a six-digit code.
+        No password needed - we&apos;ll email you a six-digit code.
       </p>
       <AccountActionForm
         action={requestLoginCode}

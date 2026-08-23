@@ -6,7 +6,7 @@ import { ProfileEditor } from "@/components/access/ProfileEditor";
 import { PERMISSION_KEYS } from "@/lib/auth/catalogue";
 import { type Profile } from "@/lib/auth/profiles";
 
-/** undefined = closed · profile null + duplicateOf null = creating from scratch */
+/** undefined = closed - profile null + duplicateOf null = creating from scratch */
 type Drawer = { profile: Profile | null; duplicateOf: Profile | null };
 
 export function ProfilesSection({
@@ -29,7 +29,7 @@ export function ProfilesSection({
           <div className="eyebrow mb-1">Permissions</div>
           <h2 className="font-display text-xl font-semibold tracking-tight">Permission profiles</h2>
           <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-            Reusable bundles of grants. Built-in profiles are fixed — duplicate one to make it yours.
+            Reusable bundles of grants. Built-in profiles are fixed - duplicate one to make it yours.
           </p>
         </div>
         {canCreate && (
@@ -64,7 +64,7 @@ export function ProfilesSection({
 
               <p className="mt-3 text-xs text-[var(--color-ink-faint)]">
                 {profile.superuser
-                  ? "Unrestricted — bypasses every permission check"
+                  ? "Unrestricted - bypasses every permission check"
                   : `${granted} of ${PERMISSION_KEYS.length} permissions granted`}
               </p>
 
@@ -75,7 +75,7 @@ export function ProfilesSection({
                   disabled={profile.system || !canUpdate}
                   title={
                     profile.system
-                      ? "Built-in profiles can't be edited — duplicate one instead."
+                      ? "Built-in profiles can't be edited - duplicate one instead."
                       : canUpdate
                         ? undefined
                         : "You don't have permission to edit profiles."

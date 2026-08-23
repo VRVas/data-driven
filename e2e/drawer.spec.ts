@@ -8,12 +8,12 @@ import { STORAGE_STATE } from "./constants";
  * `transform: matrix(1,0,0,1,0,0)` on its wrapper (ScrollSmoother does the same
  * to `#smooth-content`). A non-`none` transform makes that wrapper the
  * containing block for any `position: fixed` descendant, so a drawer rendered
- * inline gets trapped inside the wrapper's box — on the lead-detail page the
+ * inline gets trapped inside the wrapper's box - on the lead-detail page the
  * `Reveal` only wraps a short header, which squeezed the drawer into a thin
  * band. `OverlayPortal` fixes it by portaling overlays to <body>.
  *
  * WHY MOTION MUST BE ON: under reduced motion `Reveal` skips the tween, no
- * inline transform is ever written, and the bug simply cannot reproduce — so
+ * inline transform is ever written, and the bug simply cannot reproduce - so
  * this spec opts back into full GSAP motion and must NOT be switched to
  * `./fixtures`, which forces `prefers-reduced-motion: reduce` on every page.
  */
@@ -24,7 +24,7 @@ test.use({
   reducedMotion: "no-preference",
 });
 
-/** `z-[100]` is an arbitrary-value Tailwind class — the brackets need CSS escaping. */
+/** `z-[100]` is an arbitrary-value Tailwind class - the brackets need CSS escaping. */
 const DRAWER = "div.fixed.inset-0.z-\\[100\\]";
 const TOL = 2;
 
@@ -100,7 +100,7 @@ test.describe("overlay drawers escape transformed ancestors", () => {
 
     await trigger.click();
     await expectPortaledFullScreenDrawer(page);
-    // Same editor, "new" variant — its submit button reads "Create lead".
+    // Same editor, "new" variant - its submit button reads "Create lead".
     await expect(page.getByRole("button", { name: "Create lead" })).toBeVisible();
   });
 });

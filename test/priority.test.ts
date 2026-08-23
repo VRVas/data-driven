@@ -54,7 +54,7 @@ describe("the geometric mean", () => {
 
   it("crushes rather than zeroes an unwinnable deal", () => {
     // Winnability cannot reach zero: its recency term is floored at a quarter,
-    // so the axis bottoms out near 6. That is deliberate — a large deal going
+    // so the axis bottoms out near 6. That is deliberate - a large deal going
     // nowhere still deserves a glance, unlike one worth nothing at all.
     const unwinnable = priorityOf(
       lead(
@@ -79,7 +79,7 @@ describe("the geometric mean", () => {
   });
 
   it("never lets ease rescue a worthless deal", () => {
-    // Ease is reported but never blended — the old formula's real failure.
+    // Ease is reported but never blended - the old formula's real failure.
     const easyAndWorthless = priorityOf(
       lead({}, { budget: 0, customizationScore: 5, accessibilityScore: 5, receptivityScore: 5, alignmentScore: 5 }),
       NOW,
@@ -163,7 +163,7 @@ describe("the winnability axis", () => {
     expect(recencyOf({ lastContact: future.toISOString().slice(0, 10), initialContact: null }, NOW)).toBe(RECENCY_FLOOR);
   });
 
-  it("stays within 0–100 for the strongest possible lead", () => {
+  it("stays within 0-100 for the strongest possible lead", () => {
     const best = priorityOf(
       lead({ status: "Recurring", lastContact: monthsAgo(0) }, { accessibilityScore: 5, receptivityScore: 5 }),
       NOW,

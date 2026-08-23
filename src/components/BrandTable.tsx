@@ -99,7 +99,7 @@ export function BrandTable({
   const [healthFilter, setHealthFilter] = useState<HealthFilter>("all");
   const [lifecycle, setLifecycle] = useState<LifecycleFilter>("active");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "name", dir: 1 });
-  // undefined = closed · null = creating · Brand = editing
+  // undefined = closed - null = creating - Brand = editing
   const [editing, setEditing] = useState<Brand | null | undefined>(undefined);
 
   const owners = useMemo(
@@ -212,7 +212,7 @@ export function BrandTable({
         <SaveViewForm q={q} status={status} owner={owner} sortKey={sort.key} sortDir={sort.dir} />
       </div>
 
-      {/* what to show at all — finished deals are noise here, not gone */}
+      {/* what to show at all - finished deals are noise here, not gone */}
       <div data-tour="pipe-lifecycle" className="mb-3 flex flex-wrap items-center gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Show</span>
         {LIFECYCLE_FILTERS.map((f) => {
@@ -237,7 +237,7 @@ export function BrandTable({
         })}
       </div>
 
-      {/* health filters — the two questions the pipeline view exists to answer */}
+      {/* health filters - the two questions the pipeline view exists to answer */}
       <div data-tour="pipe-health" className="mb-3 flex flex-wrap items-center gap-2">
         <span className="font-mono text-[10px] uppercase tracking-[0.14em] text-[var(--color-ink-faint)]">Health</span>
         {HEALTH_FILTERS.map((f) => {
@@ -323,7 +323,7 @@ export function BrandTable({
                 <td colSpan={9} className="px-3 py-12 text-center">
                   <p className="text-sm text-[var(--color-ink-muted)]">
                     {brands.length === 0
-                      ? "No leads yet — add your first one to start building the pipeline."
+                      ? "No leads yet - add your first one to start building the pipeline."
                       : hiddenByLifecycle > 0
                         ? `No active lead matches, but ${hiddenByLifecycle} finished ${hiddenByLifecycle === 1 ? "one does" : "ones do"}.`
                         : "No leads match your filters."}
@@ -364,12 +364,12 @@ export function BrandTable({
                 <td className="hidden px-3 py-2 sm:table-cell">
                   {b.priority && <Badge color={PRIORITY_TOKEN[b.priority as Priority]}>{b.priority.replace(" Lead", "")}</Badge>}
                 </td>
-                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] lg:table-cell">{b.owner ?? "—"}</td>
-                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] md:table-cell">{b.industry ?? "—"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] lg:table-cell">{b.owner ?? "-"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] md:table-cell">{b.industry ?? "-"}</td>
                 <td className="hidden px-3 py-2 text-right tabular-nums sm:table-cell">
-                  {b.scores?.budget ? eur(b.scores.budget) : "—"}
+                  {b.scores?.budget ? eur(b.scores.budget) : "-"}
                 </td>
-                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] xl:table-cell">{b.lastContact ?? "—"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] xl:table-cell">{b.lastContact ?? "-"}</td>
                 <td className="px-3 py-2 text-right">
                   <button
                     onClick={() => setEditing(b)}
@@ -396,7 +396,7 @@ export function BrandTable({
  * Who owes the next move, and how late they are.
  *
  * "Waiting" and "late" are shown as one cell because the side alone is not
- * actionable — it is the overdue days that turn it into a to-do.
+ * actionable - it is the overdue days that turn it into a to-do.
  *
  * A side nobody stated is marked as inferred. It used to render identically to
  * a stated one, so a lead whose "waiting on" was literally "not decided" still
@@ -404,7 +404,7 @@ export function BrandTable({
  */
 function WaitingCell({ health }: { health?: LeadHealth }) {
   if (!health || !health.waitingOn) {
-    return <span className="text-xs text-[var(--color-ink-faint)]">—</span>;
+    return <span className="text-xs text-[var(--color-ink-faint)]">-</span>;
   }
   const onUs = health.waitingOn === "us";
   const late = health.daysLate > 0;

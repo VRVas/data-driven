@@ -23,7 +23,7 @@ export interface SendResult {
  * the draft → review → send flow is the control, and a tool that composed and
  * sent in one step would walk straight around it.
  *
- * The caller must already hold outreach:send — this does not check it, because
+ * The caller must already hold outreach:send - this does not check it, because
  * the permission belongs at the entry point where refusing is meaningful.
  */
 export async function sendExistingOutreach(auth: Authorized, id: string): Promise<SendResult> {
@@ -55,7 +55,7 @@ export async function sendExistingOutreach(auth: Authorized, id: string): Promis
   };
   await store.update(updated);
 
-  // Sending counts as a touch — refresh the lead's last-contact date.
+  // Sending counts as a touch - refresh the lead's last-contact date.
   if (result.ok && brand) await getBrandStore().save({ ...brand, lastContact: todayYmd() });
 
   await logAudit({

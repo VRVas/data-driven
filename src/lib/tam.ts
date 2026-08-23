@@ -7,7 +7,7 @@ export const VALUATION_WEIGHT: Record<Valuation, number> = {
   Low: 0.3,
 };
 
-/** Share of the addressable market already approached (0–1), or null if unknown. */
+/** Share of the addressable market already approached (0-1), or null if unknown. */
 export function penetration(opened: number, total: number | null): number | null {
   return total && total > 0 ? opened / total : null;
 }
@@ -18,7 +18,7 @@ export function whitespace(opened: number, total: number | null): number | null 
 }
 
 /**
- * Opportunity index (0–1): value weight × untapped share.
+ * Opportunity index (0-1): value weight × untapped share.
  * High-value, barely-approached segments score highest.
  */
 export function opportunityScore(ind: Pick<IndustryStat, "opened" | "companiesEU" | "valuation">): number {

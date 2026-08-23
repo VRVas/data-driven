@@ -32,7 +32,7 @@ export interface Authorized extends AuthzContext {
 
 /**
  * Capability gate. Must be the first statement of every server action and
- * route handler — the CI guard test fails the build otherwise.
+ * route handler - the CI guard test fails the build otherwise.
  */
 export async function requirePermission(
   permission: PermissionKey,
@@ -50,7 +50,7 @@ export async function requirePermission(
   return { ...ctx, scope: scope as Exclude<Scope, "none"> };
 }
 
-/** Any signed-in user, no specific capability — for genuinely public-to-staff reads. */
+/** Any signed-in user, no specific capability - for genuinely public-to-staff reads. */
 export async function requireSignedIn(): Promise<AuthzContext> {
   const ctx = await getAuthzContext();
   if (!ctx) throw new UnauthorizedError();
@@ -64,7 +64,7 @@ export interface OwnedRecord {
 
 /**
  * Record gate. Call immediately after loading a record, before returning or
- * mutating it — a capability check alone does not prove access to *this* row.
+ * mutating it - a capability check alone does not prove access to *this* row.
  */
 export function authorizeRecord(ctx: AuthzContext, scope: Scope, record: OwnedRecord): void {
   if (ctx.superuser || scope === "all") return;
@@ -73,7 +73,7 @@ export function authorizeRecord(ctx: AuthzContext, scope: Scope, record: OwnedRe
   throw new ForbiddenError();
 }
 
-/** List gate — apply inside the query/filter, never in the component. */
+/** List gate - apply inside the query/filter, never in the component. */
 export function scopeFilter<T extends OwnedRecord>(
   ctx: AuthzContext,
   scope: Scope,

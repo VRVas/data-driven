@@ -5,7 +5,7 @@ import { DefaultAzureCredential } from "@azure/identity";
 /**
  * Lazily-constructed Cosmos DB (NoSQL) handle.
  *
- * Auth is Microsoft Entra ID only (no keys) — DefaultAzureCredential resolves the
+ * Auth is Microsoft Entra ID only (no keys) - DefaultAzureCredential resolves the
  * Container App's user-assigned managed identity via AZURE_CLIENT_ID at runtime.
  * Returns null when COSMOS_ENDPOINT is unset (local dev falls back to a file store).
  */

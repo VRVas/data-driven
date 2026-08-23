@@ -29,7 +29,7 @@ export type Valuation = "High" | "Medium" | "Low";
  * Who owes the next move on a lead.
  *
  * The two questions the pipeline view has to answer are "are we late replying
- * to them?" and "are we late chasing them?" — the same overdue date means
+ * to them?" and "are we late chasing them?" - the same overdue date means
  * opposite things depending on which side the ball is on, so it has to be
  * recorded rather than guessed.
  */
@@ -72,13 +72,13 @@ export interface Brand {
   notes: string | null;
   /** Optional: records written before the field existed simply have no answer. */
   waitingOn?: WaitingOn | null;
-  /** The next move in the team's own words — "send revised quote", "chase legal". */
+  /** The next move in the team's own words - "send revised quote", "chase legal". */
   nextStep?: string | null;
   /** Months the deal is expected to take, estimated when it opened. */
   expectedMonths?: number | null;
   /** The budget we guessed before an offer was accepted, kept for comparison. */
   budgetAtOpen?: number | null;
-  /** 0–3: worth beyond the invoice. Capped in the score so it cannot outrank paid work alone. */
+  /** 0-3: worth beyond the invoice. Capped in the score so it cannot outrank paid work alone. */
   strategicValue?: number | null;
   /** Chosen from a fixed list, so "strategic" has to mean something specific. */
   strategicReason?: string | null;

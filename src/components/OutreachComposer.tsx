@@ -114,7 +114,7 @@ function ComposerPanel({
             />
             {!brand.email && (
               <span className="mt-1 block text-xs text-[var(--color-ink-faint)]">
-                No contact email on file — add one on the lead to prefill this.
+                No contact email on file - add one on the lead to prefill this.
               </span>
             )}
           </label>

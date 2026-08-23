@@ -67,7 +67,7 @@ export default async function TeamPage() {
         <div className="eyebrow mb-2">Access control</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Team</h1>
         <p className="mt-1 text-[var(--color-ink-muted)]">
-          {people.length} {people.length === 1 ? "member" : "members"} · {profiles.length}{" "}
+          {people.length} {people.length === 1 ? "member" : "members"} - {profiles.length}{" "}
           {profiles.length === 1 ? "profile" : "profiles"}. Profiles decide what someone can do; assigning one is how
           access is granted.
         </p>

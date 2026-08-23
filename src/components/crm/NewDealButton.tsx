@@ -7,7 +7,7 @@ import { BrandEditor } from "@/components/BrandEditor";
  * Start a new engagement with a client we already know.
  *
  * The company page could only add a proposal, so an early conversation with no
- * brief and no numbers had nowhere to live — the only way to record it was to
+ * brief and no numbers had nowhere to live - the only way to record it was to
  * invent a proposal for work that had not been scoped.
  */
 export function NewDealButton({ company }: { company: { id: string; name: string } }) {

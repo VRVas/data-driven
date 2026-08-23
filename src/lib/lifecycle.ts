@@ -1,7 +1,7 @@
 import type { Brand, BrandScores, BrandStatus } from "./types";
 
 /**
- * Lifecycle — is a lead still live?
+ * Lifecycle - is a lead still live?
  *
  * The sheet's `status` vocabulary mixes pipeline STAGE ("Early", "Advanced")
  * with OUTCOME ("Deal Closed", "Did not work out"). Ranked lists and targeting
@@ -16,7 +16,7 @@ const LOST_STATUS: BrandStatus = "Did not work out";
 
 /**
  * `status` wins over `scores.process` because it is the only one of the two a
- * user can actually edit — `process` is a frozen import artefact with no UI.
+ * user can actually edit - `process` is a frozen import artefact with no UI.
  */
 export function outcomeOf(status: BrandStatus | null | undefined): Outcome {
   if (status === WON_STATUS) return "won";
@@ -28,7 +28,7 @@ export function isOpen(brand: Pick<Brand, "status">): boolean {
   return outcomeOf(brand.status) === "open";
 }
 
-/** Open leads only — the base for every ranking and targeting view. */
+/** Open leads only - the base for every ranking and targeting view. */
 export function openLeads<T extends Pick<Brand, "status">>(brands: T[]): T[] {
   return brands.filter(isOpen);
 }
@@ -42,7 +42,7 @@ export interface OutcomeConflict {
 }
 
 /**
- * `scores.process` disagreeing with `status` is rarely a typo — it usually
+ * `scores.process` disagreeing with `status` is rarely a typo - it usually
  * means one row is carrying two engagements (a won deal plus a live one, or a
  * failed attempt followed by a fresh approach). Surfaced for review rather
  * than silently reconciled.
@@ -67,7 +67,7 @@ export function outcomeConflicts(brands: Brand[]): OutcomeConflict[] {
  *
  * `process` came from the spreadsheet's own outcome column and had no UI, so a
  * lead correctly marked "Did not work out" in the app kept being reported as
- * disagreeing with an imported "Open" forever — the warning named a field the
+ * disagreeing with an imported "Open" forever - the warning named a field the
  * user could not reach, and nothing they did could clear it.
  *
  * Once someone states the outcome here, the import is stale by definition.

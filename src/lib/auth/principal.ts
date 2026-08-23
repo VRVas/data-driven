@@ -9,8 +9,8 @@ import type { AuthzContext } from "./resolve";
  * Machine callers (the Foundry agent hitting /api/copilot/tools with an API
  * key) have no session, so every session-derived check below them resolves to
  * "logged out". Passing the identity as a function argument does not fix that:
- * the helpers that actually gate data — getAuthzContext, can, getVisibleBrands
- * — take no caller argument, and threading one through every tool would leave
+ * the helpers that actually gate data - getAuthzContext, can, getVisibleBrands
+ * - take no caller argument, and threading one through every tool would leave
  * the guarantee resting on nobody forgetting. Binding it to the async context
  * means the same code path serves both channels.
  */

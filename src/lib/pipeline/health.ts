@@ -5,12 +5,12 @@ import type { Proposal } from "@/lib/crm/types";
 import type { Brand, WaitingOn } from "@/lib/types";
 
 /**
- * Pipeline health — who owes the next move, and are they late?
+ * Pipeline health - who owes the next move, and are they late?
  *
  * The feedback asked two questions that look like one: "are we late with the
  * follow-up on their request?" and "are we late to remind them something?".
  * Both are answered by an overdue date, but they mean opposite things and
- * need opposite responses — one is our backlog, the other is a chase list.
+ * need opposite responses - one is our backlog, the other is a chase list.
  * Telling them apart needs a side, which is why `waitingOn` exists.
  *
  * Pure and time-injectable, so every branch below is testable.
@@ -48,7 +48,7 @@ function awaitingDecision(proposals: Proposal[]): Proposal | null {
  *
  * An explicit answer always wins. Otherwise a proposal out for decision means
  * the ball is with them; a follow-up date on its own means we said we would do
- * something. With neither, the lead is untriaged — reported as such rather
+ * something. With neither, the lead is untriaged - reported as such rather
  * than quietly filed under one side.
  */
 export function nextActionFor(
@@ -68,7 +68,7 @@ export function healthOf(brand: Brand, proposals: Proposal[] = [], now: Date = n
   const closed = outcomeOf(brand.status) !== "open";
   const next = nextActionFor(brand, proposals);
   // A finished deal owes nobody anything, so it has no side, cannot be late
-  // and cannot go stale — whatever dates it is still carrying.
+  // and cannot go stale - whatever dates it is still carrying.
   const { waitingOn, dueDate, source } = closed
     ? { waitingOn: null, dueDate: next.dueDate, source: next.source }
     : next;
@@ -99,7 +99,7 @@ export interface PipelineHealth {
   lateOnThem: number;
   untriaged: number;
   stale: number;
-  /** Value sent to clients with no answer yet — the "waiting for greenlight" figure. */
+  /** Value sent to clients with no answer yet - the "waiting for greenlight" figure. */
   awaitingGreenlightEur: number;
 }
 

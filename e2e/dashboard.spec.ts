@@ -58,7 +58,7 @@ test.describe("dashboard", () => {
   test("active nav follows a nested lead-detail route", async ({ page }) => {
     await page.goto("/dashboard/pipeline/alibaba");
     const nav = page.getByRole("navigation");
-    // A lead detail lives under Pipeline, so Pipeline stays lit — not Overview.
+    // A lead detail lives under Pipeline, so Pipeline stays lit - not Overview.
     await expect(nav.getByRole("link", { name: "Pipeline", exact: true })).toHaveAttribute(
       "aria-current",
       "page",

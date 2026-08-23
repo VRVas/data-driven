@@ -46,7 +46,7 @@ __pycache__/
 !.vscode/extensions.json
 !.vscode/mcp.json
 
-# reference-only (never commit) — attached for design analysis
+# reference-only (never commit) - attached for design analysis
 portfolio-aiapps-main/
 
 # Scratch output from local test runs.

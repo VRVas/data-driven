@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 const OUTCOME_ORDER: Record<Deal["outcome"], number> = { open: 0, won: 1, lost: 2 };
 
-const day = (v: string | null): string => (v ? v.slice(0, 10) : "—");
+const day = (v: string | null): string => (v ? v.slice(0, 10) : "-");
 
 export default async function CompanyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -69,7 +69,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         <Metric label="Open pipeline" value={eur(rollup.openPipelineValue)} accent="var(--color-amber)" />
         <Metric
           label="Deal win rate"
-          value={rollup.dealWinRate == null ? "—" : `${Math.round(rollup.dealWinRate * 100)}%`}
+          value={rollup.dealWinRate == null ? "-" : `${Math.round(rollup.dealWinRate * 100)}%`}
           hint={rollup.dealWinRate == null ? "nothing decided yet" : "of decided deals"}
           accent="var(--color-cyan)"
         />
@@ -119,7 +119,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                             {d.name}
                           </Link>
                           <div className="mt-0.5 text-[11px] text-[var(--color-ink-faint)] sm:hidden">
-                            {d.stage} · {d.dealType}
+                            {d.stage} - {d.dealType}
                           </div>
                         </td>
                         <td className="hidden px-4 py-3 text-[var(--color-ink-muted)] sm:table-cell sm:px-6">
@@ -130,7 +130,7 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
                         </td>
                         <td className="px-4 py-3 text-right tabular-nums sm:px-6">
                           {resolved?.basis === "none" ? (
-                            <span className="text-[var(--color-ink-faint)]">—</span>
+                            <span className="text-[var(--color-ink-faint)]">-</span>
                           ) : (
                             <>
                               {eur(value)}

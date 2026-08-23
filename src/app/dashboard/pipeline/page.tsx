@@ -57,7 +57,7 @@ export default async function PipelinePage() {
         <KpiCard
           label="Needs an owner"
           value={health.untriaged}
-          hint={`of ${health.open} open · ${health.stale} gone quiet`}
+          hint={`of ${health.open} open - ${health.stale} gone quiet`}
           accent="var(--color-ink-faint)"
         />
       </Reveal>

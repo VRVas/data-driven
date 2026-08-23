@@ -40,7 +40,7 @@ const asEnumTuple = <T extends string>(v: readonly T[]) => v as unknown as [T, .
  * The second half of the tool surface: everything the screens could do that
  * the chat could not.
  *
- * Every tool here declares the permission it needs — `runTool` enforces it —
+ * Every tool here declares the permission it needs - `runTool` enforces it -
  * and anything touching a specific lead resolves it through visibleLead or
  * writableLead so record scope applies to conversation exactly as it does to
  * the UI.
@@ -49,7 +49,7 @@ const asEnumTuple = <T extends string>(v: readonly T[]) => v as unknown as [T, .
 const PROPOSAL_STATUSES = ["draft", "sent", "accepted", "rejected", "expired", "withdrawn"] as const;
 
 // ---------------------------------------------------------------------------
-// Writes — the things a person would otherwise have to go and click
+// Writes - the things a person would otherwise have to go and click
 // ---------------------------------------------------------------------------
 
 const createLead: CopilotTool = {
@@ -57,7 +57,7 @@ const createLead: CopilotTool = {
   permission: "lead:create",
   write: true,
   description:
-    "Add a new lead. Only the name is required, but give it a commercial value if one is known — a lead with no value cannot be ranked at all, because zero opportunity is fatal in the priority formula. Pass companyId to start it under an existing client instead of creating a separate one, which is what you want for 'we worked with them last year and are talking again'. Use for 'add Zara, fashion, Marco owns it, about 40k'.",
+    "Add a new lead. Only the name is required, but give it a commercial value if one is known - a lead with no value cannot be ranked at all, because zero opportunity is fatal in the priority formula. Pass companyId to start it under an existing client instead of creating a separate one, which is what you want for 'we worked with them last year and are talking again'. Use for 'add Zara, fashion, Marco owns it, about 40k'.",
   parameters: {
     type: "object",
     properties: {
@@ -132,7 +132,7 @@ const createLead: CopilotTool = {
       action: "brand.create",
       entity: "brand",
       entityId: lead.id,
-      summary: `Created lead ${lead.name}${a.valueEur != null ? ` — €${a.valueEur.toLocaleString()}` : ""}`,
+      summary: `Created lead ${lead.name}${a.valueEur != null ? ` - €${a.valueEur.toLocaleString()}` : ""}`,
     });
 
     const p = priorityOf(lead);
@@ -148,7 +148,7 @@ const createLead: CopilotTool = {
       grade: p?.grade ?? null,
       note:
         a.valueEur == null
-          ? "No value was given, so this lead cannot be ranked yet — set_budget or record_proposal will fix that."
+          ? "No value was given, so this lead cannot be ranked yet - set_budget or record_proposal will fix that."
           : undefined,
     };
   },
@@ -159,7 +159,7 @@ const updateLead: CopilotTool = {
   permission: "lead:update",
   write: true,
   description:
-    "Edit the fields of an existing lead — the same dialog the pipeline's edit button opens. Only the fields you pass are changed; pass an empty string to clear one. For the pipeline STAGE use advance_lead_stage instead, which enforces the legal transitions. For the commercial value prefer set_budget, and for who owes the next move prefer set_next_move.",
+    "Edit the fields of an existing lead - the same dialog the pipeline's edit button opens. Only the fields you pass are changed; pass an empty string to clear one. For the pipeline STAGE use advance_lead_stage instead, which enforces the legal transitions. For the commercial value prefer set_budget, and for who owes the next move prefer set_next_move.",
   parameters: {
     type: "object",
     properties: {
@@ -267,7 +267,7 @@ const deleteLead: CopilotTool = {
   permission: "lead:delete",
   write: true,
   description:
-    "Permanently delete a lead and everything attached to it — its proposals, its company link, its outreach history. This cannot be undone. NEVER call it directly from a request: offer it as an actions block with a confirm message naming the lead, and let the user press the button. If they are asking how to remove a lead rather than asking you to, explain the Pipeline edit dialog instead.",
+    "Permanently delete a lead and everything attached to it - its proposals, its company link, its outreach history. This cannot be undone. NEVER call it directly from a request: offer it as an actions block with a confirm message naming the lead, and let the user press the button. If they are asking how to remove a lead rather than asking you to, explain the Pipeline edit dialog instead.",
   parameters: {
     type: "object",
     properties: { id: { type: "string", description: "Lead id" } },
@@ -299,7 +299,7 @@ const mergeCompaniesTool: CopilotTool = {
   permission: "company:merge",
   write: true,
   description:
-    "Fold one company into another: every deal on the source moves to the survivor, and the source stops existing because companies are projected from their deals. Use after duplicate_companies has suggested a pair AND the user has confirmed they are the same client — name similarity is never enough on its own. Offer it as a button naming both sides; undo is unlink_deal, one deal at a time.",
+    "Fold one company into another: every deal on the source moves to the survivor, and the source stops existing because companies are projected from their deals. Use after duplicate_companies has suggested a pair AND the user has confirmed they are the same client - name similarity is never enough on its own. Offer it as a button naming both sides; undo is unlink_deal, one deal at a time.",
   parameters: {
     type: "object",
     properties: {
@@ -361,7 +361,7 @@ const deleteProposalTool: CopilotTool = {
   permission: "proposal:manage",
   write: true,
   description:
-    "Remove a proposal recorded in error. Get the id from get_company or proposal_pipeline. The lead's own value follows its remaining paperwork afterwards, so deleting the accepted offer drops the budget back to an estimate rather than leaving it marked Confirmed with nothing behind it. To record a change of price, add a revision with record_proposal instead — that keeps the history.",
+    "Remove a proposal recorded in error. Get the id from get_company or proposal_pipeline. The lead's own value follows its remaining paperwork afterwards, so deleting the accepted offer drops the budget back to an estimate rather than leaving it marked Confirmed with nothing behind it. To record a change of price, add a revision with record_proposal instead - that keeps the history.",
   parameters: {
     type: "object",
     properties: { proposalId: { type: "string" } },
@@ -399,7 +399,7 @@ const cancelOutreachTool: CopilotTool = {
   permission: "outreach:cancel",
   write: true,
   description:
-    "Cancel a drafted or pending outreach message so it can never be sent. Get the id from outreach_status. A message already sent cannot be cancelled — say so rather than implying it was recalled.",
+    "Cancel a drafted or pending outreach message so it can never be sent. Get the id from outreach_status. A message already sent cannot be cancelled - say so rather than implying it was recalled.",
   parameters: {
     type: "object",
     properties: { outreachId: { type: "string" } },
@@ -435,11 +435,11 @@ const explainModel: CopilotTool = {
   name: "explain_model",
   permission: "scoring:read",
   description:
-    "The complete specification of how every number on the platform is calculated: both priority axes with every term and weight, the quadrant thresholds, the grade bands, the stage probabilities, the confidence multipliers, what is deliberately EXCLUDED from the ranking, when it recalculates, how a deal's one commercial value is resolved, which statuses feed which money total, the health and tempo rules, and the superseded lead score. Pass a lead id to get a worked example with that lead's real numbers at every step. Use this for any 'how does X work', 'why does this rank there', 'what would change it' or 'why do these two figures differ' question — quote the actual weights rather than describing them loosely.",
+    "The complete specification of how every number on the platform is calculated: both priority axes with every term and weight, the quadrant thresholds, the grade bands, the stage probabilities, the confidence multipliers, what is deliberately EXCLUDED from the ranking, when it recalculates, how a deal's one commercial value is resolved, which statuses feed which money total, the health and tempo rules, and the superseded lead score. Pass a lead id to get a worked example with that lead's real numbers at every step. Use this for any 'how does X work', 'why does this rank there', 'what would change it' or 'why do these two figures differ' question - quote the actual weights rather than describing them loosely.",
   parameters: {
     type: "object",
     properties: {
-      leadId: { type: "string", description: "Optional — adds a worked example using this lead's real values" },
+      leadId: { type: "string", description: "Optional - adds a worked example using this lead's real values" },
     },
   },
   async execute(args) {
@@ -498,7 +498,7 @@ const setNextMove: CopilotTool = {
       action: "lead.next_move",
       entity: "brand",
       entityId: brand.id,
-      summary: `Next move on ${brand.name}: ${next.waitingOn ?? "nobody"}${next.followUpDate ? ` by ${next.followUpDate}` : ""}${next.nextStep ? ` — ${next.nextStep}` : ""}`,
+      summary: `Next move on ${brand.name}: ${next.waitingOn ?? "nobody"}${next.followUpDate ? ` by ${next.followUpDate}` : ""}${next.nextStep ? ` - ${next.nextStep}` : ""}`,
     });
 
     return {
@@ -578,7 +578,7 @@ const recordProposalTool: CopilotTool = {
   permission: "proposal:manage",
   write: true,
   description:
-    "Log a commercial proposal against a lead: its value, and whether it is a draft, has been sent, or has been accepted/rejected/expired/withdrawn. Each call adds a revision, so a re-quote is recorded rather than overwriting the first number. The lead's own value follows the paperwork — a live ask becomes its estimate, an accepted one becomes its confirmed budget, and the original guess is kept for comparison. Use for 'we sent Alleanza 52k' or 'Fastweb accepted at 40k'.",
+    "Log a commercial proposal against a lead: its value, and whether it is a draft, has been sent, or has been accepted/rejected/expired/withdrawn. Each call adds a revision, so a re-quote is recorded rather than overwriting the first number. The lead's own value follows the paperwork - a live ask becomes its estimate, an accepted one becomes its confirmed budget, and the original guess is kept for comparison. Use for 'we sent Alleanza 52k' or 'Fastweb accepted at 40k'.",
   parameters: {
     type: "object",
     properties: {
@@ -626,7 +626,7 @@ const recordProposalTool: CopilotTool = {
       action: "proposal.create",
       entity: "proposal",
       entityId: result.proposal.id,
-      summary: `Added proposal for ${brand.name} — €${a.valueEur.toLocaleString()} (${a.status})`,
+      summary: `Added proposal for ${brand.name} - €${a.valueEur.toLocaleString()} (${a.status})`,
     });
 
     return {
@@ -647,12 +647,12 @@ const setStrategicValue: CopilotTool = {
   permission: "lead:update",
   write: true,
   description:
-    "Record what a deal is worth beyond its invoice, 0–3, with the reason chosen from a fixed list. This is what lets a low-budget or free project stay visible in the ranking — it is capped at a quarter of the opportunity axis, so it can never outrank paid work on its own. Use for 'Montecarlo was for visibility and it produced the Alibaba lead'.",
+    "Record what a deal is worth beyond its invoice, 0-3, with the reason chosen from a fixed list. This is what lets a low-budget or free project stay visible in the ranking - it is capped at a quarter of the opportunity axis, so it can never outrank paid work on its own. Use for 'Montecarlo was for visibility and it produced the Alibaba lead'.",
   parameters: {
     type: "object",
     properties: {
       id: { type: "string", description: "Lead id" },
-      value: { type: "integer", minimum: 0, maximum: 3, description: "0 none · 1 some · 2 significant · 3 flagship" },
+      value: { type: "integer", minimum: 0, maximum: 3, description: "0 none - 1 some - 2 significant - 3 flagship" },
       reason: { type: "string", enum: [...STRATEGIC_REASONS] },
     },
     required: ["id", "value"],
@@ -687,7 +687,7 @@ const setBudget: CopilotTool = {
   permission: "lead:update",
   write: true,
   description:
-    "Set what a lead is expected to be worth, in euros. This is the estimate the ranking uses until a proposal replaces it — a lead with no value cannot be ranked at all, because zero opportunity is fatal in the priority formula. Use for 'Fastweb is looking like about 60k'. Do NOT use this to record an offer that was actually sent or accepted: record_proposal does that, and it updates the figure itself.",
+    "Set what a lead is expected to be worth, in euros. This is the estimate the ranking uses until a proposal replaces it - a lead with no value cannot be ranked at all, because zero opportunity is fatal in the priority formula. Use for 'Fastweb is looking like about 60k'. Do NOT use this to record an offer that was actually sent or accepted: record_proposal does that, and it updates the figure itself.",
   parameters: {
     type: "object",
     properties: {
@@ -737,7 +737,7 @@ const setBudget: CopilotTool = {
       confidence: a.confidence ?? "Estimated",
       priority: p?.priority ?? null,
       grade: p?.grade ?? null,
-      note: "A proposal recorded later replaces this figure — an accepted one makes it Confirmed.",
+      note: "A proposal recorded later replaces this figure - an accepted one makes it Confirmed.",
     };
   },
 };
@@ -747,7 +747,7 @@ const linkCompany: CopilotTool = {
   permission: "lead:update",
   write: true,
   description:
-    "Attach a lead to an existing company, so repeat business with that client adds up. This is the only way two leads end up under one company — name similarity is never enough, because 'Allianz Bank' and 'Allianz CH' may be different customers. Use after confirming with the user which company is meant.",
+    "Attach a lead to an existing company, so repeat business with that client adds up. This is the only way two leads end up under one company - name similarity is never enough, because 'Allianz Bank' and 'Allianz CH' may be different customers. Use after confirming with the user which company is meant.",
   parameters: {
     type: "object",
     properties: {
@@ -789,7 +789,7 @@ const linkCompany: CopilotTool = {
 };
 
 // ---------------------------------------------------------------------------
-// Reads — questions the platform could answer but the chat could not
+// Reads - questions the platform could answer but the chat could not
 // ---------------------------------------------------------------------------
 
 const dataQuality: CopilotTool = {
@@ -820,7 +820,7 @@ const leadHistory: CopilotTool = {
   name: "lead_history",
   permission: "audit:read",
   description:
-    "The audit trail for one lead — who changed what and when, including changes made through this chat. Use for 'who moved Fastweb to Advanced?' or 'what happened to this deal last month?'.",
+    "The audit trail for one lead - who changed what and when, including changes made through this chat. Use for 'who moved Fastweb to Advanced?' or 'what happened to this deal last month?'.",
   parameters: {
     type: "object",
     properties: { id: { type: "string", description: "Lead id" }, limit: { type: "integer", minimum: 1, maximum: 50 } },
@@ -877,7 +877,7 @@ const tempoReport: CopilotTool = {
       averageActualMonths: mean(actual.map((r) => r.t.months!))?.toFixed(1) ?? null,
       averageEstimatedMonths: mean(estimated.map((r) => r.t.months!))?.toFixed(1) ?? null,
       worstOverruns: overruns.slice(0, limit ?? 10),
-      note: "Tempo means how long the deal takes, not how long since we last spoke — that is the freshness signal in pipeline_health.",
+      note: "Tempo means how long the deal takes, not how long since we last spoke - that is the freshness signal in pipeline_health.",
     };
   },
 };
@@ -921,7 +921,7 @@ const duplicateCompanies: CopilotTool = {
   name: "duplicate_companies",
   permission: "lead:read",
   description:
-    "Companies that might be the same client, grouped for human review. Deliberately over-inclusive — 'Banca Aletti' and 'Banca Sella' will appear together — because the cost of missing a real duplicate is higher than the cost of dismissing one. Never merge without asking.",
+    "Companies that might be the same client, grouped for human review. Deliberately over-inclusive - 'Banca Aletti' and 'Banca Sella' will appear together - because the cost of missing a real duplicate is higher than the cost of dismissing one. Never merge without asking.",
   parameters: { type: "object", properties: {} },
   async execute() {
     const graph = await getCrmGraph();
@@ -931,7 +931,7 @@ const duplicateCompanies: CopilotTool = {
       groups: groups.map((g) => ({
         companies: g.map((c) => ({ id: c.id, name: c.name, openDeals: c.rollup.openDealCount, lifetimeValueEur: Math.round(c.rollup.lifetimeValue) })),
       })),
-      note: "Suggestions only. Linking is an explicit human decision — use link_deal_to_company once the user confirms.",
+      note: "Suggestions only. Linking is an explicit human decision - use link_deal_to_company once the user confirms.",
     };
   },
 };
@@ -985,7 +985,7 @@ const moneyAtRisk: CopilotTool = {
   name: "money_at_risk",
   permission: "proposal:read",
   description:
-    "Euros sitting with clients that are going cold: proposals sent and unanswered, ranked by how long they have been waiting, with the lead's last contact. Use for 'what should I chase for money?' — proposal_pipeline gives the totals, this gives the queue.",
+    "Euros sitting with clients that are going cold: proposals sent and unanswered, ranked by how long they have been waiting, with the lead's last contact. Use for 'what should I chase for money?' - proposal_pipeline gives the totals, this gives the queue.",
   parameters: { type: "object", properties: { limit: { type: "integer", minimum: 1, maximum: 25 } } },
   async execute(args) {
     const { limit } = z.object({ limit: z.number().int().min(1).max(25).optional() }).parse(args);
@@ -1115,7 +1115,7 @@ const myWorkQueue: CopilotTool = {
       byReason,
       openLeads: rows.length,
       items: items.slice(0, a.limit ?? 10),
-      note: items.length === 0 ? "Nothing is overdue, untriaged or stale — the queue is genuinely empty." : undefined,
+      note: items.length === 0 ? "Nothing is overdue, untriaged or stale - the queue is genuinely empty." : undefined,
     };
   },
 };
@@ -1124,7 +1124,7 @@ const whitespace: CopilotTool = {
   name: "whitespace",
   permission: "lead:read",
   description:
-    "Clients we have already won who have no live deal — the cheapest pipeline there is, because the relationship is paid for. Ranked by what they have spent with us. Use for 'who should we go back to?' or 'where is the repeat business?'.",
+    "Clients we have already won who have no live deal - the cheapest pipeline there is, because the relationship is paid for. Ranked by what they have spent with us. Use for 'who should we go back to?' or 'where is the repeat business?'.",
   parameters: { type: "object", properties: { limit: { type: "integer", minimum: 1, maximum: 25 } } },
   async execute(args) {
     const { limit } = z.object({ limit: z.number().int().min(1).max(25).optional() }).parse(args);
@@ -1153,7 +1153,7 @@ const whitespace: CopilotTool = {
       count: dormant.length,
       totalLifetimeValueEur: dormant.reduce((s, c) => s + c.lifetimeValueEur, 0),
       companies: dormant.slice(0, limit ?? 10),
-      note: "A won client with no open deal is dormant, not lost — the next deal starts from a reference, not a cold call.",
+      note: "A won client with no open deal is dormant, not lost - the next deal starts from a reference, not a cold call.",
     };
   },
 };
@@ -1161,11 +1161,11 @@ const whitespace: CopilotTool = {
 const whatCanIDo: CopilotTool = {
   name: "what_can_i_do",
   // Gated on copilot:use rather than left open: anyone who can reach the chat
-  // at all already holds it, so this refuses nobody who could have asked — and
+  // at all already holds it, so this refuses nobody who could have asked - and
   // the "every tool declares a permission" invariant survives intact.
   permission: "copilot:use",
   description:
-    "What the person asking is allowed to do, and over which records. Use whenever someone asks 'can I…', 'why can't I…', 'what am I allowed to see' — and before telling them something is impossible, since it is usually permitted for someone and not for them.",
+    "What the person asking is allowed to do, and over which records. Use whenever someone asks 'can I…', 'why can't I…', 'what am I allowed to see' - and before telling them something is impossible, since it is usually permitted for someone and not for them.",
   parameters: { type: "object", properties: { about: { type: "string", description: "Optional filter, e.g. 'leads', 'proposals', 'export'" } } },
   async execute(args) {
     const { about } = z.object({ about: z.string().optional() }).parse(args);
@@ -1205,7 +1205,7 @@ const whatCanIDo: CopilotTool = {
       scopeMeaning: { own: "only records you own", team: "your team's records", all: "every record", yes: "held (not record-scoped)" },
       note: authz.superuser
         ? "Superuser: every permission, over every record."
-        : "Anything not listed is denied. Permissions come from profiles an admin assigns — say who to ask rather than suggesting a workaround.",
+        : "Anything not listed is denied. Permissions come from profiles an admin assigns - say who to ask rather than suggesting a workaround.",
     };
   },
 };

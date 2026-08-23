@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * StatusPill — a compact live-status indicator: a softly pulsing dot beside a
+ * StatusPill - a compact live-status indicator: a softly pulsing dot beside a
  * mono, uppercase label inside a hairline pill. Used in headers and toolbars
  * to signal environment / data state (e.g. "LIVE", "LOCAL DATA").
  */

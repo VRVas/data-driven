@@ -8,7 +8,7 @@ const VIEWPORTS = [
   { name: "desktop", width: 1440, height: 900 },
 ];
 
-test.describe("responsive — public", () => {
+test.describe("responsive - public", () => {
   for (const vp of VIEWPORTS) {
     test(`landing holds up at ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
@@ -20,7 +20,7 @@ test.describe("responsive — public", () => {
   }
 });
 
-test.describe("responsive — dashboard", () => {
+test.describe("responsive - dashboard", () => {
   test.use({ storageState: STORAGE_STATE });
 
   for (const vp of [VIEWPORTS[0], VIEWPORTS[2]]) {

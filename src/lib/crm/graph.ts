@@ -13,7 +13,7 @@ import type { Company, Deal, DealStage, Proposal } from "./types";
  * Recurring work moved off the stage axis and onto the deal type, so a
  * recurring deal now sits at stage "Advanced". Weighting it by that stage gave
  * it 0.6 here while every lead-facing surface still read
- * winProbability("Recurring") = 0.85 — the same deal, two different weighted
+ * winProbability("Recurring") = 0.85 - the same deal, two different weighted
  * values depending on which page you were on.
  */
 const prob = (deal: Pick<Deal, "stage" | "dealType">) =>
@@ -25,7 +25,7 @@ const prob = (deal: Pick<Deal, "stage" | "dealType">) =>
  *
  * Built from nothing rather than cloned from a real company: spreading one
  * carried its industry, owner, country and notes across, so the group rendered
- * an unrelated client's details as fact — on the page, and to the copilot.
+ * an unrelated client's details as fact - on the page, and to the copilot.
  * Blank fields say "we don't know"; borrowed ones say something false.
  */
 function placeholderCompany(companyId: string, name: string, from: Deal): Company {
@@ -98,7 +98,7 @@ export const getCrmGraph = cache(async (): Promise<CrmGraph> => {
   // Overlay records belong to a deal, so they inherit that deal's visibility.
   // Without this the money figures, the proposal_pipeline tool and the edit and
   // delete actions all still reach proposals attached to leads the viewer
-  // cannot open — addressable by id, because the id is all they take.
+  // cannot open - addressable by id, because the id is all they take.
   const visibleDeals = new Set(deals.map((d) => d.id));
   const proposals = overlay.proposals.filter((p) => visibleDeals.has(p.dealId));
 
@@ -173,7 +173,7 @@ export async function getPipelineMoney(): Promise<PipelineMoney> {
   const repeat = companies.filter((c) => c.rollup.repeatValue > 0);
   const valueOf = (d: Deal) => dealValue(d, proposals).value;
   // A proposal still marked sent on a deal that has since been won or lost is
-  // not awaiting anything — the negotiation ended and the record went stale.
+  // not awaiting anything - the negotiation ended and the record went stale.
   // The pipeline page has always read it this way; the companies page did not,
   // so the same "awaiting decision" claim showed two different numbers.
   const openIds = new Set(open.map((d) => d.id));

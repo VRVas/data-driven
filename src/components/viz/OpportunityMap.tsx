@@ -80,7 +80,7 @@ export function OpportunityMap({ industries }: { industries: IndustryStat[] }) {
               stroke={color}
               strokeWidth={1.5}
             >
-              <title>{`${ind.name} · ${(pen * 100).toFixed(1)}% approached · ${ind.companiesEU} companies · ${ind.valuation}`}</title>
+              <title>{`${ind.name} - ${(pen * 100).toFixed(1)}% approached - ${ind.companiesEU} companies - ${ind.valuation}`}</title>
             </circle>
             <text x={sx(pen)} y={sy(eff) - r(ind.companiesEU ?? 0) - 4} textAnchor="middle" className="fill-[var(--color-ink-muted)]" fontSize="10">
               {ind.name}

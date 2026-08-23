@@ -38,7 +38,7 @@ export interface ToolContext {
 export interface CopilotTool {
   name: string;
   description: string;
-  /** JSON Schema (object) — used for the OpenAPI doc and Foundry function definitions. */
+  /** JSON Schema (object) - used for the OpenAPI doc and Foundry function definitions. */
   parameters: Record<string, unknown>;
   /** Mutating tool → role-gated + audited. */
   write?: boolean;
@@ -88,7 +88,7 @@ function leadBrief(b: Brand) {
   };
 }
 
-/** Compact view of a company — the relationship rollup, never the raw document. */
+/** Compact view of a company - the relationship rollup, never the raw document. */
 function companyBrief(c: Company) {
   const r = c.rollup;
   return {
@@ -133,7 +133,7 @@ const searchLeads: CopilotTool = {
       industry: { type: "string", enum: [...INDUSTRIES] },
       owner: { type: "string" },
       scoredOnly: { type: "boolean", description: "Only leads that have been scored" },
-      minPriority: { type: "number", description: "Minimum priority score (0–100). Grades: A ≥ 65, B ≥ 45, C ≥ 25." },
+      minPriority: { type: "number", description: "Minimum priority score (0-100). Grades: A ≥ 65, B ≥ 45, C ≥ 25." },
       sortBy: { type: "string", enum: ["priority", "expectedValue", "weightedValue", "budget", "name"] },
       limit: { type: "integer", minimum: 1, maximum: 50 },
     },
@@ -156,7 +156,7 @@ const searchLeads: CopilotTool = {
 
     let brands = await getVisibleBrands();
     // An unqualified ranking answers "where do we spend effort next", so finished
-    // deals are out. A name lookup or an explicit status is a search — match anything.
+    // deals are out. A name lookup or an explicit status is a search - match anything.
     const outcomeFilter = a.outcome ?? (a.status || a.query ? "any" : "open");
     if (outcomeFilter !== "any") brands = brands.filter((b) => outcomeOf(b.status) === outcomeFilter);
     if (a.query) {
@@ -311,7 +311,7 @@ const explainScore: CopilotTool = {
       expectedValueEur: p ? Math.round(p.expectedValueEur) : null,
       legacyLeadScore: leadScore(b),
       formula:
-        "priority = round(sqrt(opportunity * winnability)) — a geometric mean, so weakness on one axis cannot be averaged away by strength on the other. Ease is reported but never blended, and expected value in euros is shown separately.",
+        "priority = round(sqrt(opportunity * winnability)) - a geometric mean, so weakness on one axis cannot be averaged away by strength on the other. Ease is reported but never blended, and expected value in euros is shown separately.",
     };
   },
 };
@@ -374,7 +374,7 @@ const pipelineHealthTool: CopilotTool = {
   name: "pipeline_health",
   permission: "lead:read",
   description:
-    "Who owes the next move on the pipeline and who is late making it. Separates being late to REPLY to a client (on us) from being late to CHASE one (on them) — an overdue count alone cannot tell a backlog from a chase list. Also returns euros sitting with clients awaiting a greenlight, open leads nobody owns, and leads gone quiet. Use for 'who are we late with?', 'what do I owe today?', 'how much is waiting for a greenlight?'.",
+    "Who owes the next move on the pipeline and who is late making it. Separates being late to REPLY to a client (on us) from being late to CHASE one (on them) - an overdue count alone cannot tell a backlog from a chase list. Also returns euros sitting with clients awaiting a greenlight, open leads nobody owns, and leads gone quiet. Use for 'who are we late with?', 'what do I owe today?', 'how much is waiting for a greenlight?'.",
   parameters: {
     type: "object",
     properties: {
@@ -457,7 +457,7 @@ const searchCompanies: CopilotTool = {
   name: "search_companies",
   permission: "lead:read",
   description:
-    "Find or rank CLIENT COMPANIES — the organisation itself and everything we have done with it across every deal, past and present. Use this for the relationship: lifetime value, repeat business, which clients came back, who our biggest accounts are ('how much repeat business do we have with Fastweb?'). Use search_leads instead when the question is about individual engagements and their pipeline stage — one company can have several leads/deals over time. Returns compact company records with rolled-up open, lifetime and repeat value.",
+    "Find or rank CLIENT COMPANIES - the organisation itself and everything we have done with it across every deal, past and present. Use this for the relationship: lifetime value, repeat business, which clients came back, who our biggest accounts are ('how much repeat business do we have with Fastweb?'). Use search_leads instead when the question is about individual engagements and their pipeline stage - one company can have several leads/deals over time. Returns compact company records with rolled-up open, lifetime and repeat value.",
   parameters: {
     type: "object",
     properties: {
@@ -560,7 +560,7 @@ const proposalPipeline: CopilotTool = {
   name: "proposal_pipeline",
   permission: "proposal:read",
   description:
-    "The money view of proposals: how much value is sitting with clients awaiting a decision, how many proposals are sent/accepted/rejected, the real proposal win rate, plus open and weighted pipeline and total repeat business. Use this for 'how much is out awaiting a decision?' and for win rates — proposals are recorded separately from stages, so these are actual euros sent, counting only the newest revision per deal (a re-quote is never double counted). pipeline_summary counts leads by stage; this counts money on real proposals.",
+    "The money view of proposals: how much value is sitting with clients awaiting a decision, how many proposals are sent/accepted/rejected, the real proposal win rate, plus open and weighted pipeline and total repeat business. Use this for 'how much is out awaiting a decision?' and for win rates - proposals are recorded separately from stages, so these are actual euros sent, counting only the newest revision per deal (a re-quote is never double counted). pipeline_summary counts leads by stage; this counts money on real proposals.",
   parameters: { type: "object", properties: {} },
   async execute() {
     if (!(await can("proposal:read"))) {
@@ -635,7 +635,7 @@ const draftOutreach: CopilotTool = {
   name: "draft_outreach",
   permission: "outreach:compose",
   description:
-    "Draft a templated outreach email for a lead. It is only SAVED — never sent. Admins get a draft; members get a pending-approval request an admin must send.",
+    "Draft a templated outreach email for a lead. It is only SAVED - never sent. Admins get a draft; members get a pending-approval request an admin must send.",
   write: true,
   parameters: {
     type: "object",
@@ -657,7 +657,7 @@ const draftOutreach: CopilotTool = {
     const brand = await writableLead(a.id, "outreach:compose");
     if (!brand) return { ok: false, error: "Lead not found." };
     const recipient = a.to ?? brand.email;
-    if (!recipient) return { ok: false, error: "No recipient email — add a contact email to the lead first." };
+    if (!recipient) return { ok: false, error: "No recipient email - add a contact email to the lead first." };
 
     const templateId = OUTREACH_TEMPLATES.some((t) => t.id === a.template) ? a.template! : DEFAULT_TEMPLATE_ID;
     const rendered = renderTemplate(templateId, { brand, senderName: ctx.user.name });
@@ -734,7 +734,7 @@ const webSearch: CopilotTool = {
  * The product manual, read out of the registries that define it.
  *
  * Defined here rather than in tools-extra so it can hold COPILOT_TOOLS without
- * closing an import cycle — it reads the list inside execute, after the module
+ * closing an import cycle - it reads the list inside execute, after the module
  * has finished initialising.
  */
 const explainPlatform: CopilotTool = {

@@ -44,7 +44,7 @@ describe("copilot tool registry", () => {
     const steps = readFileSync(path.join(process.cwd(), "src/lib/tour/steps.ts"), "utf8");
     const quoted = [...steps.matchAll(/(\d+) tools/g)].map((m) => Number(m[1]));
     expect(quoted.length).toBeGreaterThan(0);
-    // "went from 14 tools to 33" — the historical figure is allowed to stay,
+    // "went from 14 tools to 33" - the historical figure is allowed to stay,
     // the current one has to be right.
     expect(Math.max(...quoted)).toBe(COPILOT_TOOLS.length);
   });

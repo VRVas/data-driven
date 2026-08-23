@@ -21,7 +21,7 @@ export async function askCopilot(message: string, opts: AskOptions = {}): Promis
   const text = (message ?? "").trim();
   if (!text) return { blocks: [b.text("Ask me something about the pipeline.")], provider: "n/a", tools: [] };
   if (text.length > 1000)
-    return { blocks: [b.callout("That's a bit long — try a shorter question.", "warning")], provider: "n/a", tools: [] };
+    return { blocks: [b.callout("That's a bit long - try a shorter question.", "warning")], provider: "n/a", tools: [] };
 
   const reasoning = opts.reasoning || wantsReasoning(text);
   try {
@@ -55,7 +55,7 @@ export interface ActionResult {
 // pseudo-tools like open_lead/open_outbox are handled client-side).
 /**
  * Any write tool can back an action button. Derived from the registry rather
- * than listed here, so a new write tool is not silently unclickable — its own
+ * than listed here, so a new write tool is not silently unclickable - its own
  * permission and record scope are enforced inside runTool either way.
  */
 const isActionable = (tool: string) => COPILOT_TOOLS.some((t) => t.name === tool && t.write);
@@ -95,7 +95,7 @@ export async function runCopilotAction(tool: string, args: Record<string, unknow
       ok: true,
       blocks: [
         b.callout(
-          `Recorded revision ${d?.revision} for ${d?.name} — €${Number(d?.valueEur ?? 0).toLocaleString()} (${d?.status})${confirmed ? `. Budget confirmed at €${confirmed.accepted.toLocaleString()}.` : ""}`,
+          `Recorded revision ${d?.revision} for ${d?.name} - €${Number(d?.valueEur ?? 0).toLocaleString()} (${d?.status})${confirmed ? `. Budget confirmed at €${confirmed.accepted.toLocaleString()}.` : ""}`,
           "success",
           "Proposal recorded",
         ),

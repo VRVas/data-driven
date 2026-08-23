@@ -139,7 +139,7 @@ function Field({ label, required, children }: { label: string; required?: boolea
 function SelectField({ name, defaultValue, options }: { name: string; defaultValue: string; options: readonly string[] }) {
   return (
     <select name={name} defaultValue={defaultValue} className="auth-input">
-      <option value="">—</option>
+      <option value="">-</option>
       {options.map((o) => (
         <option key={o} value={o}>{o}</option>
       ))}

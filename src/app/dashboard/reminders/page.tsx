@@ -27,8 +27,8 @@ export default async function RemindersPage() {
             <h1 className="font-display text-3xl font-semibold tracking-tight">Reminders</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
               {reminders.length === 0
-                ? "Nothing on the radar — no open follow-ups scheduled."
-                : `${dueCount} need attention · ${reminders.length} scheduled in the next 30 days.`}
+                ? "Nothing on the radar - no open follow-ups scheduled."
+                : `${dueCount} need attention - ${reminders.length} scheduled in the next 30 days.`}
             </p>
           </div>
           {reminders.length > 0 && (
@@ -56,7 +56,7 @@ export default async function RemindersPage() {
               <div className="mb-3 flex items-baseline justify-between">
                 <h2 className="font-display text-lg font-semibold">{title}</h2>
                 <span className="text-xs text-[var(--color-ink-faint)]">
-                  {items.length} · {blurb}
+                  {items.length} - {blurb}
                 </span>
               </div>
               <div>

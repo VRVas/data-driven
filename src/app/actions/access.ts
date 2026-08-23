@@ -77,7 +77,7 @@ export async function saveProfile(_prev: AccessActionState, formData: FormData):
   const store = getProfileStore();
   const current = existingId ? await store.get(existingId) : null;
   if (existingId && !current) return { error: "That profile no longer exists." };
-  if (current?.system) return { error: "Built-in profiles can't be edited — duplicate one instead." };
+  if (current?.system) return { error: "Built-in profiles can't be edited - duplicate one instead." };
 
   // Editing a profile you hold is how you quietly grant yourself more.
   if (current && ctx.profileIds.includes(current.id) && !ctx.superuser) {

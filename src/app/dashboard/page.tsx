@@ -12,7 +12,7 @@ import { STATUS_TOKEN, PRIORITY_TOKEN, weightedValue, effectiveScores } from "@/
 import { rankByPriority } from "@/lib/priority";
 import type { BrandStatus } from "@/lib/types";
 
-// Reads the live brand store — render per request (never prerender at build).
+// Reads the live brand store - render per request (never prerender at build).
 export const dynamic = "force-dynamic";
 
 const STATUS_ORDER: BrandStatus[] = [
@@ -77,7 +77,7 @@ export default async function DashboardOverview() {
             <div className="eyebrow mb-2">Command center</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Overview</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
-              {brands.length} leads · {scored.length} scored · snapshot {ds.meta.snapshotDate}
+              {brands.length} leads - {scored.length} scored - snapshot {ds.meta.snapshotDate}
             </p>
           </div>
           <StatusPill label="Live data" />
@@ -101,7 +101,7 @@ export default async function DashboardOverview() {
         </Reveal>
 
         <Reveal>
-          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Open leads · opportunity × winnability · bubble = budget" tour="quadrant">
+          <Panel eyebrow="Targeting" title="Priority quadrant" subtitle="Open leads - opportunity × winnability - bubble = budget" tour="quadrant">
             <PriorityQuadrant points={points} />
           </Panel>
         </Reveal>

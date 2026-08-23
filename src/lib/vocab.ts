@@ -1,6 +1,6 @@
 import type { BrandStatus, Priority, Industry } from "./types";
 
-// Controlled vocabularies — mirror the original workbook's data-validation lists.
+// Controlled vocabularies - mirror the original workbook's data-validation lists.
 export const BRAND_STATUSES: readonly BrandStatus[] = [
   "Deal Closed",
   "Advanced",

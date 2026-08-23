@@ -13,14 +13,14 @@ export default function Home() {
   const scored = brands.filter((b) => b.scored && b.scores);
   const closed = brands.filter((b) => b.status === "Deal Closed").length;
   const weighted = openLeads(brands).reduce((sum, b) => sum + weightedValue(b), 0);
-  // "In play" means still open — a won or lost deal is not in play.
+  // "In play" means still open - a won or lost deal is not in play.
   const totalBudget = openLeads(scored).reduce((s, b) => s + (b.scores?.budget ?? 0), 0);
 
   const features = [
-    { title: "Pipeline & CRM", body: "Every lead, owner, stage and follow-up — live, filterable, editable.", tag: "Trackers" },
+    { title: "Pipeline & CRM", body: "Every lead, owner, stage and follow-up - live, filterable, editable.", tag: "Trackers" },
     { title: "Lead scoring", body: "The workbook's hidden model, rebuilt: what a deal is worth against how likely it is to close.", tag: "Quadrant" },
     { title: "Industry heat-map", body: "Segment scorecards fused with the sales playbook for each vertical.", tag: "Strategy" },
-    { title: "Whitespace / TAM", body: "Approached vs addressable EU market — see where the room actually is.", tag: "Opportunity" },
+    { title: "Whitespace / TAM", body: "Approached vs addressable EU market - see where the room actually is.", tag: "Opportunity" },
     { title: "Data quality", body: "Naming, dates and taxonomy fixed on import, with a full audit trail.", tag: "Console" },
     { title: "AI copilot", body: "Chat with the data, reason across tasks and pull real-time context.", tag: "Foundry" },
   ];
@@ -37,7 +37,7 @@ export default function Home() {
         <section className="mx-auto max-w-7xl px-6 pb-16">
           <Reveal>
             <p className="eyebrow mb-5">
-              <strong>Snapshot</strong> · {ds.meta.snapshotDate}
+              <strong>Snapshot</strong> - {ds.meta.snapshotDate}
             </p>
           </Reveal>
           <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -66,13 +66,13 @@ export default function Home() {
         <section className="mx-auto max-w-7xl px-6 py-20">
           <Reveal>
             <p className="eyebrow mb-4">
-              <strong>The platform</strong> · six lenses
+              <strong>The platform</strong> - six lenses
             </p>
             <h2 className="max-w-3xl font-display text-3xl font-semibold tracking-tight md:text-5xl">
               Six lenses on <span className="text-gradient">one dataset.</span>
             </h2>
             <p className="mt-4 max-w-2xl text-[var(--color-ink-muted)]">
-              Everything below is derived from the real data — no mock-ups.
+              Everything below is derived from the real data - no mock-ups.
             </p>
           </Reveal>
 
@@ -92,8 +92,8 @@ export default function Home() {
 
         <footer className="border-t border-[var(--color-border)] py-10">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-3 px-6 text-sm text-[var(--color-ink-faint)] md:flex-row">
-            <span>OOVIE Studios · Business Development Intelligence</span>
-            <span>Snapshot {ds.meta.snapshotDate} · Next.js on Azure</span>
+            <span>OOVIE Studios - Business Development Intelligence</span>
+            <span>Snapshot {ds.meta.snapshotDate} - Next.js on Azure</span>
           </div>
         </footer>
       </SmoothScrollProvider>

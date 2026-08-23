@@ -21,7 +21,7 @@ export const credentialsSchema = z.object({
   password: z.string().min(1),
 });
 
-/** Sign-up payload — password policy aligned with OWASP (length over complexity). */
+/** Sign-up payload - password policy aligned with OWASP (length over complexity). */
 export const signupSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(80),
   email: z.string().trim().toLowerCase().email("Enter a valid email"),

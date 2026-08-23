@@ -43,7 +43,7 @@ export function WhitespaceBars({ industries }: { industries: IndustryStat[] }) {
             <div className="mb-1 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 text-sm">
               <span className="font-medium">{ind.name}</span>
               <span className="text-[var(--color-ink-muted)]">
-                <span style={{ color }}>{ind.opened}</span> / {total} approached ·{" "}
+                <span style={{ color }}>{ind.opened}</span> / {total} approached -{" "}
                 <span className="text-[var(--color-ink)]">{gap.toLocaleString()}</span> untapped
               </span>
             </div>

@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 import { STORAGE_STATE } from "./constants";
 
 /**
- * Wave 6 — priority replaces the averaged 0–5 lead score.
+ * Wave 6 - priority replaces the averaged 0-5 lead score.
  *
  * The complaint was that a €0 project ranked third. The fix is structural:
  * two axes, blended by a geometric mean, with ease reported but never folded
@@ -50,12 +50,12 @@ test.describe("priority on a lead", () => {
     await page.goto("/dashboard/pipeline/dell-emea");
     await expect(page.getByText("Priority", { exact: true }).first()).toBeVisible();
     await expect(page.getByText(/grade [ABCD]/)).toBeVisible();
-    await expect(page.getByText(/opportunity \d+ · winnability \d+/)).toBeVisible();
+    await expect(page.getByText(/opportunity \d+ - winnability \d+/)).toBeVisible();
     await page.screenshot({ path: "e2e-artifacts/screens/44-lead-priority.png" });
   });
 
   test("strategic value is capturable and moves the priority", async ({ page }) => {
-    // A free project should be visible without being able to top the ranking —
+    // A free project should be visible without being able to top the ranking -
     // which only works if someone can actually record why it matters.
     await page.goto("/dashboard/pipeline");
     await page.locator("tbody tr").first().getByRole("button", { name: "Edit" }).click();

@@ -31,7 +31,7 @@ export default async function OutboxPage() {
             <div className="eyebrow mb-2">Actions</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Outbox</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
-              Templated outreach — {isAdmin ? "review, approve and send." : "draft and submit for an admin to send."}
+              Templated outreach - {isAdmin ? "review, approve and send." : "draft and submit for an admin to send."}
             </p>
           </div>
           {all.length > 0 && (

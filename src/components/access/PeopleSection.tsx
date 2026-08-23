@@ -80,7 +80,7 @@ export function PeopleSection({
                 <td className="hidden px-4 py-3 md:table-cell sm:px-6">
                   <div className="flex flex-wrap gap-1">
                     {person.profiles.length === 0 ? (
-                      <span className="text-[var(--color-ink-faint)]">—</span>
+                      <span className="text-[var(--color-ink-faint)]">-</span>
                     ) : (
                       person.profiles.map((p) => <ProfilePill key={p.id} id={p.id} name={p.name} />)
                     )}

@@ -19,13 +19,13 @@ const ACTIONS_DIR = path.join(process.cwd(), "src", "app", "actions");
 /**
  * Actions that run before a session exists, and so have no permission to check.
  * Each entry is, by definition, an unauthenticated endpoint open to the
- * internet — add one only with a reason as strong as these.
+ * internet - add one only with a reason as strong as these.
  */
 const PRE_AUTH_ALLOWLIST: readonly { file: string; fn: string; reason: string }[] = [
   {
     file: "auth.ts",
     fn: "loginAction",
-    reason: "Sign-in itself: the caller has no session yet — this is what creates one.",
+    reason: "Sign-in itself: the caller has no session yet - this is what creates one.",
   },
   {
     file: "auth.ts",
@@ -81,7 +81,7 @@ describe("server actions", () => {
       const found = scanActions(readFileSync(file, "utf8"));
       expect(
         found.length,
-        `${relative(file)} — the scanner found no exported async functions in a file that should contain server actions; fix the scanner rather than trusting it`,
+        `${relative(file)} - the scanner found no exported async functions in a file that should contain server actions; fix the scanner rather than trusting it`,
       ).toBeGreaterThan(0);
     }
   });
@@ -102,7 +102,7 @@ describe("server actions", () => {
     for (const entry of PRE_AUTH_ALLOWLIST) {
       expect(
         existing.has(`${entry.file}#${entry.fn}`),
-        `${entry.file} \u203a ${entry.fn} is allow-listed as pre-authentication but no longer exists — delete the entry or correct the name`,
+        `${entry.file} \u203a ${entry.fn} is allow-listed as pre-authentication but no longer exists - delete the entry or correct the name`,
       ).toBe(true);
     }
   });
@@ -117,7 +117,7 @@ const FIXTURE = `"use server";
 
 import { requirePermission } from "@/lib/auth/authorize";
 
-/** Not exported, so unreachable — its guard must not be credited to anyone else. */
+/** Not exported, so unreachable - its guard must not be credited to anyone else. */
 async function loadThings(): Promise<{ items: string[] }> {
   await requirePermission("lead:read");
   return { items: [] };
@@ -142,7 +142,7 @@ export async function typedAction<T extends { id: string }>(input: T): Promise<T
 }
 
 export async function unguardedAction(formData: FormData): Promise<{ ok: boolean }> {
-  const hint = "requirePermission({ — a call and a brace inside a string are neither";
+  const hint = "requirePermission({ - a call and a brace inside a string are neither";
   return { ok: formData.has(hint) };
 }
 
@@ -189,9 +189,9 @@ describe("the guard scanner itself", () => {
 
   it("rejects guards that cannot hold", () => {
     expect(guardViolations("fixture.ts", BROKEN_GUARDS, new Set())).toEqual([
-      'fixture.ts \u203a typoAction guards with requirePermission("lead:obliterate") — not in the permission catalogue',
-      "fixture.ts \u203a dynamicAction calls requirePermission(key) with a permission that is not a literal — it cannot be checked against the catalogue",
-      'fixture.ts \u203a forgotTheAwait calls requirePermission("lead:read") without awaiting it — the guard cannot block the call',
+      'fixture.ts \u203a typoAction guards with requirePermission("lead:obliterate") - not in the permission catalogue',
+      "fixture.ts \u203a dynamicAction calls requirePermission(key) with a permission that is not a literal - it cannot be checked against the catalogue",
+      'fixture.ts \u203a forgotTheAwait calls requirePermission("lead:read") without awaiting it - the guard cannot block the call',
     ]);
   });
 

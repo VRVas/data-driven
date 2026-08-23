@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * MagneticCTA — the hero call-to-action. A signature violet→aqua gradient pill
+ * MagneticCTA - the hero call-to-action. A signature violet→aqua gradient pill
  * with a mono label. The pill eases toward the cursor within a generous
  * magnetic zone, the label lags a touch behind for depth, and the trailing
  * arrow rides a CustomWiggle idle loop. Renders a Next `Link` or a `<button>`.

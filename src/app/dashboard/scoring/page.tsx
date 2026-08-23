@@ -39,12 +39,12 @@ const SCORE_COLS: Column[] = [
 ];
 
 const MODEL = [
-  { name: "Opportunity", desc: "What it is worth: budget × how much evidence backs it, capped at €80k, plus strategic value (max a quarter of the axis).", range: "0–100" },
-  { name: "Winnability", desc: "Whether it closes: stage 45%, freshness 25%, reachable decision-makers 15%, receptivity 15%.", range: "0–100" },
-  { name: "Priority", desc: "√(Opportunity × Winnability). A geometric mean, so weakness on one axis cannot be averaged away by strength on the other.", range: "0–100" },
-  { name: "Ease", desc: "What it costs to run — customization, accessibility, receptivity, alignment. Reported and used to break ties, never blended into priority.", range: "0–100" },
+  { name: "Opportunity", desc: "What it is worth: budget × how much evidence backs it, capped at €80k, plus strategic value (max a quarter of the axis).", range: "0-100" },
+  { name: "Winnability", desc: "Whether it closes: stage 45%, freshness 25%, reachable decision-makers 15%, receptivity 15%.", range: "0-100" },
+  { name: "Priority", desc: "√(Opportunity × Winnability). A geometric mean, so weakness on one axis cannot be averaged away by strength on the other.", range: "0-100" },
+  { name: "Ease", desc: "What it costs to run - customization, accessibility, receptivity, alignment. Reported and used to break ties, never blended into priority.", range: "0-100" },
   { name: "Expected value", desc: "Adjusted budget × stage probability × freshness. Shown in euros beside the priority, never folded into it.", range: "€" },
-  { name: "Strategic value", desc: "0–3 for worth beyond the invoice — a logo, a referral source, a reference case. Capped so it cannot outrank paid work alone.", range: "0–3" },
+  { name: "Strategic value", desc: "0-3 for worth beyond the invoice - a logo, a referral source, a reference case. Capped so it cannot outrank paid work alone.", range: "0-3" },
 ];
 
 export default async function ScoringPage() {
@@ -95,7 +95,7 @@ export default async function ScoringPage() {
             <div className="eyebrow mb-2">Model</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Scoring model</h1>
             <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
-              Leads are ranked by <strong>Priority</strong> — what a deal is worth against how likely it is to
+              Leads are ranked by <strong>Priority</strong> - what a deal is worth against how likely it is to
               close. The two are combined with a geometric mean, so being easy can no longer make up for
               being worthless.
             </p>
@@ -126,7 +126,7 @@ export default async function ScoringPage() {
           <div className="glass p-6">
             <h2 className="font-display text-lg font-semibold">Priority quadrant</h2>
             <p className="mb-4 mt-1 text-sm text-[var(--color-ink-muted)]">
-              {points.length} open leads · won and lost deals are excluded
+              {points.length} open leads - won and lost deals are excluded
             </p>
             <PriorityQuadrant points={points} />
           </div>
@@ -136,7 +136,7 @@ export default async function ScoringPage() {
           <div className="glass p-6">
             <h2 className="font-display text-lg font-semibold">Top-ranked leads</h2>
             <p className="mb-4 mt-1 text-sm text-[var(--color-ink-muted)]">
-              Where to spend effort next · won and lost deals are excluded
+              Where to spend effort next - won and lost deals are excluded
             </p>
             <ol className="space-y-1.5">
               {ranked.slice(0, 12).map(({ brand, p }, i) => (
@@ -145,7 +145,7 @@ export default async function ScoringPage() {
                   <span className="flex-1 font-medium">{brand.name}</span>
                   <span className="text-xs text-[var(--color-ink-muted)]">{p.quadrant}</span>
                   <span className="w-16 text-right text-sm text-[var(--color-ink-muted)]">
-                    {brand.scores?.budget ? eur(brand.scores.budget) : "—"}
+                    {brand.scores?.budget ? eur(brand.scores.budget) : "-"}
                   </span>
                   <Badge color={GRADE_TOKEN[p.grade]}>{p.grade}</Badge>
                   <span className="w-10 text-right font-display font-semibold tabular-nums text-[var(--color-brand-bright)]">

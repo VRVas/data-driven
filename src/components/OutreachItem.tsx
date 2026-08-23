@@ -56,8 +56,8 @@ export function OutreachItem({
             <span className="text-sm text-[var(--color-ink)]">{o.subject}</span>
           </div>
           <div className="mt-1 text-xs text-[var(--color-ink-faint)]">
-            to {o.to} · {o.createdByName} · <time dateTime={o.createdAt}>{relativeTime(o.createdAt)}</time>
-            {o.status === "sent" && o.provider ? ` · via ${o.provider}` : ""}
+            to {o.to} - {o.createdByName} - <time dateTime={o.createdAt}>{relativeTime(o.createdAt)}</time>
+            {o.status === "sent" && o.provider ? ` - via ${o.provider}` : ""}
           </div>
         </div>
         <div className="flex items-center gap-1.5">

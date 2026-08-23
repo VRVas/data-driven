@@ -9,7 +9,7 @@
  * refreshed on route change so ScrollTriggers re-measure the new page.
  *
  * Anything `position: fixed` (top bar, drawers, palette, toasts) must live
- * OUTSIDE this wrapper — the transform on `#smooth-content` would otherwise
+ * OUTSIDE this wrapper - the transform on `#smooth-content` would otherwise
  * become its containing block.
  */
 import { useRef } from "react";

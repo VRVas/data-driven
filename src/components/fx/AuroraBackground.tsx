@@ -1,12 +1,12 @@
 "use client";
 
 /**
- * AuroraBackground — slow-drifting blurred colour fields behind content.
+ * AuroraBackground - slow-drifting blurred colour fields behind content.
  *
  * Three brand blobs breathe across the canvas on long sine loops (yoyo), giving
  * the "Midnight kinetic canvas" its living glow. Purely decorative; frozen for
  * reduced-motion users. Absolutely positioned to fill its nearest positioned
- * ancestor — drop it into any `relative` section.
+ * ancestor - drop it into any `relative` section.
  */
 import { useRef } from "react";
 import { gsap, useGSAP } from "@/lib/gsap/register";

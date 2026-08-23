@@ -2,7 +2,7 @@ import { reconcileImportedOutcome } from "./lifecycle";
 import type { Brand, BrandStatus } from "./types";
 
 /**
- * Allowed pipeline stage transitions — a small directed graph over the workbook's
+ * Allowed pipeline stage transitions - a small directed graph over the workbook's
  * status vocabulary. Keeps the pipeline honest (no illegal jumps) and drives the
  * quick-advance control on the lead page.
  */
@@ -42,7 +42,7 @@ export function addDays(ymd: string, days: number): string {
 }
 
 /**
- * Date side-effects when entering a status (pure — `today` injected):
+ * Date side-effects when entering a status (pure - `today` injected):
  *  - any move counts as a touch → refresh `lastContact`;
  *  - closing/losing a deal stamps `closingFailed` (if not already set);
  *  - entering "Follow Up" seeds a follow-up a week out when none exists.
@@ -69,7 +69,7 @@ export function statusSideEffects(
  * outcome, in one decision.
  *
  * The screens and the copilot both move leads, and assembling this by hand in
- * two places had already drifted — chat left the imported-outcome conflict
+ * two places had already drifted - chat left the imported-outcome conflict
  * flagged where the UI cleared it, so the same move produced two different
  * records depending on where it was made.
  */

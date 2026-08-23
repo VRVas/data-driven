@@ -198,7 +198,7 @@ test.describe("copilot planning tools", () => {
       expect(String(i.suggestedTool).length).toBeGreaterThan(0);
     }
 
-    // Ranked by priority, descending — the whole point over a date sort.
+    // Ranked by priority, descending - the whole point over a date sort.
     const scores = items.map((i) => Number(i.priorityScore ?? 0));
     expect([...scores].sort((a, z) => z - a)).toEqual(scores);
 
@@ -249,7 +249,7 @@ test.describe("copilot planning tools", () => {
 /**
  * The starter prompts are the first thing anyone clicks, so each one has to
  * reach the tool it advertises. Intent routing is regex-ordered and the
- * patterns overlap — "allowed TO DO" was being captured by the triage route's
+ * patterns overlap - "allowed TO DO" was being captured by the triage route's
  * `to.?do` before the permissions route existed.
  */
 test.describe("copilot starter prompts route to the right tool", () => {

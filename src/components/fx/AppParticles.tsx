@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * AppParticles — global, fixed particle layer that sits behind all content.
+ * AppParticles - global, fixed particle layer that sits behind all content.
  * Mount once near the root so motes drift across the whole app.
  */
 import { ParticleField } from "./ParticleField";

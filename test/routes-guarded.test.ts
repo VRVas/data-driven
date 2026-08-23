@@ -5,14 +5,14 @@ import { ROUTE_GUARDS, guardViolations, maskLiterals, scanActions } from "./supp
 
 /**
  * Route handlers under src/app/api are POST/GET endpoints the browser reaches
- * directly, exactly like server actions — but they were not covered by the
+ * directly, exactly like server actions - but they were not covered by the
  * action scanner, so the API surface was both unguarded and unpoliced. This
  * test closes that: every exported HTTP handler must gate on a catalogued
  * permission via `apiPermission`.
  *
  * It also refuses to be evaded. A handler exported in a form the scanner
- * cannot read — `export const POST = async () => {}`, or a destructured
- * re-export — is reported rather than skipped, so the way to ship an unguarded
+ * cannot read - `export const POST = async () => {}`, or a destructured
+ * re-export - is reported rather than skipped, so the way to ship an unguarded
  * route is to edit this file, not to pick a different syntax.
  */
 
@@ -29,7 +29,7 @@ const PRE_AUTH_ALLOWLIST: readonly { route: string; handlers: readonly string[];
     route: "src/app/api/auth/[...nextauth]/route.ts",
     handlers: ["GET", "POST"],
     reason:
-      "Auth.js itself — the sign-in, callback and session endpoints. This is what creates a session, so it cannot require one.",
+      "Auth.js itself - the sign-in, callback and session endpoints. This is what creates a session, so it cannot require one.",
   },
 ];
 
@@ -45,7 +45,7 @@ const DIRECT_EXPORT = new RegExp(
   "g",
 );
 
-/** `export const { GET, POST } = handlers` — a re-export with no body here. */
+/** `export const { GET, POST } = handlers` - a re-export with no body here. */
 const DESTRUCTURED_EXPORT = /\bexport\s+(?:const|let|var)\s*\{([^}]*)\}/g;
 
 /** Every HTTP method this file exports, however it chose to do it. */
@@ -92,7 +92,7 @@ function unreadableHandlers(file: string, source: string): string[] {
     .filter((method) => !exempt.has(method) && !scannable.has(method))
     .map(
       (method) =>
-        `${relative(file)} \u203a ${method} is exported in a form the guard scanner cannot read — declare it as \`export async function ${method}\` so its guard can be verified`,
+        `${relative(file)} \u203a ${method} is exported in a form the guard scanner cannot read - declare it as \`export async function ${method}\` so its guard can be verified`,
     );
 }
 
@@ -104,7 +104,7 @@ describe("api route handlers", () => {
     for (const file of FILES) {
       expect(
         exportedHandlers(maskLiterals(readFileSync(file, "utf8"))).size,
-        `${relative(file)} — no HTTP handler found in a file Next.js will serve as an endpoint; fix the scanner rather than trusting it`,
+        `${relative(file)} - no HTTP handler found in a file Next.js will serve as an endpoint; fix the scanner rather than trusting it`,
       ).toBeGreaterThan(0);
     }
   });
@@ -134,7 +134,7 @@ describe("api route handlers", () => {
       for (const handler of entry.handlers) {
         expect(
           exported.has(handler),
-          `${entry.route} \u203a ${handler} is allow-listed but is no longer exported — remove the entry`,
+          `${entry.route} \u203a ${handler} is allow-listed but is no longer exported - remove the entry`,
         ).toBe(true);
       }
     }
@@ -172,7 +172,7 @@ describe("the route handler finder", () => {
   it("reports a handler the scanner cannot read rather than passing it", () => {
     const source = `export const POST = async () => { return Response.json({}); };`;
     expect(unreadableHandlers("src/app/api/x/route.ts", source)).toEqual([
-      "src/app/api/x/route.ts \u203a POST is exported in a form the guard scanner cannot read — declare it as `export async function POST` so its guard can be verified",
+      "src/app/api/x/route.ts \u203a POST is exported in a form the guard scanner cannot read - declare it as `export async function POST` so its guard can be verified",
     ]);
   });
 });

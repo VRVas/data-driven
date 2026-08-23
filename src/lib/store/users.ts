@@ -15,7 +15,7 @@ export interface AppUser {
   role: UserRole;
   passwordHash: string;
   createdAt: string;
-  /** Absent on accounts created before profiles existed — resolved from `role`. */
+  /** Absent on accounts created before profiles existed - resolved from `role`. */
   assignment?: Assignment;
   /** Bumped whenever grants change, so cached sessions can detect staleness. */
   permissionsVersion?: number;
@@ -36,7 +36,7 @@ export interface UserStore {
 /**
  * Normalise roles for back-compat with records written before roles existed:
  *  - if nobody has a role yet, the earliest-created account becomes `admin`
- *    (auto-migration — the founding user keeps full control);
+ *    (auto-migration - the founding user keeps full control);
  *  - any other missing role defaults to `member` (least privilege).
  */
 function normalizeRoles(users: AppUser[]): AppUser[] {
@@ -48,7 +48,7 @@ function normalizeRoles(users: AppUser[]): AppUser[] {
 }
 
 // --------------------------------------------------------------------------
-// Local file store (development only) — persists to .data/users.json
+// Local file store (development only) - persists to .data/users.json
 // --------------------------------------------------------------------------
 const DATA_DIR = path.join(process.cwd(), ".data");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
@@ -128,7 +128,7 @@ class LocalUserStore implements UserStore {
 }
 
 // --------------------------------------------------------------------------
-// Cosmos DB store (production) — container "users", partition key /email
+// Cosmos DB store (production) - container "users", partition key /email
 // --------------------------------------------------------------------------
 class CosmosUserStore implements UserStore {
   private container() {

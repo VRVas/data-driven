@@ -27,7 +27,7 @@ const STAGES = new Set<string>([
   "Did not work out",
 ]);
 
-/** `Recurring` was never a stage — it described repeat business. */
+/** `Recurring` was never a stage - it described repeat business. */
 export function stageOf(brand: Brand): { stage: DealStage; dealType: DealType } {
   if (brand.status === "Recurring") return { stage: "Advanced", dealType: "Recurring" };
   const stage = (brand.status && STAGES.has(brand.status) ? brand.status : "Still to open") as DealStage;
@@ -56,7 +56,7 @@ function asTimestamp(day: string | null, fallback: string): string {
  * as an accepted or rejected proposal would make the proposal win rate a
  * restatement of the deal win rate under a name that promises something else:
  * a figure about paperwork we actually sent. These records were never sent
- * — sentAt would be null on every one of them.
+ * - sentAt would be null on every one of them.
  *
  * Proposals therefore start empty and fill up as the team records real ones.
  */

@@ -6,7 +6,7 @@ import path from "node:path";
 /**
  * Account recovery, driven through the real pages.
  *
- * Deliberately unauthenticated — the point of these flows is that someone with
+ * Deliberately unauthenticated - the point of these flows is that someone with
  * no session can reach them.
  */
 

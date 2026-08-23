@@ -15,7 +15,7 @@ export interface AgentStore {
 }
 
 // --------------------------------------------------------------------------
-// Local file store (development) — .data/agents.json, seeded from the ETL
+// Local file store (development) - .data/agents.json, seeded from the ETL
 // --------------------------------------------------------------------------
 const DATA_DIR = path.join(process.cwd(), ".data");
 const AGENTS_FILE = path.join(DATA_DIR, "agents.json");
@@ -53,7 +53,7 @@ class LocalAgentStore implements AgentStore {
 }
 
 // --------------------------------------------------------------------------
-// Cosmos DB store (production) — container "agents", partition key /id
+// Cosmos DB store (production) - container "agents", partition key /id
 // --------------------------------------------------------------------------
 class CosmosAgentStore implements AgentStore {
   // Seed the empty container at most once per process (parity with LocalAgentStore).

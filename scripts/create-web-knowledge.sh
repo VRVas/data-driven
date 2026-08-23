@@ -84,4 +84,4 @@ for i in $(seq 1 10); do
 done
 [ "$ok" = 1 ] || { echo "WARNING: could not create the knowledge base."; exit 1; }
 
-echo "Web grounding ready: knowledge base '$KB_NAME' fronts web source '$KS_NAME' — manage it in the Foundry portal."
+echo "Web grounding ready: knowledge base '$KB_NAME' fronts web source '$KS_NAME' - manage it in the Foundry portal."

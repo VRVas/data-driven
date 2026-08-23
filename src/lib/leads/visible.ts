@@ -40,7 +40,7 @@ export async function getVisibleScoredBrands(): Promise<Brand[]> {
   return (await getVisibleBrands()).filter((b) => b.scored && b.scores);
 }
 
-/** True when the viewer may see this specific lead — for detail routes. */
+/** True when the viewer may see this specific lead - for detail routes. */
 export async function canSeeBrand(brand: Pick<Brand, "owner">): Promise<boolean> {
   const ctx = await getAuthzContext();
   if (!ctx) return false;
@@ -56,7 +56,7 @@ export async function canSeeBrand(brand: Pick<Brand, "owner">): Promise<boolean>
  *
  * Judged against the scope the *write* permission resolved to, not the read
  * one. Holding `lead:read: all` with `lead:update: own` is a coherent thing to
- * configure — look at everything, change only yours — and finding the record
+ * configure - look at everything, change only yours - and finding the record
  * through a read-scoped lookup would silently grant the wider of the two.
  *
  * Call it immediately after loading the record and before touching it: a
@@ -73,7 +73,7 @@ export async function authorizeLead(auth: Authorized, lead: Pick<Brand, "owner">
 /**
  * A lead the caller is allowed to see, or null.
  *
- * Out of scope returns null so callers answer "not found" — the same answer as
+ * Out of scope returns null so callers answer "not found" - the same answer as
  * a lead that does not exist, which is what stops a reply confirming the
  * existence of records the caller cannot open.
  */

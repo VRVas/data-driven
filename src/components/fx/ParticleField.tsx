@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * ParticleField — a scatter of tiny glowing motes that drift upward, sway and
+ * ParticleField - a scatter of tiny glowing motes that drift upward, sway and
  * fade on independent loops. Deterministic markup (positions from index) keeps
  * SSR + client in sync; all randomness is applied client-side by GSAP after
  * mount, so there is no hydration mismatch. Frozen for reduced-motion users.

@@ -10,7 +10,7 @@ interface Props {
   columns: Column[];
   /** The current (e.g. filtered) rows. */
   rows: Record<string, unknown>[];
-  /** Optional full dataset — when it differs from `rows`, an "all" option appears. */
+  /** Optional full dataset - when it differs from `rows`, an "all" option appears. */
   allRows?: Record<string, unknown>[];
   label?: string;
   size?: "sm" | "md";
@@ -58,13 +58,13 @@ export function ExportMenu({ filename, columns, rows, allRows, label = "Export",
             role="menu"
             className="absolute right-0 z-20 mt-1 w-56 overflow-hidden rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-elevated)] py-1 shadow-2xl"
           >
-            <Item onClick={() => save("csv", rows)}>Download CSV{hasAll ? ` · ${rows.length} shown` : ""}</Item>
+            <Item onClick={() => save("csv", rows)}>Download CSV{hasAll ? ` - ${rows.length} shown` : ""}</Item>
             <Item onClick={() => save("json", rows)}>Download JSON</Item>
             <Item onClick={() => save("xlsx", rows)}>Download Excel (.xlsx)</Item>
             <Item onClick={() => save("pdf", rows)}>Download PDF</Item>
             {hasAll && (
               <Item onClick={() => save("csv", allRows!)}>
-                Download all {allRows!.length} · CSV
+                Download all {allRows!.length} - CSV
               </Item>
             )}
             <div className="my-1 h-px bg-[var(--color-border)]" />

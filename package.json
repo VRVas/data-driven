@@ -2,7 +2,7 @@
   "name": "data-driven-platform",
   "version": "0.1.0",
   "private": true,
-  "description": "OOVIE Studios — Business Development intelligence platform (Next.js on Azure).",
+  "description": "OOVIE Studios - Business Development intelligence platform (Next.js on Azure).",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

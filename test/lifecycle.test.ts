@@ -31,7 +31,7 @@ describe("outcomeOf", () => {
     expect(outcomeOf("Did not work out")).toBe("lost");
   });
 
-  it("treats every other status — including Recurring — as open", () => {
+  it("treats every other status - including Recurring - as open", () => {
     const terminal = new Set(["Deal Closed", "Did not work out"]);
     for (const s of BRAND_STATUSES.filter((s) => !terminal.has(s))) {
       expect(outcomeOf(s), `${s} should be open`).toBe("open");

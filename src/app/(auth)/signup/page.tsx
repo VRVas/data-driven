@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { AuthForm } from "@/components/AuthForm";
 import { signupAction } from "@/app/actions/auth";
 
-export const metadata: Metadata = { title: "Create account · OOVIE" };
+export const metadata: Metadata = { title: "Create account - OOVIE" };
 
 export default function SignupPage() {
   return (

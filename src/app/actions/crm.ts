@@ -21,7 +21,7 @@ const todayIso = () => new Date().toISOString();
 
 /**
  * Attach a deal to an existing company. This is the only way two leads ever end
- * up under one client — name similarity never does it, because "Allianz Bank"
+ * up under one client - name similarity never does it, because "Allianz Bank"
  * and "Allianz CH" are probably different customers.
  */
 export async function linkDealToCompany(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
@@ -109,7 +109,7 @@ export async function mergeCompanies(_prev: CrmActionState, formData: FormData):
   return { ok: true };
 }
 
-/** Undo a link — the deal goes back to standing on its own. */
+/** Undo a link - the deal goes back to standing on its own. */
 export async function unlinkDeal(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
   const auth = await requirePermission("lead:update");
   const { user } = auth;
@@ -199,7 +199,7 @@ export async function saveProposal(_prev: CrmActionState, formData: FormData): P
     action: wasEdit ? "proposal.update" : "proposal.create",
     entity: "proposal",
     entityId: proposal.id,
-    summary: `${wasEdit ? "Updated" : "Added"} proposal for ${deal.name} — €${proposal.value.toLocaleString()} (${proposal.status})`,
+    summary: `${wasEdit ? "Updated" : "Added"} proposal for ${deal.name} - €${proposal.value.toLocaleString()} (${proposal.status})`,
   });
 
   if (confirmedBudget) {
@@ -237,7 +237,7 @@ export async function deleteProposal(_prev: CrmActionState, formData: FormData):
   if (deal) await authorizeLead(auth, deal);
 
   await getCrmOverlayStore().removeProposal(id);
-  // The lead mirrors its paperwork, so removing the paperwork has to move it —
+  // The lead mirrors its paperwork, so removing the paperwork has to move it -
   // otherwise a deleted acceptance leaves a Confirmed budget with nothing
   // behind it, still weighted as fact by the score.
   await syncLeadValue(

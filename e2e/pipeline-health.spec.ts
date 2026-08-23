@@ -2,7 +2,7 @@ import { test, expect } from "./fixtures";
 import { STORAGE_STATE } from "./constants";
 
 /**
- * Wave 4/5 — the pipeline view has to answer, at a glance:
+ * Wave 4/5 - the pipeline view has to answer, at a glance:
  *  - are we late replying to them?
  *  - are we late chasing them?
  *  - how much money is sitting with clients awaiting a greenlight?
@@ -76,7 +76,7 @@ test.describe("pipeline health", () => {
   });
 
   test("finished deals are out of the way but not lost", async ({ page }) => {
-    // "Remove all the noise, as here I want to see only what is active" —
+    // "Remove all the noise, as here I want to see only what is active" -
     // without the closed deals becoming unreachable.
     const counter = page.locator("text=/^\\d+ of \\d+$/");
     const active = page.getByRole("button", { name: /^Active/ });
@@ -122,7 +122,7 @@ test.describe("next move and expected duration", () => {
   });
 });
 
-test.describe("lead detail — next move and pace", () => {
+test.describe("lead detail - next move and pace", () => {
   test("shows who owes the move, how long it takes and the budget basis", async ({ page }) => {
     await page.goto("/dashboard/pipeline/alibaba");
     const panel = page.locator("section").filter({ hasText: "Next move & pace" }).first();

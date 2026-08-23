@@ -16,7 +16,7 @@ test.describe("access control", () => {
     await expect(page.getByRole("heading", { name: "People" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Permission profiles" })).toBeVisible();
 
-    // Match the profile cards' headings — the same names also appear as pills in
+    // Match the profile cards' headings - the same names also appear as pills in
     // the people table, including a mobile-only copy that is hidden at this width.
     for (const name of ["Administrator", "Sales manager", "Sales rep", "Operations & analysis", "Read only"]) {
       await expect(page.getByRole("heading", { name, exact: true })).toBeVisible();

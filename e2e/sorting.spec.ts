@@ -57,7 +57,7 @@ test.describe("companies sorting", () => {
   test("company sorts A to Z on first click", async ({ page }) => {
     await page.goto("/dashboard/companies");
     await page.getByRole("button", { name: /^Company$/i }).click();
-    // The link only — the cell also carries a mobile-only industry line, and
+    // The link only - the cell also carries a mobile-only industry line, and
     // textContent concatenates it ("l'oréal" + "fmcg").
     const names = (await page.locator("table tbody tr td:nth-child(1) a").allTextContents()).map((s) =>
       s.trim().toLowerCase(),

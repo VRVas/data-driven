@@ -386,7 +386,7 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
                     >
                       <div className="truncate text-sm text-[var(--color-ink)]">{h.title}</div>
                       <div className="text-[10px] text-[var(--color-ink-faint)]">
-                        {relativeTime(h.updatedAt)} · {h.messageCount} msgs
+                        {relativeTime(h.updatedAt)} - {h.messageCount} msgs
                       </div>
                     </button>
                   </li>
@@ -398,7 +398,7 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
       </div>
       {!foundryEnabled && (
         <div className="border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-amber)_8%,transparent)] px-5 py-2 text-xs text-[var(--color-ink-muted)]">
-          <span className="font-mono uppercase tracking-[0.14em] text-[var(--color-amber)]">Local preview</span> — grounded, composed cards from live tools. Connect Foundry for full conversational AI.
+          <span className="font-mono uppercase tracking-[0.14em] text-[var(--color-amber)]">Local preview</span> - grounded, composed cards from live tools. Connect Foundry for full conversational AI.
         </div>
       )}
 
@@ -408,7 +408,7 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
             <div className="eyebrow mb-2">BD Copilot</div>
             <p className="text-sm text-[var(--color-ink-muted)]">
               Ask about leads, scores, the pipeline, whitespace or reminders. Answers come back as live charts, tables and
-              cards — and I can draft outreach (an admin sends it) or move a lead to a new pipeline stage, if your role and
+              cards - and I can draft outreach (an admin sends it) or move a lead to a new pipeline stage, if your role and
               the workflow allow it.
             </p>
             <div data-tour="copilot-suggestions" className="mt-5 flex flex-col gap-2">
@@ -509,7 +509,7 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
         <button
           type="button"
           onClick={() => setDeep((v) => !v)}
-          title="Think deeply — spend more reasoning effort on this answer"
+          title="Think deeply - spend more reasoning effort on this answer"
           aria-pressed={deep}
           data-tour="copilot-reasoning"
           className={

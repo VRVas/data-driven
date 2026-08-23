@@ -6,7 +6,7 @@ import type { Brand } from "@/lib/types";
  * Making a lead, in one place.
  *
  * The form and the copilot both create leads. Two implementations would drift
- * on the things that are easy to get subtly wrong — the id, and which fields a
+ * on the things that are easy to get subtly wrong - the id, and which fields a
  * brand-new lead is allowed to claim.
  */
 

@@ -86,9 +86,9 @@ export function AgentTable({ agents }: { agents: Agent[] }) {
                 <td className="hidden px-3 py-2 sm:table-cell">
                   {a.priority && <Badge color={PRIORITY_TOKEN[a.priority as Priority]}>{a.priority.replace(" Lead", "")}</Badge>}
                 </td>
-                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] lg:table-cell">{a.owner ?? "—"}</td>
-                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] md:table-cell">{a.poc ?? "—"}</td>
-                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] xl:table-cell">{a.lastContact ?? "—"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] lg:table-cell">{a.owner ?? "-"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] md:table-cell">{a.poc ?? "-"}</td>
+                <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] xl:table-cell">{a.lastContact ?? "-"}</td>
                 <td className="px-3 py-2 text-right">
                   <button
                     onClick={() => setEditing(a)}

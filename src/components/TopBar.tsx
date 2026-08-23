@@ -108,9 +108,9 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
             {caps["audit:read"] && (
               <Link
                 href="/dashboard/activity"
-                title="Activity — audit trail"
+                title="Activity - audit trail"
                 data-tour="topbar-activity"
-                aria-label="Activity — audit trail"
+                aria-label="Activity - audit trail"
                 className="hidden rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] md:inline-flex"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

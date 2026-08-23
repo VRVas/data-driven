@@ -72,7 +72,7 @@ describe("duplicateCandidates", () => {
   it("casts wide enough to catch pairs that are probably NOT the same client", () => {
     // Deliberate: the grouping only asks the question, a human answers it.
     expect(duplicateCandidates([c("1", "Qatar Airways"), c("2", "Qatar Museums")])).toHaveLength(1);
-    // They still remain distinct companies — nothing is merged.
+    // They still remain distinct companies - nothing is merged.
     expect(companyNameKey("Qatar Airways")).not.toBe(companyNameKey("Qatar Museums"));
   });
 
@@ -304,7 +304,7 @@ describe("migrateBrands against the real dataset", () => {
     expect(generali?.length ?? 0).toBeGreaterThan(1);
   });
 
-  it("is idempotent — re-running at the same instant yields identical records", () => {
+  it("is idempotent - re-running at the same instant yields identical records", () => {
     // Time has to be pinned for the claim to mean anything: updatedAt and
     // computedAt are stamped from `now`, so the previous version of this test
     // compared ids only and would have passed even if every other field had

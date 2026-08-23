@@ -13,8 +13,8 @@ const round = (v: number | null, dp: number): number | null =>
  * Industry rows recounted from the live pipeline.
  *
  * Market size, music-video fit and valuation are external research and stay
- * exactly as imported. Everything that describes *our* pipeline — how many
- * leads we have opened, what they are worth, how they score — is counted from
+ * exactly as imported. Everything that describes *our* pipeline - how many
+ * leads we have opened, what they are worth, how they score - is counted from
  * the leads themselves.
  *
  * It used to come from the import snapshot, which meant the numbers were true

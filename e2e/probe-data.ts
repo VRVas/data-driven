@@ -8,7 +8,7 @@ import path from "node:path";
  * right permission model, so the spec cannot tidy up through the UI. This runs
  * at both ends: as teardown so a finished run leaves nothing behind, and again
  * during setup so a run that was interrupted before teardown cannot poison the
- * next one — the spec asserts on totals, and a stale probe lead moves them.
+ * next one - the spec asserts on totals, and a stale probe lead moves them.
  *
  * Mirrors deleteBrand: the lead, its proposals, and any company link to it.
  */

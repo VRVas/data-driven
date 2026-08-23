@@ -1,7 +1,7 @@
 import { Badge } from "@/components/Badge";
 import type { ProposalStatus } from "@/lib/crm/types";
 
-/** Only `sent` is amber — it's the one status that still needs an answer. */
+/** Only `sent` is amber - it's the one status that still needs an answer. */
 const TONE: Record<ProposalStatus, string> = {
   accepted: "var(--color-mint)",
   rejected: "var(--color-rose)",

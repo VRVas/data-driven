@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AccountActionForm } from "@/components/AccountActionForm";
 import { requestPasswordReset } from "@/app/actions/auth";
 
-export const metadata: Metadata = { title: "Reset your password · OOVIE" };
+export const metadata: Metadata = { title: "Reset your password - OOVIE" };
 
 export default function ForgotPage() {
   return (

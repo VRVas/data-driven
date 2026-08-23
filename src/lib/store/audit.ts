@@ -81,6 +81,6 @@ export async function logAudit(input: Omit<AuditEntry, "id" | "at">): Promise<vo
   try {
     await getAuditStore().append({ ...input, id: randomUUID(), at: new Date().toISOString() });
   } catch {
-    // best-effort — never surface audit failures to the caller
+    // best-effort - never surface audit failures to the caller
   }
 }

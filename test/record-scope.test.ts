@@ -5,7 +5,7 @@ import { maskLiterals, scanActions } from "./support/guard-scan";
 
 /**
  * A capability check proves the caller may edit *a* lead. It never proves they
- * may edit *this* lead — that is what the record scope is for, and for a while
+ * may edit *this* lead - that is what the record scope is for, and for a while
  * nothing in the app applied it: `authorizeRecord` was written, exported and
  * called nowhere, while the write actions loaded leads straight from the store.
  *
@@ -51,7 +51,7 @@ function violations(file: string): string[] {
     if (!TOUCHES_LEADS.test(action.body.masked)) continue;
     if (AUTHORIZES.test(action.body.masked)) continue;
     problems.push(
-      `${relative(file)} \u203a ${action.name} reads lead data without calling authorizeLead() — a permission check alone does not prove access to this record`,
+      `${relative(file)} \u203a ${action.name} reads lead data without calling authorizeLead() - a permission check alone does not prove access to this record`,
     );
   }
   return problems;
@@ -65,7 +65,7 @@ describe("record scoping on writes", () => {
       return scanActions(source).filter((a) => a.body && TOUCHES_LEADS.test(a.body.masked));
     });
     // If this ever hits zero the regex has drifted and every check below passes vacuously.
-    expect(reachers.length, "no action reaches lead data — the matcher has drifted").toBeGreaterThan(0);
+    expect(reachers.length, "no action reaches lead data - the matcher has drifted").toBeGreaterThan(0);
   });
 
   it("authorizes the record in every action that reaches lead data", () => {

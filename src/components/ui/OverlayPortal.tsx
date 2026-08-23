@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
  *
  * Portaling matters beyond z-index hygiene: ScrollSmoother puts a `transform`
  * on `#smooth-content`, and a transformed ancestor makes `position: fixed`
- * resolve against that element instead of the viewport — which would strand
+ * resolve against that element instead of the viewport - which would strand
  * drawers and the command palette mid-page.
  */
 export function OverlayPortal({ children }: { children: React.ReactNode }) {

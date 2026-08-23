@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
           }
         }
 
-        // Persist the turn (short-term memory). Best-effort — never break the stream.
+        // Persist the turn (short-term memory). Best-effort - never break the stream.
         let convId = conversationId;
         try {
           const store = getConversationStore();

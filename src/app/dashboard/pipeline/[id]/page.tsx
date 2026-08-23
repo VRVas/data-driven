@@ -115,17 +115,17 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Metric
           label="Priority"
-          value={p ? `${p.priority}` : "—"}
-          hint={p ? `grade ${p.grade} · was ${score?.toFixed(2) ?? "—"}/5` : undefined}
+          value={p ? `${p.priority}` : "-"}
+          hint={p ? `grade ${p.grade} - was ${score?.toFixed(2) ?? "-"}/5` : undefined}
           accent="var(--color-brand)"
         />
         <Metric
           label="Quadrant"
-          value={p?.quadrant ?? "—"}
-          hint={p ? `opportunity ${Math.round(p.opportunity)} · winnability ${Math.round(p.winnability)}` : undefined}
+          value={p?.quadrant ?? "-"}
+          hint={p ? `opportunity ${Math.round(p.opportunity)} - winnability ${Math.round(p.winnability)}` : undefined}
           accent="var(--color-cyan)"
         />
-        <Metric label="Budget" value={s?.budget ? eur(s.budget) : "—"} accent="var(--color-amber)" />
+        <Metric label="Budget" value={s?.budget ? eur(s.budget) : "-"} accent="var(--color-amber)" />
         <Metric
           label="Expected value"
           value={p ? eur(Math.round(p.expectedValueEur)) : eur(weightedValue(brand))}
@@ -175,7 +175,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                 {tempo.basis === "actual" ? "Took" : "Expected to take"}
               </dt>
               <dd className="mt-1 font-display text-xl font-semibold tabular-nums">
-                {tempo.months == null ? "—" : `${tempo.months.toFixed(1)} months`}
+                {tempo.months == null ? "-" : `${tempo.months.toFixed(1)} months`}
               </dd>
               <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
                 {tempo.basis === "actual"
@@ -189,7 +189,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             <div>
               <dt className="text-sm text-[var(--color-ink-muted)]">Budget</dt>
               <dd className="mt-1 font-display text-xl font-semibold tabular-nums">
-                {s?.budget == null ? "—" : eur(s.budget)}
+                {s?.budget == null ? "-" : eur(s.budget)}
               </dd>
               <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
                 {variance ? (
@@ -225,7 +225,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </Link>
               {(dealsPerCompany.get(crm.company.id) ?? 0) > 1 && (
                 <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-                  {dealsPerCompany.get(crm.company.id)} deals · {eur(crm.company.rollup.lifetimeValue)} lifetime
+                  {dealsPerCompany.get(crm.company.id)} deals - {eur(crm.company.rollup.lifetimeValue)} lifetime
                 </p>
               )}
             </div>
@@ -270,7 +270,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               </div>
             ) : (
               <p className="text-sm text-[var(--color-ink-muted)]">
-                Nothing judged yet. Use Edit to set a commercial value and the four 0–5 scores, and this lead
+                Nothing judged yet. Use Edit to set a commercial value and the four 0-5 scores, and this lead
                 joins the quadrant.
               </p>
             )}
@@ -292,7 +292,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
                   <li key={key} className="flex items-center gap-3">
                     <span className={`h-2 w-2 rounded-full ${brand[key] ? "bg-[var(--color-brand)]" : "bg-[var(--color-border-strong)]"}`} />
                     <span className="w-32 text-[var(--color-ink-muted)]">{label}</span>
-                    <span className="tabular-nums">{brand[key] ?? "—"}</span>
+                    <span className="tabular-nums">{brand[key] ?? "-"}</span>
                   </li>
                 ))}
               </ol>
@@ -348,7 +348,7 @@ function ScoreRow({ label, value }: { label: string; value: number | null }) {
     <div>
       <div className="mb-1 flex justify-between text-sm">
         <span className="text-[var(--color-ink-muted)]">{label}</span>
-        <span className="tabular-nums">{value != null ? value.toFixed(1) : "—"}</span>
+        <span className="tabular-nums">{value != null ? value.toFixed(1) : "-"}</span>
       </div>
       <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-surface)]">
         <div className="h-full rounded-full bg-[var(--color-brand)]" style={{ width: `${pct}%` }} />
@@ -361,7 +361,7 @@ function Aggregate({ label, value }: { label: string; value: number | null | und
   return (
     <div>
       <div className="text-xs uppercase tracking-wider text-[var(--color-ink-faint)]">{label}</div>
-      <div className="mt-1 font-display text-xl font-semibold">{value != null ? value.toFixed(2) : "—"}</div>
+      <div className="mt-1 font-display text-xl font-semibold">{value != null ? value.toFixed(2) : "-"}</div>
     </div>
   );
 }
@@ -370,7 +370,7 @@ function Row({ label, value }: { label: string; value: string | null }) {
   return (
     <div className="flex justify-between gap-4">
       <dt className="text-[var(--color-ink-faint)]">{label}</dt>
-      <dd className="text-right">{value ?? "—"}</dd>
+      <dd className="text-right">{value ?? "-"}</dd>
     </div>
   );
 }

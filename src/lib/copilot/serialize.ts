@@ -4,7 +4,7 @@ import { toCsv } from "@/lib/export";
 const eur = (n: number) => new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
 function fmtCell(v: string | number | null, kind?: string | null): string {
-  if (v == null) return "—";
+  if (v == null) return "-";
   if (kind === "currency" && typeof v === "number") return eur(v);
   if (kind === "percent" && typeof v === "number") return `${Math.round(v)}%`;
   return String(v);
@@ -47,13 +47,13 @@ function blockToMarkdown(block: Block): string {
     case "chart":
       return `**${block.title ?? "Chart"}**\n${(block.series ?? []).map((s) => `- ${s.label}: ${s.value}`).join("\n")}`;
     case "leadCard":
-      return `- **${block.name}** — ${[block.status, block.score != null ? `score ${block.score}` : null, block.budgetEur != null ? eur(block.budgetEur) : null].filter(Boolean).join(", ")}`;
+      return `- **${block.name}** - ${[block.status, block.score != null ? `score ${block.score}` : null, block.budgetEur != null ? eur(block.budgetEur) : null].filter(Boolean).join(", ")}`;
     case "leadGrid":
       return block.leads
-        .map((l) => `- **${l.name}** — ${[l.status, l.score != null ? `score ${l.score}` : null].filter(Boolean).join(", ")}`)
+        .map((l) => `- **${l.name}** - ${[l.status, l.score != null ? `score ${l.score}` : null].filter(Boolean).join(", ")}`)
         .join("\n");
     case "companyCard":
-      return `- **${block.name}** — ${[
+      return `- **${block.name}** - ${[
         block.industry,
         block.openDealCount != null ? `${block.openDealCount} open` : null,
         block.lifetimeValueEur != null ? `lifetime ${eur(block.lifetimeValueEur)}` : null,
@@ -63,7 +63,7 @@ function blockToMarkdown(block: Block): string {
         .join(", ")}`;
     case "scoreBreakdown":
       return [
-        `**${block.name} — priority ${block.priority}${block.grade ? ` (${block.grade})` : ""}**`,
+        `**${block.name} - priority ${block.priority}${block.grade ? ` (${block.grade})` : ""}**`,
         `- Opportunity: ${Math.round(block.opportunity)}`,
         `- Winnability: ${Math.round(block.winnability)}`,
         `- √(${Math.round(block.opportunity)} × ${Math.round(block.winnability)}) = ${block.priority}`,
@@ -77,7 +77,7 @@ function blockToMarkdown(block: Block): string {
         .map((it) => `**${it.title}**\n${it.metrics.map((m) => `- ${m.label}: ${m.value}`).join("\n")}`)
         .join("\n\n");
     case "recommendation":
-      return `> **★ ${block.title}** — ${block.rationale}${block.confidence != null ? ` _(${Math.round(block.confidence * 100)}% confidence)_` : ""}`;
+      return `> **★ ${block.title}** - ${block.rationale}${block.confidence != null ? ` _(${Math.round(block.confidence * 100)}% confidence)_` : ""}`;
     case "timeline":
       return block.events.map((e) => `- ${e.date ? `\`${e.date}\` ` : ""}${e.label}`).join("\n");
     case "actions":

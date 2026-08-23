@@ -3,7 +3,7 @@ import { AuthForm } from "@/components/AuthForm";
 import { loginAction } from "@/app/actions/auth";
 import { otpLoginEnabled } from "@/lib/auth/challenge";
 
-export const metadata: Metadata = { title: "Sign in · OOVIE" };
+export const metadata: Metadata = { title: "Sign in - OOVIE" };
 
 export default function LoginPage() {
   return (

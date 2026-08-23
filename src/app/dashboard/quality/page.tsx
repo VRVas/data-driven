@@ -34,7 +34,7 @@ export default async function QualityPage() {
             <div className="eyebrow mb-2">Data audit</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Data quality</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
-              {count} issues detected and resolved during migration — full audit trail.
+              {count} issues detected and resolved during migration - full audit trail.
             </p>
           </div>
           <ExportMenu
@@ -86,7 +86,7 @@ export default async function QualityPage() {
                     {c.name}
                   </Link>
                   <span className="text-[var(--color-ink-muted)]">
-                    stage <span className="text-[var(--color-ink)]">{c.status ?? "—"}</span>
+                    stage <span className="text-[var(--color-ink)]">{c.status ?? "-"}</span>
                   </span>
                   <span className="text-[var(--color-ink-faint)]">vs</span>
                   <span className="text-[var(--color-ink-muted)]">

@@ -6,9 +6,9 @@ import { GrainOverlay } from "@/components/fx/GrainOverlay";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "OOVIE · Business Development Intelligence",
+  title: "OOVIE - Business Development Intelligence",
   description:
-    "Client segmentation, lead scoring and sales strategy for OOVIE Studios — turned into a live, interactive intelligence platform.",
+    "Client segmentation, lead scoring and sales strategy for OOVIE Studios - turned into a live, interactive intelligence platform.",
   applicationName: "OOVIE BD Intelligence",
 };
 

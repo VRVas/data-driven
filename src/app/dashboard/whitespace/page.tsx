@@ -41,7 +41,7 @@ export default async function WhitespacePage() {
             <h1 className="font-display text-3xl font-semibold tracking-tight">Whitespace &amp; TAM</h1>
             <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
               Approached vs addressable market across the EU. The room to grow is the space
-              the bars <em>don&apos;t</em> fill — weighted by how valuable each segment is.
+              the bars <em>don&apos;t</em> fill - weighted by how valuable each segment is.
             </p>
           </div>
           <ExportMenu
@@ -76,19 +76,19 @@ export default async function WhitespacePage() {
       </Reveal>
 
       <Reveal>
-        <Panel title="Whitespace by industry" subtitle="Ranked by opportunity (value × untapped share) · fill = share approached">
+        <Panel title="Whitespace by industry" subtitle="Ranked by opportunity (value × untapped share) - fill = share approached">
           <WhitespaceBars industries={ranked} />
         </Panel>
       </Reveal>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Reveal>
-          <Panel title="Opportunity map" subtitle="Low penetration + high efficiency = prime whitespace · bubble = market size">
+          <Panel title="Opportunity map" subtitle="Low penetration + high efficiency = prime whitespace - bubble = market size">
             <OpportunityMap industries={industries} />
           </Panel>
         </Reveal>
         <Reveal>
-          <Panel title="Restricted / closed sectors" subtitle="Adjacent TAM not yet open — sized by market value (USD bn)">
+          <Panel title="Restricted / closed sectors" subtitle="Adjacent TAM not yet open - sized by market value (USD bn)">
             <MarketSizingBars sectors={ds.marketSizing} />
           </Panel>
         </Reveal>

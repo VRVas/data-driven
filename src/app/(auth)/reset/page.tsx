@@ -3,7 +3,7 @@ import Link from "next/link";
 import { AccountActionForm } from "@/components/AccountActionForm";
 import { resetPassword } from "@/app/actions/auth";
 
-export const metadata: Metadata = { title: "Choose a new password · OOVIE" };
+export const metadata: Metadata = { title: "Choose a new password - OOVIE" };
 
 export default async function ResetPage({
   searchParams,

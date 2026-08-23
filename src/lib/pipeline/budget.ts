@@ -19,7 +19,7 @@ export interface BudgetVariance {
   estimated: number;
   actual: number;
   deltaEur: number;
-  /** Null when the estimate was zero — a free project has no percentage. */
+  /** Null when the estimate was zero - a free project has no percentage. */
   deltaPct: number | null;
 }
 
@@ -59,8 +59,8 @@ export function writeBudget(
  *
  * `budgetAtOpen` is captured here and nowhere else, because it means "what we
  * thought before the paperwork said otherwise". Capturing it on an ordinary
- * edit would freeze it the moment a lead was created — at null, since a new
- * lead has no previous budget — and the estimate-versus-accepted comparison
+ * edit would freeze it the moment a lead was created - at null, since a new
+ * lead has no previous budget - and the estimate-versus-accepted comparison
  * would report nothing for every lead made in the app.
  *
  * `undefined` means never captured; null means captured and there was no

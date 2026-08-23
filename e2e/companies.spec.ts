@@ -3,7 +3,7 @@ import { STORAGE_STATE } from "./constants";
 import { shot, trackConsole } from "./helpers";
 
 /**
- * The Companies area — the Company → Deal → Proposal split.
+ * The Companies area - the Company → Deal → Proposal split.
  *
  * The seeded E2E account is the founding user, so it holds the administrator
  * profile and can reach every company and deal here.
@@ -81,11 +81,11 @@ test.describe("companies", () => {
     // The grouping is a suggestion computed from whatever companies exist at
     // read time, so the section only renders when two names actually look
     // alike. Asserting it unconditionally would fail on a data change that is
-    // not a regression — check first, then assert on what it contains.
+    // not a regression - check first, then assert on what it contains.
     if ((await heading.count()) === 0) {
       test.info().annotations.push({
         type: "note",
-        description: "no duplicate candidates in the current data — nothing to review",
+        description: "no duplicate candidates in the current data - nothing to review",
       });
       return;
     }

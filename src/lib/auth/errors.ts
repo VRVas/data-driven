@@ -1,4 +1,4 @@
-/** Thrown when nobody is signed in — the caller should send them to /login. */
+/** Thrown when nobody is signed in - the caller should send them to /login. */
 export class UnauthorizedError extends Error {
   readonly status = 401;
   constructor() {

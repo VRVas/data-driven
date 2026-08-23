@@ -11,9 +11,9 @@ if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger, useGSAP);
 export interface QuadPoint {
   id: string;
   name: string;
-  /** Winnability 0–100. */
+  /** Winnability 0-100. */
   x: number;
-  /** Opportunity 0–100. */
+  /** Opportunity 0-100. */
   y: number;
   budget: number;
   color: string;
@@ -26,9 +26,9 @@ const AXIS_MAX = 100;
 
 interface Props {
   points: QuadPoint[];
-  /** Winnability threshold — right of it a deal is judged movable. */
+  /** Winnability threshold - right of it a deal is judged movable. */
   xMid?: number;
-  /** Opportunity threshold — above it a deal is judged worth real effort. */
+  /** Opportunity threshold - above it a deal is judged worth real effort. */
   yMid?: number;
   xTitle?: string;
   yTitle?: string;
@@ -68,7 +68,7 @@ export function PriorityQuadrant({
         ease: "back.out(1.7)",
         stagger: 0.02,
         // Without this a `from` tween applies its start state the moment it is
-        // created, so every dot sat at r=0 until the trigger fired — and if it
+        // created, so every dot sat at r=0 until the trigger fired - and if it
         // never fired (the smooth-scroll container measures differently) the
         // chart stayed permanently empty. Now the dots render normally and the
         // animation only takes over once it actually runs.
@@ -127,7 +127,7 @@ export function PriorityQuadrant({
             onFocus={() => setHover(p)}
             onBlur={() => setHover((h) => (h?.id === p.id ? null : h))}
           >
-            <title>{`${p.name} · €${p.budget.toLocaleString()} · winnability ${p.x.toFixed(0)} / opportunity ${p.y.toFixed(0)}`}</title>
+            <title>{`${p.name} - €${p.budget.toLocaleString()} - winnability ${p.x.toFixed(0)} / opportunity ${p.y.toFixed(0)}`}</title>
           </circle>
         </Link>
       ))}
@@ -143,11 +143,11 @@ export function PriorityQuadrant({
  * The name, the instant the cursor lands.
  *
  * An SVG <title> is the only tooltip the chart had, and browsers hold that back
- * for about a second and style it as an OS bubble — with several bubbles the
+ * for about a second and style it as an OS bubble - with several bubbles the
  * same size, identifying one meant hovering and waiting.
  */
 function HoverLabel({ point, cx, cy, r }: { point: QuadPoint; cx: number; cy: number; r: number }) {
-  const text = `${point.name} · €${point.budget.toLocaleString()}`;
+  const text = `${point.name} - €${point.budget.toLocaleString()}`;
   // No text metrics inside an SVG without measuring, and measuring costs a
   // reflow per hover; 6px per character is close enough for a label box.
   const w = text.length * 6 + 16;

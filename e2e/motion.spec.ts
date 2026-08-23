@@ -2,7 +2,7 @@ import { test, expect } from "@playwright/test";
 import { shot, trackConsole } from "./helpers";
 
 /**
- * Full-motion pass — opts back into GSAP animation (the rest of the suite runs
+ * Full-motion pass - opts back into GSAP animation (the rest of the suite runs
  * reduced-motion for determinism). Proves the animated code path is healthy:
  * the SplitText hero resolves, scroll-triggered reveals fire and nothing throws.
  */

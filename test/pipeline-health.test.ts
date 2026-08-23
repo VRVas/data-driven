@@ -87,7 +87,7 @@ describe("nextActionFor", () => {
   });
 });
 
-describe("healthOf — the two questions the pipeline has to answer", () => {
+describe("healthOf - the two questions the pipeline has to answer", () => {
   it("flags a reply we owe and have not sent", () => {
     const h = healthOf(lead({ waitingOn: "us", followUpDate: ago(4) }), [], NOW);
     expect(h).toMatchObject({ lateOnUs: true, lateOnThem: false, daysLate: 4 });
@@ -110,7 +110,7 @@ describe("healthOf — the two questions the pipeline has to answer", () => {
   });
 
   it("never marks a finished deal late or stale", () => {
-    // A won or lost deal owes nobody anything, however old its dates are — and
+    // A won or lost deal owes nobody anything, however old its dates are - and
     // that includes having no side at all, not just no overdue flag. The
     // pipeline table renders waitingOn directly, so leaving it set showed a
     // closed deal as still waiting on us.

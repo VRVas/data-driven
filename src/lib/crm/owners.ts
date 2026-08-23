@@ -8,7 +8,7 @@ import { getUserStore } from "@/lib/store/users";
  *
  * Best effort by design: an unmatched name resolves to null, which means a
  * user restricted to their own records simply won't see that lead. That is the
- * safe direction to fail, and it is why the seeded profiles all grant `all` —
+ * safe direction to fail, and it is why the seeded profiles all grant `all` -
  * narrowing a scope is a deliberate decision, never a migration side-effect.
  */
 export const ownerIdResolver = cache(async (): Promise<(ownerName: string | null | undefined) => string | null> => {

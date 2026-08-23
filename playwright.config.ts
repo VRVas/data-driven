@@ -6,7 +6,7 @@ import { defineConfig, devices } from "@playwright/test";
  *  - Boots its own dev server (file-backed stores) on a dedicated port.
  *  - `seed-user.ts` (globalSetup) plants the E2E account into .data/users.json.
  *  - `probe-data.ts` runs at both ends, removing the lead `wiring.spec.ts`
- *    creates — the E2E account is a member, and members cannot delete leads.
+ *    creates - the E2E account is a member, and members cannot delete leads.
  *  - The `setup` project logs in once through the UI and saves the session, so
  *    the authenticated dashboard specs reuse it via `storageState`.
  *  - Functional specs run with reduced motion for deterministic, settled frames;
