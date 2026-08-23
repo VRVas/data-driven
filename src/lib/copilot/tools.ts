@@ -27,6 +27,7 @@ import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import type { Brand, BrandStatus } from "@/lib/types";
 import type { SessionUser } from "@/lib/auth/guards";
 import { EXTRA_TOOLS } from "./tools-extra";
+import { platformSpec } from "./platform-spec";
 
 export interface ToolContext {
   user: SessionUser;
@@ -729,6 +730,46 @@ const webSearch: CopilotTool = {
   },
 };
 
+/**
+ * The product manual, read out of the registries that define it.
+ *
+ * Defined here rather than in tools-extra so it can hold COPILOT_TOOLS without
+ * closing an import cycle — it reads the list inside execute, after the module
+ * has finished initialising.
+ */
+const explainPlatform: CopilotTool = {
+  name: "explain_platform",
+  permission: "copilot:use",
+  description:
+    "Everything about the platform itself: what it is, the data model and its vocabularies, the legal stage transitions, every section with its route and what you can do there, step-by-step instructions for common tasks ('how do I delete a lead', 'how do I merge two companies', 'how do I export'), the permission model with the full catalogue and the seeded profiles, and the copilot's own complete capability list with the permission each tool needs. Use for any question about how to use the app, where a control lives, what something means, or what you yourself can do. For how a NUMBER is calculated use explain_model; for what one specific person is allowed to do use what_can_i_do.",
+  parameters: {
+    type: "object",
+    properties: {
+      topic: {
+        type: "string",
+        enum: ["all", "sections", "howDoI", "permissions", "copilot", "dataModel"],
+        description: "Narrow the answer. Defaults to everything.",
+      },
+    },
+  },
+  async execute(args) {
+    const { topic } = z
+      .object({ topic: z.enum(["all", "sections", "howDoI", "permissions", "copilot", "dataModel"]).optional() })
+      .parse(args);
+
+    const spec = platformSpec(
+      COPILOT_TOOLS.map((t) => ({
+        name: t.name,
+        description: t.description,
+        permission: t.permission,
+        write: t.write,
+      })),
+    );
+    if (!topic || topic === "all") return spec;
+    return { what: spec.what, [topic]: spec[topic] };
+  },
+};
+
 export const COPILOT_TOOLS: CopilotTool[] = [
   ...EXTRA_TOOLS,
   searchLeads,
@@ -745,6 +786,7 @@ export const COPILOT_TOOLS: CopilotTool[] = [
   draftOutreach,
   searchDocuments,
   webSearch,
+  explainPlatform,
 ];
 
 export function getToolByName(name: string): CopilotTool | undefined {
