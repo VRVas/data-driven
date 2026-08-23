@@ -5,6 +5,7 @@ import Link from "next/link";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { BUDGET_CEILING } from "@/lib/priority";
 
 if (typeof window !== "undefined") gsap.registerPlugin(ScrollTrigger, useGSAP);
 
@@ -54,7 +55,11 @@ export function PriorityQuadrant({
   const [hover, setHover] = useState<QuadPoint | null>(null);
   const sx = (v: number) => PAD + (v / AXIS_MAX) * (W - PAD * 2);
   const sy = (v: number) => H - PAD - (v / AXIS_MAX) * (H - PAD * 2);
-  const r = (b: number) => 5 + Math.sqrt(Math.max(0, b) / 80000) * 12;
+  // Clamped at the same ceiling the opportunity axis uses. Unclamped, a EUR 10m
+  // deal drew a radius of 139 in a 520x420 chart and swallowed the quadrant -
+  // and it would have been lying anyway, because past the ceiling more money
+  // buys no more rank. The exact figure is in the tooltip.
+  const r = (b: number) => 5 + Math.sqrt(Math.min(Math.max(0, b), BUDGET_CEILING) / BUDGET_CEILING) * 12;
 
   useGSAP(
     () => {
