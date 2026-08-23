@@ -49,6 +49,12 @@ export async function purgeProbeData(): Promise<void> {
   await rewrite<Array<{ title: string }>>(path.join(dataDir, "notifications.json"), (rows) =>
     rows.filter((n) => !PROBE_TITLE.test(n.title)),
   );
+
+  // Comments live on real leads rather than on a probe lead, since members
+  // cannot create or delete one, so they are found by their body.
+  await rewrite<Array<{ body: string }>>(path.join(dataDir, "comments.json"), (rows) =>
+    rows.filter((c) => !PROBE_TITLE.test(c.body)),
+  );
 }
 
 export default purgeProbeData;
