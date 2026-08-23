@@ -39,7 +39,16 @@ test.describe("product tour", () => {
       if (/^Meet the Copilot/.test(title)) await shot(page, "tour-03-copilot");
       if (/all set/i.test(title)) break; // reached the final stop
 
-      await dialog.getByRole("button", { name: "Next" }).click();
+      // The controls must stay on screen at every step. A long step once grew
+      // the card past the bottom of the viewport and took Next with it, which
+      // is a dead end for anybody who cannot scroll a fixed element.
+      const next = dialog.getByRole("button", { name: "Next" });
+      const box = await next.boundingBox();
+      const vh = page.viewportSize()!.height;
+      expect(box, `no Next button at "${title}"`).not.toBeNull();
+      expect(box!.y + box!.height, `Next is off-screen at "${title}"`).toBeLessThanOrEqual(vh);
+
+      await next.click();
       // Advance in lock-step: wait until the step title actually changes.
       await expect(dialog.locator("h3")).not.toHaveText(last, { timeout: 8000 });
     }

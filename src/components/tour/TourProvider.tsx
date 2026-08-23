@@ -261,15 +261,18 @@ function TourOverlay({
       {/* Card */}
       <div
         ref={cardRef}
-        className="glass fixed w-[340px] max-w-[calc(100vw-24px)] rounded-2xl p-5 shadow-2xl"
+        className="glass fixed flex w-[340px] max-w-[calc(100vw-24px)] flex-col rounded-2xl p-5 shadow-2xl"
         style={{
           top: card.top,
           left: card.left,
+          // Capped, or a long step grows the card past the bottom of the screen
+          // and takes Next with it - the controls must always be reachable.
+          maxHeight: "calc(100vh - 24px)",
           transition: "top 0.35s cubic-bezier(0.22,1,0.36,1), left 0.35s cubic-bezier(0.22,1,0.36,1)",
           border: "1px solid color-mix(in srgb, var(--color-brand) 30%, var(--color-border))",
         }}
       >
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex shrink-0 items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="font-mono text-[10px] uppercase tracking-[0.16em] text-[var(--color-brand-bright)]">
               {index + 1} / {total}
@@ -289,20 +292,23 @@ function TourOverlay({
           </button>
         </div>
 
-        <h3 className="font-display text-lg font-semibold text-[var(--color-ink)]">{step.title}</h3>
-        <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-ink-muted)]">{step.body}</p>
+        {/* Only the prose scrolls; the counter, the dots and the controls stay put. */}
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <h3 className="font-display text-lg font-semibold text-[var(--color-ink)]">{step.title}</h3>
+          <p className="mt-1.5 text-sm leading-relaxed text-[var(--color-ink-muted)]">{step.body}</p>
 
-        {step.sheet && (
-          <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-brand)_7%,transparent)] px-3 py-2">
-            <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--color-ink-faint)]">
-              From the sheet
+          {step.sheet && (
+            <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-brand)_7%,transparent)] px-3 py-2">
+              <div className="font-mono text-[9px] uppercase tracking-[0.16em] text-[var(--color-ink-faint)]">
+                From the sheet
+              </div>
+              <div className="mt-0.5 text-xs text-[var(--color-ink-muted)]">{step.sheet}</div>
             </div>
-            <div className="mt-0.5 text-xs text-[var(--color-ink-muted)]">{step.sheet}</div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Progress dots */}
-        <div className="mt-4 flex items-center gap-1" aria-hidden>
+        <div className="mt-4 flex shrink-0 items-center gap-1" aria-hidden>
           {Array.from({ length: total }).map((_, i) => (
             <span
               key={i}
@@ -320,7 +326,7 @@ function TourOverlay({
           ))}
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-4 flex shrink-0 items-center justify-between">
           <button
             onClick={onClose}
             className="text-xs text-[var(--color-ink-faint)] transition-colors hover:text-[var(--color-ink)]"
