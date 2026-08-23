@@ -7,12 +7,17 @@ import { getAuditStore } from "@/lib/store/audit";
 import { getOutreachStore } from "@/lib/store/outreach";
 import { getCrmOverlayStore } from "@/lib/store/crm";
 import { getCrmGraph } from "@/lib/crm/graph";
-import { recordProposal } from "@/lib/crm/proposals";
+import { recordProposal, syncLeadValue } from "@/lib/crm/proposals";
+import { mergeCompanyInto } from "@/lib/crm/merge";
+import { blankLead, freeLeadId } from "@/lib/leads/create";
 import { duplicateCandidates, currentProposals } from "@/lib/crm/logic";
 import { completeFollowUp, snoozeFollowUp } from "@/lib/leads/followups";
 import { sendExistingOutreach } from "@/lib/outreach/send";
 import { requirePermission } from "@/lib/auth/authorize";
+import { can } from "@/lib/auth/authorize";
 import { budgetVariance, writeBudget } from "@/lib/pipeline/budget";
+import { writeRubric } from "@/lib/pipeline/rubric";
+import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
 import { withHealth } from "@/lib/pipeline/health";
 import { effectiveTempoMonths } from "@/lib/scoring";
 import { STRATEGIC_REASONS, priorityOf } from "@/lib/priority";
@@ -24,7 +29,11 @@ import { outcomeConflicts, openLeads, outcomeOf } from "@/lib/lifecycle";
 import { logAudit } from "@/lib/store/audit";
 import { todayYmd } from "@/lib/workflow";
 import type { CopilotTool } from "./tools";
+import type { Brand } from "@/lib/types";
 import type { ProposalStatus } from "@/lib/crm/types";
+
+/** Zod enums need a non-empty tuple; the vocab lists are readonly arrays. */
+const asEnumTuple = <T extends string>(v: readonly T[]) => v as unknown as [T, ...T[]];
 
 /**
  * The second half of the tool surface: everything the screens could do that
@@ -41,6 +50,385 @@ const PROPOSAL_STATUSES = ["draft", "sent", "accepted", "rejected", "expired", "
 // ---------------------------------------------------------------------------
 // Writes — the things a person would otherwise have to go and click
 // ---------------------------------------------------------------------------
+
+const createLead: CopilotTool = {
+  name: "create_lead",
+  permission: "lead:create",
+  write: true,
+  description:
+    "Add a new lead. Only the name is required, but give it a commercial value if one is known — a lead with no value cannot be ranked at all, because zero opportunity is fatal in the priority formula. Pass companyId to start it under an existing client instead of creating a separate one, which is what you want for 'we worked with them last year and are talking again'. Use for 'add Zara, fashion, Marco owns it, about 40k'.",
+  parameters: {
+    type: "object",
+    properties: {
+      name: { type: "string", description: "Brand or client name" },
+      status: { type: "string", enum: [...BRAND_STATUSES] },
+      priority: { type: "string", enum: [...PRIORITIES] },
+      industry: { type: "string", enum: [...INDUSTRIES] },
+      owner: { type: "string", description: "Who owns it, as a person's name" },
+      poc: { type: "string", description: "Point of contact" },
+      email: { type: "string" },
+      valueEur: { type: "number", minimum: 0, description: "Expected value in euros" },
+      companyId: { type: "string", description: "Attach to an existing company rather than creating a new one" },
+      nextStep: { type: "string" },
+      notes: { type: "string" },
+    },
+    required: ["name"],
+  },
+  async execute(args, ctx) {
+    const a = z
+      .object({
+        name: z.string().trim().min(1).max(120),
+        status: z.enum(asEnumTuple(BRAND_STATUSES)).optional(),
+        priority: z.enum(asEnumTuple(PRIORITIES)).optional(),
+        industry: z.enum(asEnumTuple(INDUSTRIES)).optional(),
+        owner: z.string().trim().max(120).optional(),
+        poc: z.string().trim().max(120).optional(),
+        email: z.string().trim().email().optional(),
+        valueEur: z.number().min(0).max(1_000_000_000).optional(),
+        companyId: z.string().min(1).optional(),
+        nextStep: z.string().trim().max(200).optional(),
+        notes: z.string().trim().max(4000).optional(),
+      })
+      .parse(args);
+
+    const store = getBrandStore();
+    let lead = blankLead(await freeLeadId(a.name), a.name);
+    lead.status = (a.status as Brand["status"]) ?? null;
+    lead.priority = (a.priority as Brand["priority"]) ?? null;
+    lead.industry = (a.industry as Brand["industry"]) ?? null;
+    lead.industryRaw = a.industry ?? null;
+    lead.owner = a.owner ?? null;
+    lead.poc = a.poc ?? null;
+    lead.email = a.email ?? null;
+    lead.nextStep = a.nextStep ?? null;
+    lead.notes = a.notes ?? null;
+    if (a.valueEur != null) lead = writeBudget(lead, a.valueEur, "Estimated");
+
+    await store.save(lead);
+
+    // Same rule the company page uses: without the link the new deal would
+    // project a company of its own and the client's history would not add up.
+    let linkedTo: string | null = null;
+    if (a.companyId) {
+      const graph = await getCrmGraph();
+      const target = graph.companies.find((c) => c.id === a.companyId);
+      if (target) {
+        await getCrmOverlayStore().linkDeal({
+          dealId: lead.id,
+          companyId: target.id,
+          companyName: target.name,
+          linkedById: ctx.user.id,
+          linkedByName: ctx.user.name,
+          linkedAt: new Date().toISOString(),
+        });
+        linkedTo = target.name;
+      }
+    }
+
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "brand.create",
+      entity: "brand",
+      entityId: lead.id,
+      summary: `Created lead ${lead.name}${a.valueEur != null ? ` — €${a.valueEur.toLocaleString()}` : ""}`,
+    });
+
+    const p = priorityOf(lead);
+    return {
+      ok: true,
+      id: lead.id,
+      name: lead.name,
+      status: lead.status,
+      owner: lead.owner,
+      valueEur: lead.scores?.budget ?? null,
+      linkedToCompany: linkedTo,
+      priority: p?.priority ?? null,
+      grade: p?.grade ?? null,
+      note:
+        a.valueEur == null
+          ? "No value was given, so this lead cannot be ranked yet — set_budget or record_proposal will fix that."
+          : undefined,
+    };
+  },
+};
+
+const updateLead: CopilotTool = {
+  name: "update_lead",
+  permission: "lead:update",
+  write: true,
+  description:
+    "Edit the fields of an existing lead — the same dialog the pipeline's edit button opens. Only the fields you pass are changed; pass an empty string to clear one. For the pipeline STAGE use advance_lead_stage instead, which enforces the legal transitions. For the commercial value prefer set_budget, and for who owes the next move prefer set_next_move.",
+  parameters: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "Lead id" },
+      name: { type: "string" },
+      priority: { type: "string", enum: [...PRIORITIES] },
+      industry: { type: "string", enum: [...INDUSTRIES] },
+      poc: { type: "string" },
+      email: { type: "string" },
+      initialContact: { type: "string", description: "YYYY-MM-DD" },
+      lastContact: { type: "string", description: "YYYY-MM-DD" },
+      closingFailed: { type: "string", description: "YYYY-MM-DD" },
+      expectedMonths: { type: "number", minimum: 0, maximum: 60, description: "How long the deal is expected to take" },
+      notes: { type: "string" },
+      customizationScore: { type: "number", minimum: 0, maximum: 5 },
+      accessibilityScore: { type: "number", minimum: 0, maximum: 5 },
+      receptivityScore: { type: "number", minimum: 0, maximum: 5 },
+      alignmentScore: { type: "number", minimum: 0, maximum: 5 },
+    },
+    required: ["id"],
+  },
+  async execute(args, ctx) {
+    const ymd = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Dates are YYYY-MM-DD").or(z.literal(""));
+    const rubric = z.number().min(0).max(5).nullable().optional();
+    const a = z
+      .object({
+        id: z.string().min(1),
+        name: z.string().trim().min(1).max(120).optional(),
+        priority: z.enum(asEnumTuple(PRIORITIES)).or(z.literal("")).optional(),
+        industry: z.enum(asEnumTuple(INDUSTRIES)).or(z.literal("")).optional(),
+        poc: z.string().trim().max(120).optional(),
+        email: z.string().trim().email().or(z.literal("")).optional(),
+        initialContact: ymd.optional(),
+        lastContact: ymd.optional(),
+        closingFailed: ymd.optional(),
+        expectedMonths: z.number().min(0).max(60).optional(),
+        notes: z.string().trim().max(4000).optional(),
+        customizationScore: rubric,
+        accessibilityScore: rubric,
+        receptivityScore: rubric,
+        alignmentScore: rubric,
+      })
+      .parse(args);
+
+    const brand = await writableLead(a.id, "lead:update");
+    if (!brand) return { ok: false, error: "Lead not found." };
+
+    const blank = <T>(v: string | undefined, cast: (s: string) => T): T | null | undefined =>
+      v === undefined ? undefined : v === "" ? null : cast(v);
+
+    let next: Brand = { ...brand };
+    const changed: string[] = [];
+    const set = <K extends keyof Brand>(key: K, value: Brand[K] | undefined) => {
+      if (value === undefined || next[key] === value) return;
+      next[key] = value;
+      changed.push(String(key));
+    };
+
+    set("name", a.name);
+    set("priority", blank(a.priority, (s) => s as Brand["priority"]));
+    set("industry", blank(a.industry, (s) => s as Brand["industry"]));
+    set("poc", blank(a.poc, (s) => s));
+    set("email", blank(a.email, (s) => s));
+    set("initialContact", blank(a.initialContact, (s) => s));
+    set("lastContact", blank(a.lastContact, (s) => s));
+    set("closingFailed", blank(a.closingFailed, (s) => s));
+    set("notes", blank(a.notes, (s) => s));
+    if (a.expectedMonths !== undefined) set("expectedMonths", a.expectedMonths);
+
+    const rubricGiven =
+      a.customizationScore !== undefined ||
+      a.accessibilityScore !== undefined ||
+      a.receptivityScore !== undefined ||
+      a.alignmentScore !== undefined;
+    if (rubricGiven) {
+      const s = next.scores;
+      next = writeRubric(next, {
+        customizationScore: a.customizationScore ?? s?.customizationScore ?? null,
+        accessibilityScore: a.accessibilityScore ?? s?.accessibilityScore ?? null,
+        receptivityScore: a.receptivityScore ?? s?.receptivityScore ?? null,
+        alignmentScore: a.alignmentScore ?? s?.alignmentScore ?? null,
+      });
+      changed.push("scores");
+    }
+
+    if (changed.length === 0) return { ok: true, id: brand.id, name: brand.name, note: "Nothing to change." };
+
+    await getBrandStore().save(next);
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "brand.update",
+      entity: "brand",
+      entityId: brand.id,
+      summary: `Updated ${brand.name}: ${changed.join(", ")}`,
+    });
+
+    const p = priorityOf(next);
+    return { ok: true, id: brand.id, name: next.name, changed, priority: p?.priority ?? null, grade: p?.grade ?? null };
+  },
+};
+
+const deleteLead: CopilotTool = {
+  name: "delete_lead",
+  permission: "lead:delete",
+  write: true,
+  description:
+    "Permanently delete a lead and everything attached to it — its proposals, its company link, its outreach history. This cannot be undone. NEVER call it directly from a request: offer it as an actions block with a confirm message naming the lead, and let the user press the button. If they are asking how to remove a lead rather than asking you to, explain the Pipeline edit dialog instead.",
+  parameters: {
+    type: "object",
+    properties: { id: { type: "string", description: "Lead id" } },
+    required: ["id"],
+  },
+  async execute(args, ctx) {
+    const { id } = z.object({ id: z.string().min(1) }).parse(args);
+    const brand = await writableLead(id, "lead:delete");
+    if (!brand) return { ok: false, error: "Lead not found." };
+
+    await getBrandStore().remove(id);
+    // Lead ids are name slugs, so recreating a deleted lead reuses its id.
+    // Without this the new lead would inherit the dead one's paperwork.
+    await getCrmOverlayStore().purgeDeal(id);
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "brand.delete",
+      entity: "brand",
+      entityId: id,
+      summary: `Deleted lead ${brand.name}`,
+    });
+    return { ok: true, id, name: brand.name, deleted: true };
+  },
+};
+
+const mergeCompaniesTool: CopilotTool = {
+  name: "merge_companies",
+  permission: "company:merge",
+  write: true,
+  description:
+    "Fold one company into another: every deal on the source moves to the survivor, and the source stops existing because companies are projected from their deals. Use after duplicate_companies has suggested a pair AND the user has confirmed they are the same client — name similarity is never enough on its own. Offer it as a button naming both sides; undo is unlink_deal, one deal at a time.",
+  parameters: {
+    type: "object",
+    properties: {
+      sourceId: { type: "string", description: "The company that will disappear" },
+      targetId: { type: "string", description: "The company that survives" },
+    },
+    required: ["sourceId", "targetId"],
+  },
+  async execute(args, ctx) {
+    const a = z.object({ sourceId: z.string().min(1), targetId: z.string().min(1) }).parse(args);
+    const auth = await requirePermission("company:merge");
+
+    const result = await mergeCompanyInto(auth, a.sourceId, a.targetId);
+    if ("error" in result) return { ok: false, error: result.error };
+
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "company.merge",
+      entity: "company",
+      entityId: a.targetId,
+      summary: `Merged ${result.sourceName} into ${result.targetName} (${result.movedDealIds.length} ${result.movedDealIds.length === 1 ? "deal" : "deals"})`,
+    });
+    return { ok: true, ...result, movedDeals: result.movedDealIds.length };
+  },
+};
+
+const unlinkDealTool: CopilotTool = {
+  name: "unlink_deal",
+  permission: "lead:update",
+  write: true,
+  description:
+    "Detach a lead from the company it was linked to, so it stands on its own again. This is the undo for link_deal_to_company and for a merge that grouped the wrong records.",
+  parameters: {
+    type: "object",
+    properties: { id: { type: "string", description: "Lead id" } },
+    required: ["id"],
+  },
+  async execute(args, ctx) {
+    const { id } = z.object({ id: z.string().min(1) }).parse(args);
+    const brand = await writableLead(id, "lead:update");
+    if (!brand) return { ok: false, error: "Lead not found." };
+
+    await getCrmOverlayStore().unlinkDeal(id);
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "company.unlink",
+      entity: "deal",
+      entityId: id,
+      summary: `Unlinked ${brand.name} from its company`,
+    });
+    return { ok: true, id, name: brand.name };
+  },
+};
+
+const deleteProposalTool: CopilotTool = {
+  name: "delete_proposal",
+  permission: "proposal:manage",
+  write: true,
+  description:
+    "Remove a proposal recorded in error. Get the id from get_company or proposal_pipeline. The lead's own value follows its remaining paperwork afterwards, so deleting the accepted offer drops the budget back to an estimate rather than leaving it marked Confirmed with nothing behind it. To record a change of price, add a revision with record_proposal instead — that keeps the history.",
+  parameters: {
+    type: "object",
+    properties: { proposalId: { type: "string" } },
+    required: ["proposalId"],
+  },
+  async execute(args, ctx) {
+    const { proposalId } = z.object({ proposalId: z.string().min(1) }).parse(args);
+    const graph = await getCrmGraph();
+    const proposal = graph.proposals.find((p) => p.id === proposalId);
+    if (!proposal) return { ok: false, error: "Proposal not found." };
+
+    // The id came from a sentence, so the lead behind it is re-checked.
+    const brand = await writableLead(proposal.dealId, "proposal:manage");
+    if (!brand) return { ok: false, error: "Proposal not found." };
+
+    await getCrmOverlayStore().removeProposal(proposalId);
+    await syncLeadValue(
+      proposal.dealId,
+      graph.proposals.filter((p) => p.dealId === proposal.dealId && p.id !== proposalId),
+    );
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "proposal.delete",
+      entity: "proposal",
+      entityId: proposalId,
+      summary: `Deleted a €${proposal.value.toLocaleString()} proposal on ${brand.name}`,
+    });
+    return { ok: true, proposalId, leadId: proposal.dealId, name: brand.name, valueEur: proposal.value };
+  },
+};
+
+const cancelOutreachTool: CopilotTool = {
+  name: "cancel_outreach",
+  permission: "outreach:cancel",
+  write: true,
+  description:
+    "Cancel a drafted or pending outreach message so it can never be sent. Get the id from outreach_status. A message already sent cannot be cancelled — say so rather than implying it was recalled.",
+  parameters: {
+    type: "object",
+    properties: { outreachId: { type: "string" } },
+    required: ["outreachId"],
+  },
+  async execute(args, ctx) {
+    const { outreachId } = z.object({ outreachId: z.string().min(1) }).parse(args);
+    const auth = await requirePermission("outreach:cancel");
+
+    const store = getOutreachStore();
+    const record = await store.get(outreachId);
+    if (!record) return { ok: false, error: "That message no longer exists." };
+    if (record.status === "sent") return { ok: false, error: "Sent messages can't be cancelled." };
+    // Same rule as the outbox: without approval you may only cancel your own.
+    if (!(await can("outreach:approve")) && record.createdById !== auth.user.id) {
+      return { ok: false, error: "You can only cancel your own drafts." };
+    }
+
+    await store.update({ ...record, status: "cancelled", updatedAt: new Date().toISOString() });
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "outreach.cancel",
+      entity: "outreach",
+      entityId: record.id,
+      summary: `Cancelled outreach to ${record.brandName}`,
+    });
+    return { ok: true, outreachId, brandName: record.brandName, status: "cancelled" };
+  },
+};
 
 const setNextMove: CopilotTool = {
   name: "set_next_move",
@@ -848,6 +1236,13 @@ export const EXTRA_TOOLS: CopilotTool[] = [
   recordProposalTool,
   setStrategicValue,
   setBudget,
+  createLead,
+  updateLead,
+  deleteLead,
+  mergeCompaniesTool,
+  unlinkDealTool,
+  deleteProposalTool,
+  cancelOutreachTool,
   linkCompany,
   assignLead,
   sendOutreachTool,

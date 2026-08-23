@@ -7,6 +7,7 @@ import { authorizeLead } from "@/lib/leads/visible";
 import { getCrmOverlayStore } from "@/lib/store/crm";
 import { getCrmGraph } from "@/lib/crm/graph";
 import { recordProposal, syncLeadValue } from "@/lib/crm/proposals";
+import { mergeCompanyInto } from "@/lib/crm/merge";
 import { logAudit } from "@/lib/store/audit";
 import type { ProposalStatus } from "@/lib/crm/types";
 
@@ -88,31 +89,9 @@ export async function mergeCompanies(_prev: CrmActionState, formData: FormData):
     .safeParse(Object.fromEntries(formData));
   if (!parsed.success) return { error: "Pick both companies." };
   const { sourceId, targetId } = parsed.data;
-  if (sourceId === targetId) return { error: "Pick two different companies." };
 
-  const graph = await getCrmGraph();
-  const source = graph.companies.find((c) => c.id === sourceId);
-  const target = graph.companies.find((c) => c.id === targetId);
-  if (!source) return { error: "That company no longer exists." };
-  if (!target) return { error: "The company you are merging into no longer exists." };
-
-  const moving = graph.deals.filter((d) => d.companyId === sourceId);
-  // Checked before anything is written: a merge that moved the deals it could
-  // reach and skipped the rest would split the company rather than merge it.
-  for (const deal of moving) await authorizeLead(auth, deal);
-
-  const store = getCrmOverlayStore();
-  const linkedAt = todayIso();
-  for (const deal of moving) {
-    await store.linkDeal({
-      dealId: deal.id,
-      companyId: targetId,
-      companyName: target.name,
-      linkedById: user.id,
-      linkedByName: user.name,
-      linkedAt,
-    });
-  }
+  const result = await mergeCompanyInto(auth, sourceId, targetId);
+  if ("error" in result) return { error: result.error };
 
   await logAudit({
     actorId: user.id,
@@ -120,13 +99,13 @@ export async function mergeCompanies(_prev: CrmActionState, formData: FormData):
     action: "company.merge",
     entity: "company",
     entityId: targetId,
-    summary: `Merged ${source.name} into ${target.name} (${moving.length} ${moving.length === 1 ? "deal" : "deals"})`,
+    summary: `Merged ${result.sourceName} into ${result.targetName} (${result.movedDealIds.length} ${result.movedDealIds.length === 1 ? "deal" : "deals"})`,
   });
 
   revalidatePath("/dashboard/companies");
   revalidatePath(`/dashboard/companies/${targetId}`);
   revalidatePath(`/dashboard/companies/${sourceId}`);
-  for (const deal of moving) revalidatePath(`/dashboard/pipeline/${deal.id}`);
+  for (const dealId of result.movedDealIds) revalidatePath(`/dashboard/pipeline/${dealId}`);
   return { ok: true };
 }
 

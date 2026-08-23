@@ -7,6 +7,7 @@ import { getBrandStore } from "@/lib/store/brands";
 import { getCrmOverlayStore } from "@/lib/store/crm";
 import { getCrmGraph } from "@/lib/crm/graph";
 import { authorizeLead } from "@/lib/leads/visible";
+import { blankLead, freeLeadId } from "@/lib/leads/create";
 import { logAudit } from "@/lib/store/audit";
 import { advanceStage, todayYmd } from "@/lib/workflow";
 import { reconcileImportedOutcome } from "@/lib/lifecycle";
@@ -75,17 +76,6 @@ const brandInputSchema = z.object({
   notes: optionalStr,
 });
 
-function slug(name: string): string {
-  return (
-    name
-      .normalize("NFKD")
-      .replace(/[^\w\s-]/g, "")
-      .trim()
-      .replace(/[\s_]+/g, "-")
-      .toLowerCase() || "lead"
-  );
-}
-
 export async function saveBrand(_prev: BrandActionState, formData: FormData): Promise<BrandActionState> {
   // Pure read of the submitted id: decides which capability the write needs.
   const isNew = !String(formData.get("id") ?? "").trim();
@@ -107,31 +97,7 @@ export async function saveBrand(_prev: BrandActionState, formData: FormData): Pr
     await authorizeLead(auth, existing);
     brand = { ...existing };
   } else {
-    let id = slug(input.name);
-    if (await store.get(id)) id = `${id}-${Date.now().toString(36).slice(-4)}`;
-    brand = {
-      id,
-      name: input.name,
-      aliases: [],
-      scored: false,
-      status: null,
-      priority: null,
-      owner: null,
-      poc: null,
-      email: null,
-      industry: null,
-      industryRaw: null,
-      initialContact: null,
-      lastContact: null,
-      followUpDate: null,
-      waitingOn: null,
-      nextStep: null,
-      expectedMonths: null,
-      strategicValue: 0,
-      strategicReason: null,
-      closingFailed: null,
-      notes: null,
-    };
+    brand = blankLead(await freeLeadId(input.name), input.name);
   }
 
   brand.name = input.name;
