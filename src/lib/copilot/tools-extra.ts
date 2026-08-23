@@ -10,6 +10,7 @@ import { getCrmGraph } from "@/lib/crm/graph";
 import { recordProposal, syncLeadValue } from "@/lib/crm/proposals";
 import { mergeCompanyInto } from "@/lib/crm/merge";
 import { blankLead, freeLeadId } from "@/lib/leads/create";
+import { modelSpec, workedExample } from "./model-spec";
 import { duplicateCandidates, currentProposals } from "@/lib/crm/logic";
 import { completeFollowUp, snoozeFollowUp } from "@/lib/leads/followups";
 import { sendExistingOutreach } from "@/lib/outreach/send";
@@ -427,6 +428,28 @@ const cancelOutreachTool: CopilotTool = {
       summary: `Cancelled outreach to ${record.brandName}`,
     });
     return { ok: true, outreachId, brandName: record.brandName, status: "cancelled" };
+  },
+};
+
+const explainModel: CopilotTool = {
+  name: "explain_model",
+  permission: "scoring:read",
+  description:
+    "The complete specification of how every number on the platform is calculated: both priority axes with every term and weight, the quadrant thresholds, the grade bands, the stage probabilities, the confidence multipliers, what is deliberately EXCLUDED from the ranking, when it recalculates, how a deal's one commercial value is resolved, which statuses feed which money total, the health and tempo rules, and the superseded lead score. Pass a lead id to get a worked example with that lead's real numbers at every step. Use this for any 'how does X work', 'why does this rank there', 'what would change it' or 'why do these two figures differ' question — quote the actual weights rather than describing them loosely.",
+  parameters: {
+    type: "object",
+    properties: {
+      leadId: { type: "string", description: "Optional — adds a worked example using this lead's real values" },
+    },
+  },
+  async execute(args) {
+    const { leadId } = z.object({ leadId: z.string().min(1).optional() }).parse(args);
+    const spec = modelSpec();
+    if (!leadId) return { model: spec };
+
+    const brand = await visibleLead(leadId);
+    if (!brand) return { model: spec, example: null, note: "That lead was not found, so the spec is returned on its own." };
+    return { model: spec, example: workedExample(brand) };
   },
 };
 
@@ -1236,6 +1259,7 @@ export const EXTRA_TOOLS: CopilotTool[] = [
   recordProposalTool,
   setStrategicValue,
   setBudget,
+  explainModel,
   createLead,
   updateLead,
   deleteLead,
