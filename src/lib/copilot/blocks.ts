@@ -268,6 +268,46 @@ export type Block = z.infer<typeof BlockSchema>;
 export type BlockType = Block["type"];
 export type ActionSpec = z.infer<typeof actionBlock>["actions"][number];
 
+/** Read/write a nested array by the path zod reports on an issue. */
+function atPath(root: unknown, path: (string | number)[]): unknown {
+  return path.reduce<unknown>((node, key) => (node == null ? node : (node as Record<string, unknown>)[key]), root);
+}
+
+/**
+ * Salvage a block the schema rejected.
+ *
+ * The per-block caps exist so one answer cannot flood the panel, but rejecting
+ * the whole block for breaching them threw away everything the model wrote:
+ * ten metrics produced no metrics at all, five suggested actions produced no
+ * buttons. Trimming to the cap keeps the answer; dropping it silently is what
+ * made replies look truncated for no visible reason.
+ */
+function repairBlock(raw: unknown, error: z.ZodError): Block | null {
+  if (raw == null || typeof raw !== "object") return null;
+
+  const oversized = error.issues.filter(
+    (i): i is z.ZodIssue & { maximum: number | bigint } =>
+      i.code === "too_big" && "type" in i && (i as { type?: unknown }).type === "array",
+  );
+  if (oversized.length > 0) {
+    const clone = structuredClone(raw) as Record<string, unknown>;
+    for (const issue of oversized) {
+      const parent = issue.path.slice(0, -1);
+      const key = issue.path.at(-1)!;
+      const holder = (parent.length ? atPath(clone, parent) : clone) as Record<string | number, unknown>;
+      const list = holder?.[key];
+      if (Array.isArray(list)) holder[key] = list.slice(0, Number(issue.maximum));
+    }
+    const retry = BlockSchema.safeParse(clone);
+    if (retry.success) return retry.data;
+  }
+
+  // Last resort: a block we cannot render but which carries prose is still
+  // worth more to the reader than nothing.
+  const text = (raw as { text?: unknown }).text;
+  return typeof text === "string" && text.trim() ? { type: "text", text } : null;
+}
+
 /** Validate + filter unknown input into a clean list of blocks (never throws). */
 export function parseBlocks(input: unknown): Block[] {
   const arr = Array.isArray(input)
@@ -278,7 +318,12 @@ export function parseBlocks(input: unknown): Block[] {
   const out: Block[] = [];
   for (const raw of arr) {
     const parsed = BlockSchema.safeParse(raw);
-    if (parsed.success) out.push(parsed.data);
+    if (parsed.success) {
+      out.push(parsed.data);
+      continue;
+    }
+    const salvaged = repairBlock(raw, parsed.error);
+    if (salvaged) out.push(salvaged);
   }
   return out;
 }

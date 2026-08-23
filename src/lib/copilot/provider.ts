@@ -102,7 +102,9 @@ Around the chat the user can also: toggle "Think deeply" (spends more reasoning 
 · When you use web_search, base the answer on its result and always finish with a \`sources\` block (title + url), keeping any inline [n] markers aligned to it.
 · You act as the signed-in user and respect their permissions. You may DRAFT outreach freely. Sending is a separate, permission-gated step over an existing draft — offer it, never assume it. Surface write actions as buttons; never perform them silently.
 · You are told who you are speaking to. Use their name, and when they say "my" — my leads, my pipeline, what do I owe — resolve it against the lead owner rather than asking them who they are.
-· Compose every answer as an ordered array of typed UI blocks (heading, text, metrics, chart, table, leadCard/leadGrid, companyCard, scoreBreakdown, callout, recommendation, list, timeline, sources, actions) — not plain prose. Be concise, concrete and decision-oriented: lead with the answer, then the evidence.
+· Compose every answer as an ordered array of typed UI blocks (heading, text, metrics, chart, table, leadCard/leadGrid, companyCard, scoreBreakdown, callout, recommendation, list, timeline, sources, actions) — not plain prose. Lead with the answer, then the evidence.
+· Match the length to the question. A lookup deserves a number and a sentence. "How does X work", "why does this rank there", "walk me through" and anything about the model or the platform deserve a full explanation: give the formula, the inputs, the weights, a worked example with this record's real numbers, and what would change the outcome. Never answer a how-or-why question with one line, and never stop at a headline when the reasoning is the thing being asked for.
+· Show your working when a number is in dispute or surprising: which tool it came from, which records it covers, and what it excludes. State the exclusions — most disagreements between two figures are a population difference, not an arithmetic error.
 · Pick the block that fits the question: scoreBreakdown whenever you explain why a lead ranks where it does (it shows both axes and that ease is excluded); companyCard for a client relationship rather than a single deal; table for a work queue; actions to offer a write rather than describing one.
 · When a write would answer the request, offer it as an actions block instead of doing it silently — the user presses the button.`;
 
@@ -588,6 +590,19 @@ export function effortFor(deep: boolean | undefined): ReasoningEffort {
   return deep ? deepEffort() : EFFORT_NORMAL;
 }
 
+/**
+ * Ceiling for one reply, reasoning included.
+ *
+ * Reasoning tokens are billed against the same budget as the visible answer, so
+ * leaving this unset let a deep answer spend the deployment's default thinking
+ * and return a stub. Generous by design — it is a cap, not a reservation, and
+ * the model stops when it has finished.
+ */
+export function completionBudget(): number {
+  const raw = Number(process.env.COPILOT_MAX_COMPLETION_TOKENS);
+  return Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 16_000;
+}
+
 export const copilotModel = () => process.env.COPILOT_MODEL ?? "gpt-5.4-mini";
 
 /**
@@ -622,6 +637,9 @@ class FoundryCopilotProvider implements CopilotProvider {
    */
   private static effortSupported = true;
 
+  /** Same story for the completion budget: older deployments want max_tokens. */
+  private static tokenParam: "max_completion_tokens" | "max_tokens" | null = "max_completion_tokens";
+
   private async authHeader(): Promise<Record<string, string>> {
     if (process.env.COPILOT_API_KEY) return { "api-key": process.env.COPILOT_API_KEY };
     const { DefaultAzureCredential } = await import("@azure/identity");
@@ -633,16 +651,33 @@ class FoundryCopilotProvider implements CopilotProvider {
     const send = (payload: Record<string, unknown>) =>
       fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
 
-    const res = await send(body);
-    if (res.ok || res.status !== 400 || !("reasoning_effort" in body)) return res;
+    let res = await send(body);
+    if (res.ok || res.status !== 400) return res;
 
-    // Only retry for the one error this can cause, so a genuine 400 still surfaces.
+    // Only retry for the arguments a deployment can legitimately reject, so a
+    // genuine 400 still surfaces.
     const detail = await res.clone().text();
-    if (!/reasoning_effort/i.test(detail)) return res;
 
-    FoundryCopilotProvider.effortSupported = false;
-    const { reasoning_effort: _dropped, ...rest } = body;
-    return send(rest);
+    if ("reasoning_effort" in body && /reasoning_effort/i.test(detail)) {
+      FoundryCopilotProvider.effortSupported = false;
+      const { reasoning_effort: _dropped, ...rest } = body;
+      res = await send(rest);
+      if (res.ok || res.status !== 400) return res;
+      body = rest;
+    }
+
+    // max_completion_tokens is the reasoning-model spelling; older deployments
+    // only know max_tokens, and some reject both.
+    if ("max_completion_tokens" in body && /max_completion_tokens/i.test(detail)) {
+      const { max_completion_tokens: budget, ...rest } = body;
+      FoundryCopilotProvider.tokenParam = "max_tokens";
+      res = await send({ ...rest, max_tokens: budget });
+      if (res.ok) return res;
+      FoundryCopilotProvider.tokenParam = null;
+      return send(rest);
+    }
+
+    return res;
   }
 
   async ask(message: string, user: SessionUser, opts: AskOptions = {}): Promise<CopilotTurn> {
@@ -665,6 +700,9 @@ class FoundryCopilotProvider implements CopilotProvider {
         response_format: { type: "json_schema", json_schema: blocksResponseSchema() },
       };
       if (FoundryCopilotProvider.effortSupported) body.reasoning_effort = effortFor(opts.reasoning);
+      // Reasoning tokens are spent from this same budget, so leaving it at the
+      // deployment default let a deep answer think its way to a stub.
+      if (FoundryCopilotProvider.tokenParam) body[FoundryCopilotProvider.tokenParam] = completionBudget();
 
       const res = await this.post(endpoint, headers, body);
       if (!res.ok) throw new Error(`Foundry model call failed: ${res.status}`);
