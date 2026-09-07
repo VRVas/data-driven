@@ -29,7 +29,6 @@ export function PeopleSection({
     <section className="glass overflow-hidden">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
         <div>
-          <div className="eyebrow mb-1">Accounts</div>
           <h2 className="font-display text-xl font-semibold tracking-tight">People</h2>
           <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
             Everyone with a sign-in, and the profiles that decide what they can do.

@@ -34,7 +34,6 @@ export default async function CompaniesPage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Accounts</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Companies</h1>
         <p className="mt-1 text-[var(--color-ink-muted)]">
           {companies.length} {companies.length === 1 ? "company" : "companies"}. A company holds every deal we have
@@ -76,7 +75,6 @@ export default async function CompaniesPage() {
       <Reveal>
         <section className="glass overflow-hidden">
           <header className="border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
-            <div className="eyebrow mb-1">Book of business</div>
             <h2 className="font-display text-xl font-semibold tracking-tight">By open pipeline</h2>
           </header>
 
@@ -92,7 +90,6 @@ export default async function CompaniesPage() {
 
       <Reveal>
         <section className="glass p-4 sm:p-6">
-          <div className="eyebrow mb-1">Reference</div>
           <h2 className="font-display text-xl font-semibold tracking-tight">Where each figure comes from</h2>
           <p className="mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">
             One value per deal, strongest evidence first: an <strong>accepted</strong> proposal, else the one
@@ -132,7 +129,6 @@ export default async function CompaniesPage() {
       {(duplicates.length > 0 || canMerge) && (
         <Reveal>
           <section className="glass p-4 sm:p-6">
-            <div className="eyebrow mb-1">Review</div>
             <h2 className="font-display text-xl font-semibold tracking-tight">
               {duplicates.length > 0 ? "Possible duplicates" : "Merge companies"}
             </h2>

@@ -62,7 +62,6 @@ export default async function DashboardOverview() {
       <Reveal>
         <div className="flex items-end justify-between gap-4">
           <div>
-            <div className="eyebrow mb-2">Command center</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Overview</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
               {brands.length} leads - {scored.length} scored - snapshot {ds.meta.snapshotDate}
@@ -83,20 +82,20 @@ export default async function DashboardOverview() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Reveal className="h-full">
-          <ChartCard id="overview-funnel" eyebrow="Funnel" title="Pipeline by stage" subtitle="Lead count across the sales funnel" tour="funnel">
+          <ChartCard id="overview-funnel" title="Pipeline by stage" subtitle="Lead count across the sales funnel" tour="funnel">
             <StatusFunnel rows={funnel} />
           </ChartCard>
         </Reveal>
 
         <Reveal className="h-full">
-          <ChartCard id="overview-quadrant" eyebrow="Targeting" title="Priority quadrant" subtitle="Open leads - opportunity × winnability - bubble = budget" tour="quadrant">
+          <ChartCard id="overview-quadrant" title="Priority quadrant" subtitle="Open leads - opportunity × winnability - bubble = budget" tour="quadrant">
             <PriorityQuadrant points={points} />
           </ChartCard>
         </Reveal>
       </div>
 
       <Reveal>
-        <ChartCard id="overview-heatmap" eyebrow="Segments" title="Industry scorecard" subtitle="Segment-level model, recomputed from the raw data" tour="heatmap">
+        <ChartCard id="overview-heatmap" title="Industry scorecard" subtitle="Segment-level model, recomputed from the raw data" tour="heatmap">
           <IndustryHeatmap industries={industries} />
         </ChartCard>
       </Reveal>

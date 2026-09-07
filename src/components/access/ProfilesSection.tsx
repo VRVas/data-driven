@@ -26,7 +26,6 @@ export function ProfilesSection({
     <section className="glass overflow-hidden">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
         <div>
-          <div className="eyebrow mb-1">Permissions</div>
           <h2 className="font-display text-xl font-semibold tracking-tight">Permission profiles</h2>
           <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
             Reusable bundles of grants. Built-in profiles are fixed - duplicate one to make it yours.

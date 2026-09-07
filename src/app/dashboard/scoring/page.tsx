@@ -93,7 +93,6 @@ export default async function ScoringPage() {
       <Reveal>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="eyebrow mb-2">Model</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Scoring model</h1>
             <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
               Leads are ranked by <strong>Priority</strong> - what a deal is worth against how likely it is to
@@ -161,7 +160,6 @@ export default async function ScoringPage() {
 
       <Reveal>
         <div data-tour="scoring-reference" className="glass p-6">
-          <div className="eyebrow mb-2">Reference</div>
           <h2 className="font-display text-xl font-semibold tracking-tight">How the numbers are worked out</h2>
           <p className="mb-6 mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">
             Every field, every weight, every threshold, and what has no effect at all. Rendered from the same

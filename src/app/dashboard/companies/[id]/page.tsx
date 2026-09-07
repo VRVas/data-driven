@@ -79,7 +79,6 @@ export default async function CompanyDetailPage({ params }: { params: Promise<{ 
         <section className="glass overflow-hidden">
           <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
             <div>
-              <div className="eyebrow mb-1">Engagements</div>
               <h2 className="font-display text-xl font-semibold tracking-tight">Deals</h2>
               <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
                 Every piece of work with this client, live or finished.

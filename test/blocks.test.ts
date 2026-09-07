@@ -62,7 +62,7 @@ describe("block protocol", () => {
 
   it("builders produce schema-valid blocks", () => {
     const built = [
-      b.heading("Title", { eyebrow: "Eyebrow", subtitle: "Sub" }),
+      b.heading("Title", { subtitle: "Sub" }),
       b.metrics([{ label: "a", value: 1, tone: "mint" }]),
       b.chart("donut", { series: [{ label: "x", value: 1 }] }),
       b.table([{ key: "k", label: "K" }], [{ k: "v" }]),

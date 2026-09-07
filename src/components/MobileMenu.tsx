@@ -13,7 +13,8 @@ const COMMAND_EVENT = "oovie:command-palette";
 interface MenuUser {
   name?: string | null;
   email?: string | null;
-  role?: string | null;
+  /** Resolved from the profiles the user holds, not the legacy role claim. */
+  access: { label: string; elevated: boolean };
 }
 
 /**
@@ -67,7 +68,7 @@ export function MobileMenu({
         onClick={() => setOpen(true)}
         aria-label="Open menu"
         aria-expanded={open}
-        className="inline-flex items-center justify-center rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] xl:hidden"
+        className="inline-flex items-center justify-center rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] lg:hidden"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
           <path d="M3 6h18M3 12h18M3 18h18" />
@@ -77,7 +78,7 @@ export function MobileMenu({
       {mounted &&
         open &&
         createPortal(
-          <div className="fixed inset-0 z-[200] xl:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+          <div className="fixed inset-0 z-[200] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
             <div
               className="absolute inset-0 bg-[rgba(3,5,20,0.6)] backdrop-blur-sm"
               onClick={() => setOpen(false)}
@@ -145,16 +146,15 @@ export function MobileMenu({
               <div className="border-t border-[var(--color-border)] px-5 py-4">
                 <div className="mb-3 flex items-center gap-2">
                   <span
-                    className="rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em]"
+                    className="max-w-[12rem] truncate rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em]"
                     style={{
-                      borderColor:
-                        user.role === "admin"
-                          ? "color-mix(in srgb, var(--color-digital-violet) 55%, transparent)"
-                          : "var(--color-border-strong)",
-                      color: user.role === "admin" ? "var(--color-digital-violet)" : "var(--color-ink-faint)",
+                      borderColor: user.access.elevated
+                        ? "color-mix(in srgb, var(--color-digital-violet) 55%, transparent)"
+                        : "var(--color-border-strong)",
+                      color: user.access.elevated ? "var(--color-digital-violet)" : "var(--color-ink-faint)",
                     }}
                   >
-                    {user.role === "admin" ? "Admin" : "Member"}
+                    {user.access.label}
                   </span>
                   <span className="truncate font-mono text-xs text-[var(--color-ink-muted)]">
                     {user.name ?? user.email}

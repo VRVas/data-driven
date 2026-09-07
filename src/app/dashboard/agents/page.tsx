@@ -9,7 +9,6 @@ export default async function AgentsPage() {
   return (
     <div className="space-y-6">
       <Reveal>
-        <div className="eyebrow mb-2">Partner network</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Agents &amp; Agencies</h1>
         <p className="mt-1 text-[var(--color-ink-muted)]">
           The partner network - intermediaries, scouts and agencies that open doors.

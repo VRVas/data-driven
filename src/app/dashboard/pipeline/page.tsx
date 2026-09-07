@@ -27,7 +27,6 @@ export default async function PipelinePage() {
   return (
     <div className="space-y-6">
       <Reveal>
-        <div className="eyebrow mb-2">Lead tracker</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Pipeline</h1>
         <p className="mt-1 text-[var(--color-ink-muted)]">
           What the book is worth, who owes the next move, and who is late making it. Search, filter, sort and edit

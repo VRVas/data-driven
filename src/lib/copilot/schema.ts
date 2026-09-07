@@ -10,7 +10,7 @@ export function blocksResponseSchema() {
     type: "object",
     description:
       "One UI block. `type` selects the block; fill only that block's fields. " +
-      "heading{eyebrow?,title,subtitle?} - text{text} - callout{tone(insight|success|warning|danger),title?,text} - " +
+      "heading{title,subtitle?} - text{text} - callout{tone(insight|success|warning|danger),title?,text} - " +
       "metrics{items:[{label,value,unit?,delta?,tone?}]} - table{columns:[{key,label,align?,kind?}],rows:[{}]} - " +
       "chart{variant(bar|donut|scatter|line|progress),title?,series?:[{label,value,tone?}],points?:[{x,y,label?,size?,tone?}],max?} - " +
       "leadCard/leadGrid{leads:[{id,name,status?,score?,budgetEur?,quadrant?}]} - " +
@@ -31,7 +31,6 @@ export function blocksResponseSchema() {
       },
       title: { type: "string" },
       subtitle: { type: "string" },
-      eyebrow: { type: "string" },
       text: { type: "string" },
       tone: { type: "string" },
       variant: { type: "string", enum: ["bar", "donut", "scatter", "line", "progress"] },

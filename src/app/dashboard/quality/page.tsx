@@ -46,7 +46,6 @@ export default async function QualityPage() {
       <Reveal>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="eyebrow mb-2">Data audit</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Data quality</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
               What is wrong with the pipeline now, and what the original import had to clean.
@@ -67,7 +66,6 @@ export default async function QualityPage() {
 
       <Reveal>
         <section className="glass p-6" data-testid="live-hygiene">
-          <div className="eyebrow mb-2">Live</div>
           <h2 className="font-display text-lg font-semibold">
             {summary.total === 0
               ? "Nothing outstanding"
@@ -118,7 +116,6 @@ export default async function QualityPage() {
       {conflicts.length > 0 && (
         <Reveal>
           <section className="glass p-6">
-            <div className="eyebrow mb-2">Needs review</div>
             <h2 className="font-display text-lg font-semibold">
               {conflicts.length} leads look like two deals in one row
             </h2>
@@ -159,7 +156,6 @@ export default async function QualityPage() {
       <Reveal>
         <div className="glass overflow-hidden">
           <div className="border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
-            <div className="eyebrow mb-1">History</div>
             <h2 className="font-display text-lg font-semibold">Migration notes</h2>
             <p className="mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">
               {count} issues the original spreadsheet import found and resolved. This list is a record of what

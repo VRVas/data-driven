@@ -40,7 +40,6 @@ function BlockView({
     case "heading":
       return (
         <div>
-          {block.eyebrow && <div className="eyebrow mb-1">{block.eyebrow}</div>}
           <h3 className="font-display text-lg font-semibold tracking-tight text-[var(--color-ink)]">{block.title}</h3>
           {block.subtitle && <p className="mt-0.5 text-sm text-[var(--color-ink-muted)]">{block.subtitle}</p>}
         </div>

@@ -56,11 +56,13 @@ export function CommandButton() {
  */
 export function CommandPalette({
   leads,
-  isAdmin,
+  canSeeActivity,
+  canSeeTeam,
   signOutAction,
 }: {
   leads: Lead[];
-  isAdmin: boolean;
+  canSeeActivity: boolean;
+  canSeeTeam: boolean;
   signOutAction: () => Promise<void>;
 }) {
   const router = useRouter();
@@ -122,11 +124,11 @@ export function CommandPalette({
       keywords,
       run: () => router.push(href),
     }));
-    if (isAdmin) {
-      list.push(
-        { id: "nav:/dashboard/activity", label: "Activity", group: "Navigate", hint: "Go", keywords: "audit trail", run: () => router.push("/dashboard/activity") },
-        { id: "nav:/dashboard/team", label: "Team & roles", group: "Navigate", hint: "Go", keywords: "members roles", run: () => router.push("/dashboard/team") },
-      );
+    if (canSeeActivity) {
+      list.push({ id: "nav:/dashboard/activity", label: "Activity", group: "Navigate", hint: "Go", keywords: "audit trail", run: () => router.push("/dashboard/activity") });
+    }
+    if (canSeeTeam) {
+      list.push({ id: "nav:/dashboard/team", label: "Team & roles", group: "Navigate", hint: "Go", keywords: "members roles", run: () => router.push("/dashboard/team") });
     }
     list.push(
       { id: "act:copilot", label: "Ask the Copilot", group: "Actions", hint: "Action", keywords: "chat ai question", run: () => router.push("/dashboard/copilot") },
@@ -134,7 +136,7 @@ export function CommandPalette({
       { id: "act:signout", label: "Sign out", group: "Actions", hint: "Action", keywords: "logout leave", run: () => void signOutAction() },
     );
     return list;
-  }, [router, isAdmin, start, signOutAction]);
+  }, [router, canSeeActivity, canSeeTeam, start, signOutAction]);
 
   const q = query.trim().toLowerCase();
   const filtered = useMemo<Command[]>(() => {

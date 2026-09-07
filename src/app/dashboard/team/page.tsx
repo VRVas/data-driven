@@ -64,7 +64,6 @@ export default async function TeamPage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="eyebrow mb-2">Access control</div>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Team</h1>
         <p className="mt-1 text-[var(--color-ink-muted)]">
           {people.length} {people.length === 1 ? "member" : "members"} - {profiles.length}{" "}

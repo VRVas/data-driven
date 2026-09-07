@@ -27,7 +27,7 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <nav data-tour="nav" className="hidden items-center gap-0.5 xl:flex">
+    <nav data-tour="nav" className="hidden items-center gap-0.5 lg:flex">
       {NAV.map((n) => {
         const current = isActive(pathname, n.href);
         return (
@@ -36,7 +36,7 @@ export function DashboardNav() {
             href={n.href}
             aria-current={current ? "page" : undefined}
             className={clsx(
-              "whitespace-nowrap rounded-full px-2.5 py-1.5 text-[13px] transition-colors duration-300 ease-[var(--ease-brand-snap)]",
+              "whitespace-nowrap rounded-full px-2 py-1.5 text-[13px] transition-colors duration-300 ease-[var(--ease-brand-snap)] xl:px-2.5",
               current
                 ? "bg-[color-mix(in_srgb,var(--color-frosted-canvas)_12%,transparent)] text-[var(--color-ink)]"
                 : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",

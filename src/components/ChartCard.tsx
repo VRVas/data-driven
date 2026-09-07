@@ -22,7 +22,6 @@ const storageKey = (id: string) => `oovie.panel.${id}`;
 export function ChartCard({
   id,
   title,
-  eyebrow,
   subtitle,
   tour,
   action,
@@ -32,7 +31,6 @@ export function ChartCard({
   /** Stable per panel: the collapsed preference is remembered against it. */
   id: string;
   title: string;
-  eyebrow?: string;
   subtitle?: ReactNode;
   tour?: string;
   /** Anything that belongs beside the fold control, e.g. an export menu. */
@@ -71,7 +69,6 @@ export function ChartCard({
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          {eyebrow && <div className="eyebrow mb-2">{eyebrow}</div>}
           <h2 className="font-display text-lg font-semibold">{title}</h2>
           {subtitle && <p className="mt-1 text-sm text-[var(--color-ink-muted)]">{subtitle}</p>}
         </div>

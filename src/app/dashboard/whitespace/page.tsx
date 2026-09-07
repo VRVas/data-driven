@@ -26,7 +26,6 @@ export default async function WhitespacePage() {
       <Reveal>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="eyebrow mb-2">Market</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Whitespace &amp; TAM</h1>
             <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
               Approached vs addressable market across the EU. The room to grow is the space

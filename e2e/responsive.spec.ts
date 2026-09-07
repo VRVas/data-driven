@@ -33,9 +33,9 @@ test.describe("responsive - dashboard", () => {
     });
   }
 
-  // The full horizontal nav only fits from `xl` (1280px) up; below that it
-  // collapses into the hamburger drawer, which must still reach every section.
-  for (const vp of [VIEWPORTS[0], VIEWPORTS[1], { name: "small-laptop", width: 1024, height: 768 }]) {
+  // The full horizontal nav fits from `lg` (1024px) up; below that it collapses
+  // into the hamburger drawer, which must still reach every section.
+  for (const vp of [VIEWPORTS[0], VIEWPORTS[1]]) {
     test(`menu drawer navigates at ${vp.name} (${vp.width}px)`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto("/dashboard");
@@ -51,6 +51,36 @@ test.describe("responsive - dashboard", () => {
       await drawer.getByRole("link", { name: "Whitespace", exact: true }).click();
       await expect(page).toHaveURL(/\/dashboard\/whitespace$/);
       await expect(drawer).toBeHidden();
+    });
+  }
+
+  // A laptop is the machine this gets used on. Every section has to be one
+  // click away there, not buried behind a hamburger, and "visible" is not
+  // enough - a tab pushed outside the header is technically visible too.
+  for (const width of [1024, 1280, 1440]) {
+    test(`every nav tab is reachable and inside the header at ${width}px`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 800 });
+      await page.goto("/dashboard");
+
+      const nav = page.getByRole("navigation");
+      await expect(nav).toBeVisible();
+      await expect(page.getByRole("button", { name: "Open menu" })).toBeHidden();
+
+      const links = nav.getByRole("link");
+      const count = await links.count();
+      expect(count, `only ${count} tabs at ${width}px`).toBeGreaterThanOrEqual(7);
+
+      for (let i = 0; i < count; i++) {
+        const link = links.nth(i);
+        await expect(link).toBeVisible();
+        const box = (await link.boundingBox())!;
+        expect(box.x, `${await link.innerText()} starts off-screen at ${width}px`).toBeGreaterThanOrEqual(0);
+        expect(
+          box.x + box.width,
+          `${await link.innerText()} runs past the right edge at ${width}px`,
+        ).toBeLessThanOrEqual(width);
+      }
+      await shot(page, `12-nav-${width}`);
     });
   }
 

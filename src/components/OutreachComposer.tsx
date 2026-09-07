@@ -69,7 +69,6 @@ function ComposerPanel({
       <div className="relative flex h-full w-full max-w-lg flex-col border-l border-[var(--color-border)] bg-[var(--color-bg-elevated)] shadow-2xl">
         <header className="flex items-center justify-between border-b border-[var(--color-border)] px-6 py-4">
           <div>
-            <div className="eyebrow">Outreach</div>
             <h2 className="font-display text-lg font-semibold">{brand.name}</h2>
           </div>
           <button onClick={onClose} className="text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]" aria-label="Close">✕</button>

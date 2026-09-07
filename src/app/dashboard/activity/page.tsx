@@ -29,7 +29,6 @@ export default async function ActivityPage() {
       <Reveal>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="eyebrow mb-2">Audit trail</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Activity</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
               Every change, who made it and when - {entries.length} recent {entries.length === 1 ? "event" : "events"}.

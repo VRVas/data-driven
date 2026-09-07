@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import path from "node:path";
 import {
   PERMISSIONS,
   PERMISSION_KEYS,
@@ -229,5 +231,43 @@ describe("scopeFilter", () => {
 
   it("drops unowned rows rather than showing them to everyone", () => {
     expect(rows.filter(scopeFilter(context(), "own")).some((r) => r.ownerId === null)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The legacy role claim is not a display source
+// ---------------------------------------------------------------------------
+
+describe("what the UI calls you", () => {
+  it("never derives a label or a gate from the session's legacy role claim", () => {
+    // The top bar said Member to people the Team panel called Administrator.
+    // Both read honestly, from different places. Assigning a profile does write
+    // the legacy role to the store, but the session token keeps whatever it was
+    // issued with, so `session.user.role` stays stale until the user signs out
+    // and back in. Anything user-visible resolves through the profiles instead.
+    //
+    // Store records are a different matter: `u.role` / `target.role` are the
+    // documented fallback for accounts written before profiles existed, so this
+    // only bans the session claim.
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = path.join(dir, entry);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (/\.tsx?$/.test(p)) files.push(p);
+      }
+    };
+    walk(path.join(process.cwd(), "src/components"));
+    walk(path.join(process.cwd(), "src/app"));
+
+    const offenders: string[] = [];
+    for (const f of files) {
+      readFileSync(f, "utf8").split("\n").forEach((line, i) => {
+        if (/\b(session\??\.)?user\??\.role\b\s*===/.test(line)) {
+          offenders.push(`${path.relative(process.cwd(), f)}:${i + 1}`);
+        }
+      });
+    }
+    expect(offenders, `read the profiles instead:\n${offenders.join("\n")}`).toEqual([]);
   });
 });

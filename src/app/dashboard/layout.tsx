@@ -4,11 +4,16 @@ import { TourProvider } from "@/components/tour/TourProvider";
 import { CommandPalette } from "@/components/CommandPalette";
 import { SmoothScrollProvider } from "@/lib/gsap/SmoothScrollProvider";
 import { auth, signOut } from "@/auth";
+import { capabilities } from "@/lib/auth/authorize";
 import { getVisibleBrands } from "@/lib/leads/visible";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
-  const isAdmin = session?.user?.role === "admin";
+  // Same two gates the top bar uses. The legacy role claim is not one of them:
+  // it stays "member" no matter which profile the user holds.
+  const caps = session?.user
+    ? await capabilities(["audit:read", "user:read"] as const)
+    : { "audit:read": false, "user:read": false };
 
   let leads: { id: string; name: string }[] = [];
   try {
@@ -31,7 +36,12 @@ export default async function DashboardLayout({ children }: { children: React.Re
         <SmoothScrollProvider>
           <main className="mx-auto max-w-7xl px-6 pb-8 pt-24">{children}</main>
         </SmoothScrollProvider>
-        <CommandPalette leads={leads} isAdmin={isAdmin} signOutAction={signOutAction} />
+        <CommandPalette
+          leads={leads}
+          canSeeActivity={caps["audit:read"]}
+          canSeeTeam={caps["user:read"]}
+          signOutAction={signOutAction}
+        />
       </TourProvider>
     </ToastProvider>
   );

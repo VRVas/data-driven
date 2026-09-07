@@ -37,7 +37,6 @@ export function CompanyProposals({
     <section className="glass overflow-hidden">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
         <div>
-          <div className="eyebrow mb-1">Commercials</div>
           <h2 className="font-display text-xl font-semibold tracking-tight">Proposals</h2>
           <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
             Every number that left the building, and what came back.

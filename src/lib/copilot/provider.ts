@@ -216,7 +216,7 @@ class LocalCopilotProvider implements CopilotProvider {
       const count = Number(mine?.count ?? 0);
       return done(
         [
-          b.heading(user.name, { eyebrow: "You", subtitle: user.email }),
+          b.heading(user.name, { subtitle: user.email }),
           b.text(
             count > 0
               ? `You have **${count}** ${count === 1 ? "lead" : "leads"} under your name. Ask me for "my work queue" or "what do I owe" and I'll scope it to you.`
@@ -318,7 +318,7 @@ class LocalCopilotProvider implements CopilotProvider {
       const today = d.reminders.filter((r) => r.bucket === "today").length;
       return done(
         [
-          b.heading("Follow-ups", { eyebrow: "Reminders", subtitle: `${d.count} scheduled` }),
+          b.heading("Follow-ups", { subtitle: `${d.count} scheduled` }),
           b.metrics([
             { label: "Overdue", value: overdue, tone: "rose" },
             { label: "Today", value: today, tone: "amber" },
@@ -349,7 +349,7 @@ class LocalCopilotProvider implements CopilotProvider {
       const rows = d?.industries ?? [];
       return done(
         [
-          b.heading("Whitespace by industry", { eyebrow: "Opportunity", subtitle: "Value weight × untapped share" }),
+          b.heading("Whitespace by industry", { subtitle: "Value weight × untapped share" }),
           b.chart("bar", {
             max: 1,
             series: rows.map((i) => ({
@@ -391,7 +391,6 @@ class LocalCopilotProvider implements CopilotProvider {
       return done(
         [
           b.heading("What you can do", {
-            eyebrow: "Permissions",
             subtitle: d.superuser ? "Superuser - everything" : `${d.grantedCount} of ${d.totalCount} permissions`,
           }),
           b.keyValue([
@@ -423,7 +422,7 @@ class LocalCopilotProvider implements CopilotProvider {
       if (!items.length) {
         return done(
           [
-            b.heading("Nothing is waiting on you", { eyebrow: "Work queue" }),
+            b.heading("Nothing is waiting on you", {}),
             b.callout(`All ${d.openLeads} open leads are triaged, in date and recently contacted.`, "success"),
           ],
           "Build the work queue; report an empty queue as a result rather than an error.",
@@ -431,7 +430,7 @@ class LocalCopilotProvider implements CopilotProvider {
       }
       return done(
         [
-          b.heading("Start here", { eyebrow: "Work queue", subtitle: `${d.total} of ${d.openLeads} open leads need a move` }),
+          b.heading("Start here", { subtitle: `${d.total} of ${d.openLeads} open leads need a move` }),
           b.metrics([
             { label: "Late on us", value: String(by["late-on-us"] ?? 0), tone: "rose" },
             { label: "To chase", value: String(by["late-on-them"] ?? 0), tone: "amber" },
@@ -476,7 +475,7 @@ class LocalCopilotProvider implements CopilotProvider {
       const leads = (d.leads ?? []) as Record<string, unknown>[];
       return done(
         [
-          b.heading("Pipeline health", { eyebrow: "Triage", subtitle: `${d.openLeads} open leads` }),
+          b.heading("Pipeline health", { subtitle: `${d.openLeads} open leads` }),
           b.metrics([
             { label: "Late on us", value: String(d.lateOnUs), tone: "rose" },
             { label: "Late on them", value: String(d.lateOnThem), tone: "amber" },
@@ -512,7 +511,6 @@ class LocalCopilotProvider implements CopilotProvider {
       return done(
         [
           b.heading("Awaiting a greenlight", {
-            eyebrow: "Money",
             subtitle: `${d.count} proposals - €${Number(d.totalEur).toLocaleString()}`,
           }),
           rows.length
@@ -546,7 +544,7 @@ class LocalCopilotProvider implements CopilotProvider {
       if (leads.length === 0) return done([b.callout("No leads match that yet.", "warning")]);
       return done(
         [
-          b.heading(isHot ? "Top hot leads" : "Highest-scoring leads", { eyebrow: "Targets", subtitle: `${leads.length} shown` }),
+          b.heading(isHot ? "Top hot leads" : "Highest-scoring leads", { subtitle: `${leads.length} shown` }),
           b.leadGrid(leads.map(toLeadCard)),
         ],
         isHot ? "Filter to Hot Lead priority, sort by priority score, render as lead cards." : "Sort all leads by priority score, render the top as cards.",
@@ -562,7 +560,7 @@ class LocalCopilotProvider implements CopilotProvider {
       const palette = ["brand", "cyan", "mint", "amber", "rose", "violet", "neutral"] as const;
       return done(
         [
-          b.heading("Pipeline overview", { eyebrow: "Command center", subtitle: `Snapshot of ${d.totalLeads} leads` }),
+          b.heading("Pipeline overview", { subtitle: `Snapshot of ${d.totalLeads} leads` }),
           b.metrics([
             { label: "Total leads", value: d.totalLeads, tone: "brand" },
             { label: "Scored", value: d.scored, tone: "cyan" },
@@ -585,7 +583,7 @@ class LocalCopilotProvider implements CopilotProvider {
       const d = (await run("get_lead", { id: lead.id })) as Record<string, unknown> | undefined;
       if (d?.found) {
         return done([
-          b.heading(lead.name, { eyebrow: "Lead" }),
+          b.heading(lead.name, {}),
           b.leadCard(toLeadCard(d)),
           b.actions([
             { label: "Explain score", tool: "ask", args: { message: `Why is ${lead.name} scored that way?` }, style: "ghost" },
@@ -596,10 +594,10 @@ class LocalCopilotProvider implements CopilotProvider {
     }
     const sd = (await run("search_leads", { query: message, limit: 6 })) as { count: number; leads: Record<string, unknown>[] } | undefined;
     if (sd && sd.count > 0) {
-      return done([b.heading("Matches", { eyebrow: "Search", subtitle: `${sd.count} found` }), b.leadGrid(sd.leads.map(toLeadCard))]);
+      return done([b.heading("Matches", { subtitle: `${sd.count} found` }), b.leadGrid(sd.leads.map(toLeadCard))]);
     }
     return done([
-      b.heading("BD Copilot", { eyebrow: "How I can help" }),
+      b.heading("BD Copilot", {}),
       b.list(
         [
           "“Summarise the pipeline” - KPIs + stage donut",

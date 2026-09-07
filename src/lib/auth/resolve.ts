@@ -105,3 +105,25 @@ const getSessionAuthzContext = cache(async (): Promise<AuthzContext | null> => {
 export async function getAuthzContext(): Promise<AuthzContext | null> {
   return currentPrincipal() ?? getSessionAuthzContext();
 }
+
+/**
+ * What to call the caller in the UI.
+ *
+ * The badge in the top bar used to read `user.role` off the session. That
+ * stopped being the truth the day profiles landed: granting someone the
+ * Administrator profile writes an assignment and never touches the legacy
+ * role, so the Team panel called them Administrator while the top bar called
+ * them Member. Resolve it from the profiles, which is what actually decides
+ * what they can do.
+ */
+export async function accessLabel(): Promise<{ label: string; elevated: boolean }> {
+  const ctx = await getAuthzContext();
+  if (!ctx) return { label: "Member", elevated: false };
+  const profiles = await loadProfiles(ctx.profileIds);
+  const label = profiles.map((p) => p.name).join(", ");
+  return {
+    label: label || (ctx.superuser ? "Admin" : "Member"),
+    elevated: ctx.superuser || profiles.some((p) => p.superuser),
+  };
+}
+

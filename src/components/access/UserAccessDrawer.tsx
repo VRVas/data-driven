@@ -39,7 +39,7 @@ export function CreatePersonDrawer({ profiles, onClose }: { profiles: ProfileCho
   }, [state, onClose]);
 
   return (
-    <DrawerShell title="New person" eyebrow="People" onClose={onClose}>
+    <DrawerShell title="New person" onClose={onClose}>
       <form action={action} className="flex min-h-0 flex-1 flex-col">
         <input type="hidden" name="profileIds" value={selected.join(",")} />
 
@@ -102,7 +102,7 @@ export function AssignAccessDrawer({
   }, [state, onClose]);
 
   return (
-    <DrawerShell title={person.name} eyebrow="Access" onClose={onClose}>
+    <DrawerShell title={person.name} onClose={onClose}>
       <form action={action} className="flex min-h-0 flex-1 flex-col">
         <input type="hidden" name="id" value={person.id} />
         <input type="hidden" name="profileIds" value={selected.join(",")} />
@@ -218,12 +218,10 @@ function ActiveControl({ id, active, onDone }: { id: string; active: boolean; on
 
 function DrawerShell({
   title,
-  eyebrow,
   onClose,
   children,
 }: {
   title: string;
-  eyebrow: string;
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -247,7 +245,6 @@ function DrawerShell({
         >
           <header className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-5 py-4 sm:px-6">
             <div className="min-w-0">
-              <div className="eyebrow mb-1">{eyebrow}</div>
               <h2 id={titleId} className="truncate font-display text-lg font-semibold">
                 {title}
               </h2>

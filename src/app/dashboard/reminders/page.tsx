@@ -42,7 +42,6 @@ export default async function RemindersPage() {
       <Reveal>
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="eyebrow mb-2">Follow-ups</div>
             <h1 className="font-display text-3xl font-semibold tracking-tight">Reminders</h1>
             <p className="mt-1 text-[var(--color-ink-muted)]">
               {reminders.length === 0

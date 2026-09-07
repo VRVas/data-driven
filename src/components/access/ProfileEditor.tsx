@@ -84,7 +84,6 @@ export function ProfileEditor({
         >
           <header className="flex items-center justify-between gap-3 border-b border-[var(--color-border)] px-5 py-4 sm:px-6">
             <div className="min-w-0">
-              <div className="eyebrow mb-1">Permission profile</div>
               <h2 id={titleId} className="truncate font-display text-lg font-semibold">
                 {heading}
               </h2>

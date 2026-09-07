@@ -67,7 +67,6 @@ export type CompanyCardData = z.infer<typeof companyShape>;
 // --- Block variants -------------------------------------------------------
 const headingBlock = z.object({
   type: z.literal("heading"),
-  eyebrow: z.string().nullish(),
   title: z.string(),
   subtitle: z.string().nullish(),
 });
@@ -330,10 +329,9 @@ export function parseBlocks(input: unknown): Block[] {
 
 /** Convenience builders for the local provider - keeps composition terse + typed. */
 export const b = {
-  heading: (title: string, opts: { eyebrow?: string; subtitle?: string } = {}): Block => ({
+  heading: (title: string, opts: { subtitle?: string } = {}): Block => ({
     type: "heading",
     title,
-    eyebrow: opts.eyebrow ?? null,
     subtitle: opts.subtitle ?? null,
   }),
   text: (text: string): Block => ({ type: "text", text }),

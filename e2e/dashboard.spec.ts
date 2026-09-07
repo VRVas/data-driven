@@ -5,12 +5,16 @@ import { shot, trackConsole } from "./helpers";
 // Every test in this file runs with the persisted authenticated session.
 test.use({ storageState: STORAGE_STATE });
 
+// `gone` is the kicker each page used to print directly above its own title.
+// The review called them double titles and they are, so they are asserted absent
+// rather than simply deleted - a deleted assertion does not stop anyone putting
+// the kicker back.
 const PAGES = [
-  { nav: "Pipeline", url: /\/dashboard\/pipeline$/, h1: "Pipeline", eyebrow: "Lead tracker" },
-  { nav: "Scoring", url: /\/dashboard\/scoring$/, h1: "Scoring model", eyebrow: "Model" },
-  { nav: "Industries", url: /\/dashboard\/industries$/, h1: "Industries", eyebrow: "Segments" },
-  { nav: "Whitespace", url: /\/dashboard\/whitespace$/, h1: "Whitespace & TAM", eyebrow: "Market" },
-  { nav: "Data Quality", url: /\/dashboard\/quality$/, h1: "Data quality", eyebrow: "Data audit" },
+  { nav: "Pipeline", url: /\/dashboard\/pipeline$/, h1: "Pipeline", gone: "Lead tracker" },
+  { nav: "Scoring", url: /\/dashboard\/scoring$/, h1: "Scoring model", gone: "Model" },
+  { nav: "Industries", url: /\/dashboard\/industries$/, h1: "Industries", gone: "Segments" },
+  { nav: "Whitespace", url: /\/dashboard\/whitespace$/, h1: "Whitespace & TAM", gone: "Market" },
+  { nav: "Data Quality", url: /\/dashboard\/quality$/, h1: "Data quality", gone: "Data audit" },
 ];
 
 test.describe("dashboard", () => {
@@ -19,7 +23,7 @@ test.describe("dashboard", () => {
     await page.goto("/dashboard");
 
     await expect(page.getByRole("heading", { level: 1, name: "Overview" })).toBeVisible();
-    await expect(page.getByText("Command center")).toBeVisible();
+    await expect(page.getByText("Command center")).toHaveCount(0);
     await expect(page.getByText(/live data/i)).toBeVisible();
 
     // KPI cards (settled numbers under reduced motion)
@@ -47,7 +51,7 @@ test.describe("dashboard", () => {
       await link.click();
       await page.waitForURL(p.url, { timeout: 30_000 });
       await expect(page.getByRole("heading", { level: 1, name: p.h1 })).toBeVisible();
-      await expect(page.getByText(p.eyebrow, { exact: true })).toBeVisible();
+      await expect(page.getByText(p.gone, { exact: true })).toHaveCount(0);
       // The active section is highlighted and nothing else is.
       await expect(link).toHaveAttribute("aria-current", "page");
       await expect(nav.locator('[aria-current="page"]')).toHaveCount(1);

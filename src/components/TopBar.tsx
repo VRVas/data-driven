@@ -6,6 +6,7 @@ import { TourLauncher } from "@/components/tour/TourLauncher";
 import { CommandButton } from "@/components/CommandPalette";
 import { getVisibleBrands } from "@/lib/leads/visible";
 import { capabilities } from "@/lib/auth/authorize";
+import { accessLabel } from "@/lib/auth/resolve";
 import { followUpsFrom, countDue } from "@/lib/leads/followups";
 import { getNotificationStore } from "@/lib/store/notifications";
 import { getOutreachStore } from "@/lib/store/outreach";
@@ -19,6 +20,7 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
   const caps = user
     ? await capabilities(["audit:read", "user:read", "outreach:send"] as const)
     : { "audit:read": false, "user:read": false, "outreach:send": false };
+  const access = user ? await accessLabel() : { label: "Member", elevated: false };
   if (user) {
     try {
       // The bell counts anything wanting attention: follow-ups that are due,
@@ -57,7 +59,8 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
           >
             O
           </span>
-          <span className="flex flex-col leading-none">
+          {/* Hidden only between lg and xl, where the full nav needs the room. */}
+          <span className="flex flex-col leading-none lg:hidden xl:flex">
             <span className="font-display text-[15px] font-semibold tracking-tight">OOVIE</span>
             <span className="mt-0.5 whitespace-nowrap font-mono text-[10px] uppercase tracking-[0.18em] text-[var(--color-ink-faint)]">
               BD Intelligence
@@ -71,7 +74,7 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
 
         {user ? (
           <>
-          <div className="hidden items-center gap-2 xl:flex">
+          <div className="hidden items-center gap-2 lg:flex">
             <CommandButton />
             {tour && <TourLauncher />}
             <Link
@@ -144,13 +147,13 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
             )}
             <span className="hidden items-center gap-2 sm:flex">
               <span
-                className="rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em]"
+                className="max-w-[10rem] truncate rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-[0.14em]"
                 style={{
-                  borderColor: user.role === "admin" ? "color-mix(in srgb, var(--color-digital-violet) 55%, transparent)" : "var(--color-border-strong)",
-                  color: user.role === "admin" ? "var(--color-digital-violet)" : "var(--color-ink-faint)",
+                  borderColor: access.elevated ? "color-mix(in srgb, var(--color-digital-violet) 55%, transparent)" : "var(--color-border-strong)",
+                  color: access.elevated ? "var(--color-digital-violet)" : "var(--color-ink-faint)",
                 }}
               >
-                {user.role === "admin" ? "Admin" : "Member"}
+                {access.label}
               </span>
               <span className="hidden whitespace-nowrap font-mono text-xs text-[var(--color-ink-muted)] 2xl:inline">{user.name ?? user.email}</span>
             </span>
@@ -164,7 +167,7 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
             </form>
           </div>
           <MobileMenu
-            user={{ name: user.name, email: user.email, role: user.role }}
+            user={{ name: user.name, email: user.email, access }}
             isAdmin={caps["user:read"]}
             dueCount={dueCount}
             pendingOutreach={pendingOutreach}
