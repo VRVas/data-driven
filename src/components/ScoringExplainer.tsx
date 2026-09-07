@@ -151,7 +151,7 @@ export function ScoringExplainer() {
             deliberately never blended into priority.
           </li>
           <li>
-            <span className="text-[var(--color-ink)]">Priority label</span> (Hot/Warm/Cold) - a human tag. It
+            <span className="text-[var(--color-ink)]">Priority label</span> (High/Medium/Low) - a human tag. It
             colours the bubble and sorts the table; it does not score.
           </li>
           <li>

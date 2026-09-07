@@ -334,7 +334,7 @@ const pipelineSummary: CopilotTool = {
       wonLeadCount: brands.filter((b) => outcomeOf(b.status) === "won").length,
       lostLeadCount: brands.filter((b) => outcomeOf(b.status) === "lost").length,
       scored: brands.filter((b) => b.scored).length,
-      hotLeads: brands.filter((b) => b.priority === "Hot Lead").length,
+      highPriorityLeads: brands.filter((b) => b.priority === "High").length,
       dealsClosed: brands.filter((b) => b.status === "Deal Closed").length,
       // Open deals only. Weighting a won deal by its stage probability of 1.0
       // adds banked money to a figure that claims to be pipeline.

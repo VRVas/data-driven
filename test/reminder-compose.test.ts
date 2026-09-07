@@ -39,7 +39,7 @@ const lead = (over: Partial<ReminderLeadContext> = {}): ReminderLeadContext => (
   id: "alleanza",
   name: "Alleanza",
   status: "Advanced",
-  priority: "Hot Lead",
+  priority: "High",
   owner: "Ada",
   poc: "Marco Rossi",
   email: "marco@alleanza.example",

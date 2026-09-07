@@ -32,8 +32,9 @@ test.describe("pipeline sorting", () => {
     await page.getByRole("columnheader", { name: /^Priority/i }).click();
     const seen = (await column(page, "Priority")).map((s) => s.trim()).filter(Boolean);
 
-    // Alphabetical would put Cold first; the vocabulary's order is Hot → Cold.
-    const rank = (v: string) => ["Hot", "Warm", "Cold"].findIndex((r) => v.startsWith(r));
+    // Alphabetical would put High above Low by luck and Medium in the wrong
+    // place; the vocabulary's order is High -> Low.
+    const rank = (v: string) => ["High", "Medium", "Low"].findIndex((r) => v.startsWith(r));
     const ranks = seen.map(rank).filter((r) => r >= 0);
     expect(ranks.length).toBeGreaterThan(0);
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));

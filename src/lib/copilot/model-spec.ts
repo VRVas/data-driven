@@ -113,7 +113,7 @@ export function modelSpec() {
     notInTheRanking: [
       "expectedMonths (how long the deal takes) - changing it will NEVER move a bubble. Duration is a cost of running a deal, not a reason to want it or a reason it closes, so it feeds economical efficiency and the tempo report instead.",
       "customizationScore and alignmentScore - reported as Ease, never blended.",
-      "priority label (Hot/Warm/Cold Lead) - a human tag. It colours the bubble and sorts the table; it does not score.",
+      "priority label (High/Medium/Low) - a human tag. It colours the bubble and sorts the table; it does not score.",
       "owner, industry, nextStep, notes, poc, email - filters and context.",
       "waitingOn and followUpDate - they drive the health view, not the ranking.",
     ],

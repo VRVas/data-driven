@@ -128,9 +128,9 @@ export const STATUS_TOKEN: Record<BrandStatus, string> = {
   "Still to open": "var(--color-status-open)",
 };
 
-const PRIORITY_ORDER: readonly Priority[] = ["Cold Lead", "Warm Lead", "Hot Lead"];
+const PRIORITY_ORDER: readonly Priority[] = ["Low", "Medium", "High"];
 
-/** Colour ramp aligned to PRIORITY_ORDER - green = act now, red = cold. Reverse this line to flip to hot = red. */
+/** Colour ramp aligned to PRIORITY_ORDER - green = act now, red = low. Reverse this line to flip the ends. */
 const PRIORITY_RAMP: readonly string[] = ["var(--color-rose)", "var(--color-amber)", "var(--color-mint)"];
 
 export const PRIORITY_TOKEN: Record<Priority, string> = Object.fromEntries(

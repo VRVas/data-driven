@@ -206,10 +206,10 @@ export function suggestLeadFields(brands: Brand[], draft: LeadDraft = {}): Sugge
   if (!draft.priority) {
     suggestions.push({
       field: "priority",
-      value: "Warm",
-      label: "Warm",
+      value: "Medium",
+      label: "Medium",
       confidence: "low",
-      basis: "Hot, warm and cold describe how the conversation is going, which nothing in the record can know yet. Warm is the neutral placeholder - correct it from what you know.",
+      basis: "High, medium and low describe how the conversation is going, which nothing in the record can know yet. Medium is the neutral placeholder - correct it from what you know.",
       sampleSize: 0,
     });
   }

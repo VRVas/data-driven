@@ -127,7 +127,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard/pipeline",
     selector: '[data-tour="pipe-views"]',
     title: "Saved views",
-    body: "Save a search + filter + sort combination as a named view (e.g. \"My hot leads\") and jump back to it in one click.",
+    body: "Save a search + filter + sort combination as a named view (e.g. \"My high-priority leads\") and jump back to it in one click.",
     placement: "bottom",
   },
   {

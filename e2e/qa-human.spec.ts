@@ -38,7 +38,7 @@ test.describe("a lead typed by hand", () => {
 
     await form.locator('input[name="name"]').fill(FULL);
     await form.locator('select[name="status"]').selectOption("Follow Up");
-    await form.locator('select[name="priority"]').selectOption("Hot Lead");
+    await form.locator('select[name="priority"]').selectOption("High");
     await form.locator('select[name="industry"]').selectOption("Fashion");
     await form.locator('input[name="owner"]').fill("QA Owner");
     await form.locator('input[name="poc"]').fill("Test Contact");
@@ -78,7 +78,7 @@ test.describe("a lead typed by hand", () => {
     }>(request, "get_lead", { id: row.id });
 
     expect(d.status).toBe("Follow Up");
-    expect(d.priority).toBe("Hot Lead");
+    expect(d.priority).toBe("High");
     expect(d.industry).toBe("Fashion");
     expect(d.owner).toBe("QA Owner");
     expect(d.poc).toBe("Test Contact");

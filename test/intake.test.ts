@@ -72,7 +72,7 @@ describe("intake checklists", () => {
       industry: "Fashion",
       poc: "Ana",
       email: "ana@zara.com",
-      priority: "Hot",
+      priority: "High",
       nextStep: "Send the deck",
       notes: "Introduced by the Milan office",
     })!;

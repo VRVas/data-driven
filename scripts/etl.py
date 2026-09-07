@@ -90,6 +90,16 @@ def clean_str(v):
     return s or None
 
 
+# The workbook's priority column reads Hot/Warm/Cold Lead. The app renamed these
+# to High/Medium/Low, so translate here and keep dataset.json in one vocabulary.
+PRIORITY = {"Hot Lead": "High", "Warm Lead": "Medium", "Cold Lead": "Low"}
+
+
+def norm_priority(v):
+    s = clean_str(v)
+    return PRIORITY.get(s, s) if s else None
+
+
 wb = openpyxl.load_workbook(XLSX, data_only=True)
 
 # =========================================================================
@@ -108,7 +118,7 @@ for r in range(2, op.max_row + 1):
     op_rows.append({
         "name": name,
         "status": clean_str(op.cell(r, 2).value),
-        "priority": clean_str(op.cell(r, 3).value),
+        "priority": norm_priority(op.cell(r, 3).value),
         "owner": clean_str(op.cell(r, 4).value),
         "poc": clean_str(poc),
         "industry": norm_industry(op.cell(r, 6).value),
@@ -257,7 +267,7 @@ for r in range(2, ag.max_row + 1):
     agents.append({
         "id": slug(name), "name": name,
         "status": clean_str(ag.cell(r, 2).value),
-        "priority": clean_str(ag.cell(r, 3).value),
+        "priority": norm_priority(ag.cell(r, 3).value),
         "owner": clean_str(ag.cell(r, 4).value),
         "poc": clean_str(ag.cell(r, 5).value),
         "initialContact": iso(ag.cell(r, 6).value, name, "initialContact"),

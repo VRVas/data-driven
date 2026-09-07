@@ -84,7 +84,7 @@ export function AgentTable({ agents }: { agents: Agent[] }) {
                   {a.status && <Badge color={STATUS_TOKEN[a.status as BrandStatus] ?? "var(--color-ink-faint)"}>{a.status}</Badge>}
                 </td>
                 <td className="hidden px-3 py-2 sm:table-cell">
-                  {a.priority && <Badge color={PRIORITY_TOKEN[a.priority as Priority]}>{a.priority.replace(" Lead", "")}</Badge>}
+                  {a.priority && <Badge color={PRIORITY_TOKEN[a.priority as Priority]}>{a.priority}</Badge>}
                 </td>
                 <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] lg:table-cell">{a.owner ?? "-"}</td>
                 <td className="hidden whitespace-nowrap px-3 py-2 text-[var(--color-ink-muted)] md:table-cell">{a.poc ?? "-"}</td>

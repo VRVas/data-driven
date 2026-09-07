@@ -111,4 +111,27 @@ describe("brand legacy-key normalisation", () => {
     const legacy = { id: "x", name: "X", followUp: null } as unknown as Brand;
     expect(normaliseBrand(legacy).followUpDate).toBeNull();
   });
+
+  // Hot/Warm/Cold Lead became High/Medium/Low. The rows in Cosmos still say the
+  // old thing, and nothing rewrites them until someone saves that lead, so a
+  // read that does not translate shows a blank priority on live data.
+  it("translates the retired priority vocabulary", async () => {
+    const { normaliseBrand } = await import("@/lib/store/brands");
+    const read = (priority: string) =>
+      normaliseBrand({ id: "x", name: "X", priority } as unknown as Brand).priority;
+    expect(read("Hot Lead")).toBe("High");
+    expect(read("Warm Lead")).toBe("Medium");
+    expect(read("Cold Lead")).toBe("Low");
+  });
+
+  it("passes today's priorities through and drops values that are neither", async () => {
+    const { normaliseBrand } = await import("@/lib/store/brands");
+    const read = (priority: string) =>
+      normaliseBrand({ id: "x", name: "X", priority } as unknown as Brand).priority;
+    expect(read("High")).toBe("High");
+    expect(read("Low")).toBe("Low");
+    // Not a priority in either vocabulary - better blank than a value the
+    // select cannot render and the enum will reject on the next save.
+    expect(read("Lukewarm")).toBeNull();
+  });
 });

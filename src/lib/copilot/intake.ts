@@ -112,8 +112,8 @@ export const INTAKE_SPECS: readonly IntakeSpec[] = [
         field: "priority",
         label: "Priority label",
         need: "useful",
-        why: "Hot, warm or cold is the human read that sits beside the computed score. The two disagreeing is itself a useful signal.",
-        ask: "Hot, warm or cold?",
+        why: "High, medium or low is the human read that sits beside the computed score. The two disagreeing is itself a useful signal.",
+        ask: "High, medium or low?",
       },
       {
         field: "nextStep",

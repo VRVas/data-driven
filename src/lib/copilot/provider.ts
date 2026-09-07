@@ -34,7 +34,7 @@ BD Intelligence turns OOVIE's "Business Development - Client Segmentation" workb
 A lead (brand) has: name, status, priority, owner, point of contact (POC), email, industry, initial-contact date, last-contact date, follow-up date, closing/failed date, notes, a comment thread, and - if scored - six sub-scores.
 - NOTES vs COMMENTS: they are different records and the distinction matters. Notes is the standing summary of what the lead IS - one field, edited in place, REPLACED by whoever saves next, and carried into exports and reminder emails. Comments are the discussion: append-only, each with an author and a timestamp, so nothing anybody wrote is ever overwritten. Anything that HAPPENED - what a client said, what was agreed, why a date moved - is a comment. Use add_comment for it, never update_lead's notes, or you will silently delete somebody else's context.
 - Statuses (pipeline stages): Still to open → Early → Follow Up → Advanced → Deal Closed, plus Recurring, Back to Attack and Did not work out.
-- Priorities: Hot, Warm, Cold.
+- Priorities: High, Medium, Low.
 - Industries: Financial/Finance, FMCG, Fashion, Tech/Telecom, Automotive, Consultancy/Professional Services, Fair, Other.
 - NEXT MOVE: every lead records waitingOn - 'us' (we owe them a reply: a proposal, an answer) or 'them' (they owe us: feedback, a decision, and the date is when we should chase) - plus nextStep in plain words. Where nobody has said, it is INFERRED: a proposal out for decision means them, a lone follow-up date means us, and neither means UNTRIAGED, which is reported as its own number rather than guessed. Late on us is a backlog; late on them is a chase list; they are different work and must never be merged into one "overdue" figure.
 - PACE: expectedMonths is how long someone thought the deal would take when it opened; once it closes the real elapsed time replaces it. That is what "tempo" means - duration, NOT how long since we last spoke. Going quiet is a separate signal (freshness / stale).
@@ -534,27 +534,29 @@ class LocalCopilotProvider implements CopilotProvider {
       );
     }
 
-    // hot / top leads
-    if (/(hot lead|top lead|best lead|priorit|who should i (call|contact|chase)|top \d+)/.test(m)) {
-      const isHot = m.includes("hot");
-      const d = (await run("search_leads", { ...(isHot ? { priority: "Hot Lead" } : {}), sortBy: "leadScore", limit: 6 })) as
+    // high priority / top leads. "Hot" stays in the pattern because people who
+    // used the old spreadsheet still ask for it - understanding the word costs
+    // nothing, and the label it maps to is today's.
+    if (/(hot lead|high priorit|top lead|best lead|priorit|who should i (call|contact|chase)|top \d+)/.test(m)) {
+      const wantsHigh = /\bhot\b|high priorit/.test(m);
+      const d = (await run("search_leads", { ...(wantsHigh ? { priority: "High" } : {}), sortBy: "leadScore", limit: 6 })) as
         | { count: number; leads: Record<string, unknown>[] }
         | undefined;
       const leads = d?.leads ?? [];
       if (leads.length === 0) return done([b.callout("No leads match that yet.", "warning")]);
       return done(
         [
-          b.heading(isHot ? "Top hot leads" : "Highest-scoring leads", { subtitle: `${leads.length} shown` }),
+          b.heading(wantsHigh ? "Top high-priority leads" : "Highest-scoring leads", { subtitle: `${leads.length} shown` }),
           b.leadGrid(leads.map(toLeadCard)),
         ],
-        isHot ? "Filter to Hot Lead priority, sort by priority score, render as lead cards." : "Sort all leads by priority score, render the top as cards.",
+        wantsHigh ? "Filter to High priority, sort by priority score, render as lead cards." : "Sort all leads by priority score, render the top as cards.",
       );
     }
 
     // pipeline summary
     if (/(pipeline|summary|overview|how many|weighted|closed|total leads|state of|how'?s|health)/.test(m)) {
       const d = (await run("pipeline_summary")) as
-        | { totalLeads: number; scored: number; hotLeads: number; dealsClosed: number; weightedValueEur: number; byStatus: Record<string, number> }
+        | { totalLeads: number; scored: number; highPriorityLeads: number; dealsClosed: number; weightedValueEur: number; byStatus: Record<string, number> }
         | undefined;
       if (!d) return done([b.callout("Couldn't read the pipeline.", "danger")]);
       const palette = ["brand", "cyan", "mint", "amber", "rose", "violet", "neutral"] as const;
@@ -564,7 +566,7 @@ class LocalCopilotProvider implements CopilotProvider {
           b.metrics([
             { label: "Total leads", value: d.totalLeads, tone: "brand" },
             { label: "Scored", value: d.scored, tone: "cyan" },
-            { label: "Hot leads", value: d.hotLeads, tone: "rose" },
+            { label: "High priority", value: d.highPriorityLeads, tone: "rose" },
             { label: "Deals closed", value: d.dealsClosed, tone: "mint" },
             { label: "Weighted value", value: eur(d.weightedValueEur), tone: "amber" },
           ]),
@@ -601,7 +603,7 @@ class LocalCopilotProvider implements CopilotProvider {
       b.list(
         [
           "“Summarise the pipeline” - KPIs + stage donut",
-          "“Top hot leads to call this week” - ranked lead cards",
+          "“Top high-priority leads to call this week” - ranked lead cards",
           "“Why is Alibaba scored that way?” - score breakdown chart",
           "“Where's our biggest untapped market?” - whitespace analysis",
           "“Draft an intro to Generali” - queued outreach",

@@ -3,10 +3,19 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import datasetJson from "@/data/dataset.json";
 import type { Agent, Dataset } from "@/lib/types";
+import { isPriority, toPriority } from "@/lib/vocab";
 import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 const SEED = (datasetJson as unknown as Dataset).agents;
+
+/** Agents carry the same priority vocabulary as leads, so they heal the same way. */
+const normaliseAgent = (a: Agent): Agent => {
+  const p: unknown = a.priority;
+  if (typeof p !== "string" || p === "" || isPriority(p)) return a;
+  return { ...a, priority: toPriority(p) };
+};
+const normaliseAll = (rows: Agent[]): Agent[] => rows.map(normaliseAgent);
 
 export interface AgentStore {
   list(): Promise<Agent[]>;
@@ -24,7 +33,7 @@ const AGENTS_FILE = path.join(DATA_DIR, "agents.json");
 class LocalAgentStore implements AgentStore {
   private async readAll(): Promise<Agent[]> {
     try {
-      return JSON.parse(await fs.readFile(AGENTS_FILE, "utf8")) as Agent[];
+      return normaliseAll(JSON.parse(await fs.readFile(AGENTS_FILE, "utf8")) as Agent[]);
     } catch {
       await this.writeAll(SEED);
       return SEED;
@@ -68,7 +77,7 @@ class CosmosAgentStore implements AgentStore {
     const { resources } = await c.items.readAll<Agent>().fetchAll();
     // First run against a freshly provisioned (empty) Cosmos: seed from the
     // cleaned dataset so production matches dev (see CosmosBrandStore).
-    if (resources.length > 0 || CosmosAgentStore.seeded) return resources;
+    if (resources.length > 0 || CosmosAgentStore.seeded) return normaliseAll(resources);
     CosmosAgentStore.seeded = true;
     await Promise.all(SEED.map((a) => c.items.upsert<Agent>(a)));
     return SEED;
@@ -76,7 +85,7 @@ class CosmosAgentStore implements AgentStore {
   async get(id: string): Promise<Agent | null> {
     try {
       const { resource } = await this.container().item(id, id).read<Agent>();
-      return resource ?? null;
+      return resource ? normaliseAgent(resource) : null;
     } catch {
       return null;
     }

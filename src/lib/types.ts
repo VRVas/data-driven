@@ -11,7 +11,7 @@ export type Industry =
   | "Professional Services"
   | "Other";
 
-export type Priority = "Hot Lead" | "Warm Lead" | "Cold Lead";
+export type Priority = "High" | "Medium" | "Low";
 
 export type BrandStatus =
   | "Deal Closed"

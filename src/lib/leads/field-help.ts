@@ -30,7 +30,7 @@ export const LEAD_FIELD_HELP: Record<string, FieldHelp> = {
       "The stage win probability, which is 45% of the winnability axis and the multiplier behind weighted pipeline value. Leaving it blank treats the deal as not yet opened, so it counts as live but scores as cold.",
   },
   priority: {
-    what: "Your read on the conversation: Hot, Warm or Cold. A human label, not a calculation.",
+    what: "Your read on the conversation: High, Medium or Low. A human label, not a calculation.",
     feeds:
       "Nothing in the ranking, on purpose. It exists so your instinct and the computed priority can disagree - and disagreement is the interesting signal.",
   },
