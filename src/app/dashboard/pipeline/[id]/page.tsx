@@ -2,22 +2,21 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Reveal } from "@/components/Reveal";
 import { Badge } from "@/components/Badge";
+import { EditableBadge } from "@/components/EditableBadge";
 import { EditBrandButton } from "@/components/EditBrandButton";
-import { QuickStatus } from "@/components/QuickStatus";
 import { OutreachComposer } from "@/components/OutreachComposer";
 import { OutreachItem } from "@/components/OutreachItem";
 import { LeadToolbar } from "@/components/LeadToolbar";
-import { LinkCompanyButton } from "@/components/crm/LinkCompanyButton";
+import { ClientRelationship } from "@/components/crm/ClientRelationship";
 import { CompanyProposals } from "@/components/crm/CompanyProposals";
-import { CommentThread } from "@/components/comments/CommentThread";
 import { getBrand } from "@/lib/data";
 import { getCrmGraph, getDealWithCompany } from "@/lib/crm/graph";
 import { ownerIdResolver } from "@/lib/crm/owners";
 import { getSessionUser } from "@/lib/auth/guards";
 import { can, requirePermission } from "@/lib/auth/authorize";
 import { getOutreachStore } from "@/lib/store/outreach";
-import { getCommentStore } from "@/lib/store/comments";
 import { allowedTransitions } from "@/lib/workflow";
+import { INDUSTRIES, PRIORITIES } from "@/lib/vocab";
 import {
   STATUS_TOKEN,
   PRIORITY_TOKEN,
@@ -64,28 +63,21 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const me = await getSessionUser();
   const isAdmin = await can("outreach:send");
   const canDeleteLead = await can("lead:delete");
-  const canLinkCompany = await can("lead:update");
+  const canUpdate = await can("lead:update");
+  const canCreateLeads = await can("lead:create");
   const [canReadProposals, canManageProposals] = await Promise.all([
     can("proposal:read"),
     can("proposal:manage"),
   ]);
-  const [canComment, canDeleteAnyComment] = await Promise.all([
-    can("lead:comment"),
-    can("lead:comment:delete"),
-  ]);
   const outreach = await getOutreachStore().listForBrand(brand.id);
-  const comments = await getCommentStore().listForRecord(brand.id);
 
+  // The client relationship, not just this deal: every piece of work under the
+  // same company, and the proposals across all of them. This is what the
+  // separate company page used to show.
   const [crm, graph] = await Promise.all([getDealWithCompany(brand.id), getCrmGraph()]);
-  const dealsPerCompany = graph.deals.reduce<Map<string, number>>(
-    (counts, d) => counts.set(d.companyId, (counts.get(d.companyId) ?? 0) + 1),
-    new Map(),
-  );
-  const companyChoices = graph.companies.map((c) => ({
-    id: c.id,
-    name: c.name,
-    dealCount: dealsPerCompany.get(c.id) ?? 0,
-  }));
+  const companyDeals = crm ? graph.deals.filter((d) => d.companyId === crm.company.id) : [];
+  const companyDealIds = new Set(companyDeals.map((d) => d.id));
+  const companyProposals = crm ? graph.proposals.filter((p) => companyDealIds.has(p.dealId)) : [];
 
   const s = effectiveScores(brand);
   const score = leadScore(brand);
@@ -103,11 +95,44 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="font-display text-4xl font-semibold tracking-tight">{brand.name}</h1>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              {brand.status && <Badge color={STATUS_TOKEN[brand.status as BrandStatus]}>{brand.status}</Badge>}
-              {brand.priority && <Badge color={PRIORITY_TOKEN[brand.priority as Priority]}>{brand.priority}</Badge>}
-              {brand.industry && <Badge>{brand.industry}</Badge>}
-              {!brand.scored && <span className="text-xs text-[var(--color-ink-faint)]">unscored</span>}
+            <div className="mt-3 flex flex-wrap items-start gap-2">
+              {canUpdate ? (
+                <>
+                  <EditableBadge
+                    brandId={brand.id}
+                    field="status"
+                    label="Pipeline stage"
+                    current={brand.status}
+                    options={allowedTransitions(brand.status)}
+                    color={brand.status ? STATUS_TOKEN[brand.status as BrandStatus] : undefined}
+                    placeholder="No stage yet"
+                  />
+                  <EditableBadge
+                    brandId={brand.id}
+                    field="priority"
+                    label="Priority"
+                    current={brand.priority}
+                    options={PRIORITIES}
+                    color={brand.priority ? PRIORITY_TOKEN[brand.priority as Priority] : undefined}
+                    placeholder="No priority"
+                  />
+                  <EditableBadge
+                    brandId={brand.id}
+                    field="industry"
+                    label="Industry"
+                    current={brand.industry}
+                    options={INDUSTRIES}
+                    placeholder="No industry"
+                  />
+                </>
+              ) : (
+                <>
+                  {brand.status && <Badge color={STATUS_TOKEN[brand.status as BrandStatus]}>{brand.status}</Badge>}
+                  {brand.priority && <Badge color={PRIORITY_TOKEN[brand.priority as Priority]}>{brand.priority}</Badge>}
+                  {brand.industry && <Badge>{brand.industry}</Badge>}
+                </>
+              )}
+              {!brand.scored && <span className="self-center text-xs text-[var(--color-ink-faint)]">unscored</span>}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -145,13 +170,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           accent="var(--color-mint)"
         />
       </Reveal>
-      <Reveal>
-        <section className="glass p-5">
-          <div className="eyebrow mb-2">Pipeline stage</div>
-          <QuickStatus brandId={brand.id} current={brand.status} allowed={allowedTransitions(brand.status)} />
-        </section>
-      </Reveal>
-
       <Reveal>
         <section className="glass p-6">
           <div className="eyebrow mb-3">Next move &amp; pace</div>
@@ -226,40 +244,20 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       </Reveal>
       {crm && (
         <Reveal>
-          <section className="glass flex flex-wrap items-center justify-between gap-3 p-5">
-            <div className="min-w-0">
-              <div className="eyebrow mb-1">Company</div>
-              <Link
-                href={`/dashboard/companies/${crm.company.id}`}
-                className="font-display text-lg font-semibold hover:text-[var(--color-brand)]"
-              >
-                {crm.company.name}
-              </Link>
-              {(dealsPerCompany.get(crm.company.id) ?? 0) > 1 && (
-                <p className="mt-1 text-sm text-[var(--color-ink-muted)]">
-                  {dealsPerCompany.get(crm.company.id)} deals - {eur(crm.company.rollup.lifetimeValue)} lifetime
-                </p>
-              )}
-            </div>
-            {canLinkCompany && (
-              <LinkCompanyButton
-                deal={{
-                  id: crm.deal.id,
-                  name: crm.deal.name,
-                  companyId: crm.company.id,
-                  isLinked: graph.links.some((l) => l.dealId === crm.deal.id),
-                }}
-                companies={companyChoices}
-              />
-            )}
-          </section>
+          <ClientRelationship
+            company={crm.company}
+            deals={companyDeals}
+            proposals={companyProposals}
+            currentDealId={brand.id}
+            canCreateLeads={canCreateLeads}
+          />
         </Reveal>
       )}
       {crm && canReadProposals && (
         <Reveal>
           <CompanyProposals
-            proposals={crm.proposals}
-            deals={[{ id: crm.deal.id, name: crm.deal.name }]}
+            proposals={companyProposals}
+            deals={companyDeals.map((d) => ({ id: d.id, name: d.name }))}
             canManage={canManageProposals}
           />
         </Reveal>
@@ -318,7 +316,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           <section className="glass p-6">
             <h2 className="mb-1 font-display text-lg font-semibold">Notes</h2>
             <p className="mb-3 text-xs text-[var(--color-ink-faint)]">
-              The standing summary of this lead. Edit replaces it - use a comment to add to the story.
+              The standing summary of this lead. Edit replaces the whole field.
             </p>
             <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-ink-muted)]">{brand.notes}</p>
           </section>
@@ -334,16 +332,6 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </section>
         </Reveal>
       )}
-
-      <Reveal>
-        <CommentThread
-          leadId={brand.id}
-          comments={comments}
-          meId={me?.id ?? ""}
-          canComment={canComment}
-          canDeleteAny={canDeleteAnyComment}
-        />
-      </Reveal>
 
       {outreach.length > 0 && (
         <Reveal>

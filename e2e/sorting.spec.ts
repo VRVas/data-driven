@@ -40,30 +40,3 @@ test.describe("pipeline sorting", () => {
     expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
   });
 });
-
-test.describe("companies sorting", () => {
-  test("every column sorts", async ({ page }) => {
-    await page.goto("/dashboard/companies");
-
-    for (const name of ["Company", "Industry", "Deals", "Open pipeline", "Lifetime", "Repeat"]) {
-      const before = await column(page, name);
-      await page.getByRole("button", { name: new RegExp(`^${name}$`, "i") }).click();
-      const after = await column(page, name);
-
-      expect(after.length).toBe(before.length);
-      expect([...after].sort()).toEqual([...before].sort());
-    }
-  });
-
-  test("company sorts A to Z on first click", async ({ page }) => {
-    await page.goto("/dashboard/companies");
-    await page.getByRole("button", { name: /^Company$/i }).click();
-    // The link only - the cell also carries a mobile-only industry line, and
-    // textContent concatenates it ("l'oréal" + "fmcg").
-    const names = (await page.locator("table tbody tr td:nth-child(1) a").allTextContents()).map((s) =>
-      s.trim().toLowerCase(),
-    );
-    expect(names.length).toBeGreaterThan(1);
-    expect(names).toEqual([...names].sort());
-  });
-});

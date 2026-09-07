@@ -87,13 +87,11 @@ export function BrandTable({
   health = {},
   canDelete = false,
   views = [],
-  commentCounts = {},
 }: {
   brands: Brand[];
   health?: Record<string, LeadHealth>;
   canDelete?: boolean;
   views?: SavedView[];
-  commentCounts?: Record<string, number>;
 }) {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState<string>("All");
@@ -357,14 +355,6 @@ export function BrandTable({
                     {b.name}
                   </Link>
                   {!b.scored && <span className="ml-2 text-xs text-[var(--color-ink-faint)]">unscored</span>}
-                  {commentCounts[b.id] ? (
-                    <span
-                      className="ml-2 align-middle text-xs text-[var(--color-ink-faint)]"
-                      title={`${commentCounts[b.id]} comment${commentCounts[b.id] === 1 ? "" : "s"}`}
-                    >
-                      &#9679; {commentCounts[b.id]}
-                    </span>
-                  ) : null}
                   {b.notes && (
                     <span
                       className="mt-0.5 block max-w-[22rem] truncate text-xs font-normal text-[var(--color-ink-faint)]"

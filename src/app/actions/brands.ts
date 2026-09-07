@@ -292,3 +292,65 @@ export async function changeBrandStatus(
   revalidatePath("/dashboard/quality");
   return { ok: true };
 }
+
+// ---------------------------------------------------------------------------
+// Single-field edits from the lead header
+// ---------------------------------------------------------------------------
+
+/**
+ * The badges under a lead's name are editable in place. Only fields with a
+ * controlled vocabulary are here: a dropdown is the whole interaction, so there
+ * is nothing to validate beyond "is it one of these". Anything free-text still
+ * goes through the edit drawer, where it can be reviewed as a whole.
+ *
+ * Stage is deliberately NOT in this list. It has a transition graph and a
+ * closing date to write, so it keeps changeBrandStatus.
+ */
+const inlineFieldSchema = z.discriminatedUnion("field", [
+  z.object({
+    id: z.string().min(1),
+    field: z.literal("priority"),
+    value: z.enum(PRIORITIES as unknown as [string, ...string[]]).or(z.literal("")),
+  }),
+  z.object({
+    id: z.string().min(1),
+    field: z.literal("industry"),
+    value: z.enum(INDUSTRIES as unknown as [string, ...string[]]).or(z.literal("")),
+  }),
+]);
+
+export async function setBrandField(
+  _prev: BrandActionState,
+  formData: FormData,
+): Promise<BrandActionState> {
+  const auth = await requirePermission("lead:update");
+
+  const parsed = inlineFieldSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { error: "That is not a value this field accepts." };
+  const { id, field, value } = parsed.data;
+
+  const store = getBrandStore();
+  const brand = await store.get(id);
+  if (!brand) return { error: "That lead no longer exists." };
+  await authorizeLead(auth, brand);
+
+  const before = brand[field] ?? null;
+  const after = value === "" ? null : value;
+  if (before === after) return { ok: true };
+
+  await store.save({ ...brand, [field]: after } as Brand);
+  await logAudit({
+    actorId: auth.user.id,
+    actorName: auth.user.name,
+    action: "brand.update",
+    entity: "brand",
+    entityId: id,
+    summary: `${brand.name}: ${field} ${before ?? "unset"} \u2192 ${after ?? "unset"}`,
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/dashboard/pipeline");
+  revalidatePath(`/dashboard/pipeline/${id}`);
+  revalidatePath("/dashboard/quality");
+  return { ok: true };
+}

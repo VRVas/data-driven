@@ -140,7 +140,6 @@ test.describe("lead detail - next move and pace", () => {
     const panel = page.locator("section").filter({ hasText: "Next move & pace" }).first();
     await expect(panel).toContainText("estimated");
 
-    await page.goto("/dashboard/companies/co-alleanza");
     await page.getByRole("button", { name: "New proposal" }).click();
     await page.locator("input[name='value']").fill("52000");
     await page.locator("select[name='status']").selectOption("accepted");

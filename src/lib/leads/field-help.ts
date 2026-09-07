@@ -126,6 +126,6 @@ export const LEAD_FIELD_HELP: Record<string, FieldHelp> = {
   notes: {
     what: "The standing summary of what this lead is - how it came in, what was agreed, what to be careful of.",
     feeds:
-      "Search, every export and any reminder email about this lead. Saving REPLACES it, so use a comment on the lead to add to the story without overwriting anyone else's.",
+      "Search, every export and any reminder email about this lead. Saving REPLACES the whole field, so add to what is there rather than typing over it."
   },
 };

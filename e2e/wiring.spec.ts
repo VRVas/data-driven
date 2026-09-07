@@ -43,16 +43,18 @@ async function openPipelineValue(page: Page): Promise<number> {
   return kpi(page, "Pipeline value");
 }
 
-async function companiesOpenPipeline(page: Page): Promise<number> {
-  await page.goto("/dashboard/companies");
-  return kpi(page, "Open pipeline");
+/** The client rollup, which now lives on the lead page rather than its own. */
+async function clientRollup(page: Page, label: string): Promise<number> {
+  await page.goto(`/dashboard/pipeline/${SLUG}`);
+  const cell = page.locator("div").filter({ has: page.getByText(label, { exact: true }) }).last();
+  const text = await cell.textContent();
+  const match = text?.match(/\u20ac([\d,.]+)/);
+  return match ? Number(match[1].replace(/[,.]/g, "")) : Number.NaN;
 }
 
 test.describe("value wiring", () => {
   test("a lead created with a value lands on every surface at once", async ({ page }) => {
     const pipelineBefore = await openPipelineValue(page);
-    const companiesBefore = await companiesOpenPipeline(page);
-    expect(pipelineBefore).toBe(companiesBefore);
 
     await page.goto("/dashboard/pipeline");
     await page.getByRole("button", { name: "+ New lead" }).click();
@@ -65,7 +67,9 @@ test.describe("value wiring", () => {
 
     // The value the form captured is the value the totals moved by.
     expect(await openPipelineValue(page)).toBe(pipelineBefore + 45_000);
-    expect(await companiesOpenPipeline(page)).toBe(companiesBefore + 45_000);
+    // The same figure reaches the client rollup, which is the surface that used
+    // to be a separate page and used to be able to disagree with this one.
+    expect(await clientRollup(page, "Open pipeline")).toBe(45_000);
 
     // And the lead itself is scored, not stranded as "unscored".
     await page.goto(`/dashboard/pipeline/${SLUG}`);
@@ -92,8 +96,8 @@ test.describe("value wiring", () => {
     // and the ranking used to read two different figures for this deal.
     expect((await metric(page, "Priority").textContent())!).not.toBe(before);
 
-    await page.goto("/dashboard/companies");
-    await expect(page.locator("div.beam-card").filter({ hasText: "Awaiting decision" }).first())
+    await page.goto("/dashboard/pipeline");
+    await expect(page.locator("div.beam-card").filter({ hasText: "Outstanding proposals" }).first())
       .not.toContainText("€0");
   });
 
@@ -114,13 +118,12 @@ test.describe("value wiring", () => {
     const openBefore = await openPipelineValue(page);
 
     await page.goto(`/dashboard/pipeline/${SLUG}`);
-    await page.getByRole("button", { name: "Deal Closed" }).click();
-    await expect(page.getByRole("button", { name: "Deal Closed" })).toHaveCount(0);
+    await page.getByLabel("Pipeline stage", { exact: true }).selectOption("Deal Closed");
+    await expect(page.getByLabel("Pipeline stage", { exact: true })).toHaveValue("Deal Closed");
 
     // Out of the live book...
     expect(await openPipelineValue(page)).toBe(openBefore - 80_000);
-    // ...and onto the client's record.
-    await page.goto(`/dashboard/companies/co-${SLUG}`);
-    await expect(metric(page, "Lifetime value")).toContainText("€80,000");
+    // ...and onto the client's record, which is on the lead page now.
+    expect(await clientRollup(page, "Lifetime value")).toBe(80_000);
   });
 });

@@ -50,12 +50,6 @@ export async function purgeProbeData(): Promise<void> {
     rows.filter((n) => !PROBE_TITLE.test(n.title)),
   );
 
-  // Comments live on real leads rather than on a probe lead, since members
-  // cannot create or delete one, so they are found by their body.
-  await rewrite<Array<{ body: string }>>(path.join(dataDir, "comments.json"), (rows) =>
-    rows.filter((c) => !PROBE_TITLE.test(c.body)),
-  );
-
   // Conversations are titled from their first message, which the memory spec
   // prefixes. The control tests deliberately start a thread with no prefix at
   // all, so the E2E account's whole history goes too - every one of them is

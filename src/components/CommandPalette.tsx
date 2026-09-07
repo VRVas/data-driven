@@ -106,12 +106,11 @@ export function CommandPalette({
   const commands = useMemo<Command[]>(() => {
     const nav: [string, string, string?][] = [
       ["/dashboard", "Overview"],
-      ["/dashboard/pipeline", "Pipeline", "leads crm"],
-      ["/dashboard/companies", "Companies", "accounts clients repeat revenue"],
+      ["/dashboard/pipeline", "Pipeline", "leads crm clients companies accounts"],
       ["/dashboard/scoring", "Scoring", "score quadrant"],
       ["/dashboard/industries", "Industries", "sectors"],
       ["/dashboard/whitespace", "Whitespace & opportunity", "tam market sizing"],
-      ["/dashboard/quality", "Data quality"],
+      ["/dashboard/quality", "Data quality", "audit issues duplicates merge clients"],
       ["/dashboard/copilot", "Copilot", "chat ai assistant"],
       ["/dashboard/reminders", "Reminders", "follow up due"],
       ["/dashboard/outbox", "Outbox", "email outreach"],

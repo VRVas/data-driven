@@ -24,7 +24,6 @@ const OWN_ONLY_PROFILE = {
     "lead:read": "own",
     "lead:update": "own",
     "lead:create": "all",
-    "lead:comment": "own",
     "proposal:read": "own",
     "proposal:manage": "own",
     "outreach:read": "own",

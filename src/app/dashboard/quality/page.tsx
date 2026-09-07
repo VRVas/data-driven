@@ -1,9 +1,12 @@
 import Link from "next/link";
 import { Reveal } from "@/components/Reveal";
 import { ResolveConflictButton } from "@/components/crm/ResolveConflictButton";
+import { DuplicateCompanies } from "@/components/crm/DuplicateCompanies";
 import { can } from "@/lib/auth/authorize";
 import { getDataQuality } from "@/lib/data";
 import { getVisibleBrands } from "@/lib/leads/visible";
+import { getCrmGraph } from "@/lib/crm/graph";
+import { duplicateCandidates } from "@/lib/crm/logic";
 import { hygieneFindings, hygieneSummary } from "@/lib/pipeline/hygiene";
 import { outcomeConflicts } from "@/lib/lifecycle";
 import { ExportMenu } from "@/components/ExportMenu";
@@ -29,6 +32,16 @@ export default async function QualityPage() {
     }, {}),
   ).sort((a, b) => (a.worst === b.worst ? a.name.localeCompare(b.name) : a.worst === "high" ? -1 : 1));
   const canUpdate = await can("lead:update");
+  const [graph, canMerge] = await Promise.all([getCrmGraph(), can("company:merge")]);
+  const duplicates = duplicateCandidates(graph.companies);
+  const mergeChoices = [...graph.companies]
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      dealCount: graph.deals.filter((d) => d.companyId === c.id).length,
+    }));
+  const firstDealOf = (companyId: string) => graph.deals.find((d) => d.companyId === companyId)?.id ?? null;
   const groups = issues.reduce<Record<string, typeof issues>>((acc, i) => {
     const bucket = i.issue.includes("date") || i.key.includes("Contact")
       ? "Dates"
@@ -40,6 +53,18 @@ export default async function QualityPage() {
     (acc[bucket] ??= []).push(i);
     return acc;
   }, {});
+
+  // The page is four unrelated jobs stacked vertically, and it was long enough
+  // that the last one was never seen. Each is now an anchored section with a
+  // count, so you can see from the top whether there is anything to do.
+  const sections = [
+    { id: "fix", label: "Needs fixing", count: summary.total, tone: "var(--color-rose)", present: true },
+    // The conflicts section is only rendered when there are conflicts, so this
+    // must not offer to jump to it when there are none.
+    { id: "review", label: "Needs review", count: conflicts.length, tone: "var(--color-amber)", present: conflicts.length > 0 },
+    { id: "duplicates", label: "Possible duplicates", count: duplicates.length, tone: "var(--color-cyan)", present: true },
+    { id: "history", label: "Import history", count, tone: "var(--color-ink-faint)", present: true },
+  ];
 
   return (
     <div className="space-y-8">
@@ -64,8 +89,38 @@ export default async function QualityPage() {
         </div>
       </Reveal>
 
+      <Reveal stagger className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {sections.map((s) => {
+          const body = (
+            <>
+              <span className="text-sm text-[var(--color-ink-muted)]">{s.label}</span>
+              <span
+                className="font-display text-2xl font-semibold tabular-nums"
+                style={{ color: s.count > 0 ? s.tone : "var(--color-ink-faint)" }}
+              >
+                {s.count}
+              </span>
+            </>
+          );
+          const shell = "glass flex items-baseline justify-between gap-3 p-4";
+          return s.present ? (
+            <a
+              key={s.id}
+              href={`#${s.id}`}
+              className={`${shell} transition-colors duration-200 hover:border-[var(--color-frosted-canvas)]`}
+            >
+              {body}
+            </a>
+          ) : (
+            <div key={s.id} className={shell}>
+              {body}
+            </div>
+          );
+        })}
+      </Reveal>
+
       <Reveal>
-        <section className="glass p-6" data-testid="live-hygiene">
+        <section id="fix" className="glass scroll-mt-24 p-6" data-testid="live-hygiene">
           <h2 className="font-display text-lg font-semibold">
             {summary.total === 0
               ? "Nothing outstanding"
@@ -104,18 +159,9 @@ export default async function QualityPage() {
         </section>
       </Reveal>
 
-      <Reveal stagger className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        {Object.entries(groups).map(([g, list]) => (
-          <div key={g} className="glass p-5">
-            <div className="eyebrow">{g}</div>
-            <div className="mt-1 font-display text-3xl font-semibold">{list.length}</div>
-          </div>
-        ))}
-      </Reveal>
-
       {conflicts.length > 0 && (
         <Reveal>
-          <section className="glass p-6">
+          <section id="review" className="glass scroll-mt-24 p-6">
             <h2 className="font-display text-lg font-semibold">
               {conflicts.length} leads look like two deals in one row
             </h2>
@@ -154,13 +200,35 @@ export default async function QualityPage() {
       )}
 
       <Reveal>
-        <div className="glass overflow-hidden">
+        <div id="duplicates" className="scroll-mt-24">
+          <DuplicateCompanies
+            duplicates={duplicates}
+            mergeChoices={mergeChoices}
+            firstDealOf={firstDealOf}
+            canMerge={canMerge}
+          />
+        </div>
+      </Reveal>
+
+      <Reveal>
+        <div id="history" className="glass scroll-mt-24 overflow-hidden">
           <div className="border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
             <h2 className="font-display text-lg font-semibold">Migration notes</h2>
             <p className="mt-1 max-w-3xl text-sm text-[var(--color-ink-muted)]">
               {count} issues the original spreadsheet import found and resolved. This list is a record of what
               happened once - it is not outstanding work and it does not change.
             </p>
+            {/* These counts describe the table below, not the live pipeline.
+                They used to sit directly under the live findings, where they
+                read as four more things to go and fix. */}
+            <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1">
+              {Object.entries(groups).map(([g, list]) => (
+                <div key={g} className="flex items-baseline gap-1.5">
+                  <dt className="text-sm text-[var(--color-ink-muted)]">{g}</dt>
+                  <dd className="font-display text-sm font-semibold tabular-nums">{list.length}</dd>
+                </div>
+              ))}
+            </dl>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[36rem] text-sm">

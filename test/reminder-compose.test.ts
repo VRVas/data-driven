@@ -56,7 +56,6 @@ const lead = (over: Partial<ReminderLeadContext> = {}): ReminderLeadContext => (
   lastContact: "2026-08-01",
   followUpDate: "2026-08-19",
   notes: "They asked for a phased rollout.",
-  recentComments: [],
   company: { name: "Alleanza Group", openPipelineEur: 130_000, lifetimeEur: 52_000, dealCount: 3 },
   latestProposal: { valueEur: 52_000, status: "accepted", sentAt: "2026-07-20T00:00:00.000Z" },
   ...over,
@@ -107,42 +106,6 @@ describe("leadSummaryLines", () => {
       .toContain("not set - this lead cannot be ranked");
   });
 
-  it("carries the discussion, attributed and dated, not just the summary", () => {
-    const out = leadSummaryLines(
-      lead({
-        recentComments: [
-          { author: "Giulia", at: "2026-08-20T09:00:00.000Z", body: "They want phased pricing." },
-          { author: "Marco", at: "2026-08-12T09:00:00.000Z", body: "Procurement is the blocker." },
-        ],
-      }),
-    ).join("\n");
-    expect(out).toContain("Comment (Giulia, 2026-08-20): They want phased pricing.");
-    expect(out).toContain("Comment (Marco, 2026-08-12): Procurement is the blocker.");
-  });
-
-  it("keeps a long comment on one line, because the email is read on a phone", () => {
-    const out = leadSummaryLines(
-      lead({
-        recentComments: [
-          { author: "Ada", at: "2026-08-20T09:00:00.000Z", body: `first\n\nsecond ${"x".repeat(400)}` },
-        ],
-      }),
-    );
-    const comment = out.find((l) => l.startsWith("Comment ("))!;
-    expect(comment).not.toContain("\n");
-    expect(comment).toContain("first second");
-    expect(comment.endsWith("...")).toBe(true);
-  });
-
-  it("shows only the newest three, so the email stays a reminder", () => {
-    const many = Array.from({ length: 6 }, (_, i) => ({
-      author: "Ada",
-      at: "2026-08-20T09:00:00.000Z",
-      body: `comment ${i}`,
-    }));
-    const out = leadSummaryLines(lead({ recentComments: many }));
-    expect(out.filter((l) => l.startsWith("Comment ("))).toHaveLength(3);
-  });
 });
 
 describe("composeReminderEmail", () => {

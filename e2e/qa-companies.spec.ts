@@ -132,7 +132,8 @@ test.describe("as an administrator", () => {
       await page.goto(`/dashboard/pipeline/${d.id}`);
       await expect(page.locator("body")).toContainText(d.name);
     }
-    await page.goto(`/dashboard/companies/${survivorId}`);
+    // The client's whole book is on the lead page now.
+    await page.goto(`/dashboard/pipeline/${survivorDeal.id}`);
     const body = await page.locator("body").innerText();
     expect(body).toContain(survivorDeal.name);
     expect(body).toContain(absorbedDeal.name);

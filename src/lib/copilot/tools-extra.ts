@@ -12,7 +12,6 @@ import { recordProposal, syncLeadValue } from "@/lib/crm/proposals";
 import { mergeCompanyInto } from "@/lib/crm/merge";
 import { blankLead, freeLeadId } from "@/lib/leads/create";
 import { getReminderStore, type Reminder } from "@/lib/store/reminders";
-import { getCommentStore, type Comment } from "@/lib/store/comments";
 import { claim, contextFor, deliver } from "@/lib/reminders/dispatch";
 import { composeReminderCancellation } from "@/lib/reminders/compose";
 import { getEmailProvider } from "@/lib/mail/provider";
@@ -1530,88 +1529,9 @@ const suggestLeadValues: CopilotTool = {
   },
 };
 
-// ---------------------------------------------------------------------------
-// Comments - the discussion on a record, as opposed to its summary
-// ---------------------------------------------------------------------------
-
-const addCommentTool: CopilotTool = {
-  name: "add_comment",
-  permission: "lead:comment",
-  write: true,
-  description:
-    "Add a dated, attributed comment to a lead's discussion thread. Use this for anything that HAPPENED - what a client said, what was agreed, why a date moved - rather than update_lead's notes field, which is the standing summary and is REPLACED by whoever edits next. If somebody says 'note that they want phased pricing', this is the tool: it keeps their name and the date on it, and the previous comment survives.",
-  parameters: {
-    type: "object",
-    properties: {
-      leadId: { type: "string", description: "Lead id" },
-      body: { type: "string", description: "The comment, in the user's own words" },
-    },
-    required: ["leadId", "body"],
-  },
-  async execute(args, ctx) {
-    const a = z.object({ leadId: z.string().min(1), body: z.string().trim().min(1).max(4000) }).parse(args);
-    const lead = await writableLead(a.leadId, "lead:comment");
-    if (!lead) return { ok: false, error: "Lead not found." };
-
-    const comment: Comment = {
-      id: `cmt-${randomUUID()}`,
-      target: "lead",
-      recordId: lead.id,
-      recordName: lead.name,
-      body: a.body,
-      authorId: ctx.user.id,
-      authorName: ctx.user.name,
-      createdAt: new Date().toISOString(),
-      editedAt: null,
-    };
-    await getCommentStore().create(comment);
-    await logAudit({
-      actorId: ctx.user.id,
-      actorName: `${ctx.user.name} (via copilot)`,
-      action: "lead.comment",
-      entity: "brand",
-      entityId: lead.id,
-      summary: `Commented on ${lead.name}`,
-    });
-    return { ok: true, id: comment.id, leadId: lead.id, name: lead.name, author: comment.authorName, createdAt: comment.createdAt };
-  },
-};
-
-const listCommentsTool: CopilotTool = {
-  name: "list_comments",
-  permission: "lead:read",
-  description:
-    "Read a lead's discussion thread, newest first, with who wrote each comment and when. Use it before answering 'what's the latest on X', 'what did they say', or 'why did this stall' - the notes field holds only the current summary, while the thread holds the history and its authors.",
-  parameters: {
-    type: "object",
-    properties: {
-      leadId: { type: "string", description: "Lead id" },
-      limit: { type: "integer", minimum: 1, maximum: 100 },
-    },
-    required: ["leadId"],
-  },
-  async execute(args) {
-    const a = z.object({ leadId: z.string().min(1), limit: z.number().int().min(1).max(100).optional() }).parse(args);
-    const lead = await visibleLead(a.leadId);
-    if (!lead) return { found: false, leadId: a.leadId };
-    const comments = await getCommentStore().listForRecord(lead.id, a.limit ?? 25);
-    return {
-      found: true,
-      leadId: lead.id,
-      name: lead.name,
-      notes: lead.notes,
-      notesNote: "notes is the standing summary and is replaced on edit; the comments below are the history.",
-      count: comments.length,
-      comments: comments.map((c) => ({ author: c.authorName, at: c.createdAt, body: c.body })),
-    };
-  },
-};
-
 export const EXTRA_TOOLS: CopilotTool[] = [
   checkRequest,
   suggestLeadValues,
-  addCommentTool,
-  listCommentsTool,
   setNextMove,
   completeFollowUpTool,
   snoozeFollowUpTool,

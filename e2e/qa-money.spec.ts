@@ -162,11 +162,11 @@ test.describe("company rollups add up", () => {
     expect(d.company.repeatValueEur).toBe(20_000);
   });
 
-  test("the company page shows the same rollup the tool reports", async ({ page, request }) => {
+  test("the lead page shows the same rollup the tool reports", async ({ page, request }) => {
     const d = await must<{ company: { lifetimeValueEur: number; openPipelineEur: number } }>(request, "get_company", {
       id: companyId,
     });
-    await page.goto(`/dashboard/companies/${companyId}`);
+    await page.goto(`/dashboard/pipeline/${first.id}`);
     const body = await page.locator("body").innerText();
     expect(body).toContain(d.company.lifetimeValueEur.toLocaleString("en-IE"));
     expect(body).toContain(d.company.openPipelineEur.toLocaleString("en-IE"));

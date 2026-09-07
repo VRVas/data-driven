@@ -39,7 +39,6 @@ const ROUTES = [
   "/dashboard",
   "/dashboard/pipeline",
   "/dashboard/pipeline/alibaba",
-  "/dashboard/companies",
   "/dashboard/scoring",
   "/dashboard/industries",
   "/dashboard/whitespace",

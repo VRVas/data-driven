@@ -16,57 +16,8 @@ export type CrmActionState = { ok?: boolean; error?: string } | undefined;
 const todayIso = () => new Date().toISOString();
 
 // ---------------------------------------------------------------------------
-// Company linking
+// Merging duplicate clients
 // ---------------------------------------------------------------------------
-
-/**
- * Attach a deal to an existing company. This is the only way two leads ever end
- * up under one client - name similarity never does it, because "Allianz Bank"
- * and "Allianz CH" are probably different customers.
- */
-export async function linkDealToCompany(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
-  const auth = await requirePermission("lead:update");
-  const { user } = auth;
-
-  const parsed = z
-    .object({ dealId: z.string().min(1), companyId: z.string().min(1) })
-    .safeParse(Object.fromEntries(formData));
-  if (!parsed.success) return { error: "Pick a deal and a company." };
-  const { dealId, companyId } = parsed.data;
-
-  const graph = await getCrmGraph();
-  const deal = graph.deals.find((d) => d.id === dealId);
-  const target = graph.companies.find((c) => c.id === companyId);
-  if (!deal) return { error: "That lead no longer exists." };
-  if (!target) return { error: "That company no longer exists." };
-  await authorizeLead(auth, deal);
-  if (deal.companyId === companyId) return { ok: true };
-
-  await getCrmOverlayStore().linkDeal({
-    dealId,
-    companyId,
-    companyName: target.name,
-    linkedById: user.id,
-    linkedByName: user.name,
-    linkedAt: todayIso(),
-  });
-
-  await logAudit({
-    actorId: user.id,
-    actorName: user.name,
-    action: "company.link",
-    entity: "deal",
-    entityId: dealId,
-    summary: `Linked ${deal.name} to ${target.name}`,
-  });
-
-  revalidatePath("/dashboard/companies");
-  revalidatePath(`/dashboard/companies/${companyId}`);
-  // The company it just left also lost a deal, so its rollup is stale too.
-  revalidatePath(`/dashboard/companies/${deal.companyId}`);
-  revalidatePath(`/dashboard/pipeline/${dealId}`);
-  return { ok: true };
-}
 
 /**
  * Fold one company into another: every deal it holds is re-pointed at the
@@ -109,36 +60,6 @@ export async function mergeCompanies(_prev: CrmActionState, formData: FormData):
   return { ok: true };
 }
 
-/** Undo a link - the deal goes back to standing on its own. */
-export async function unlinkDeal(_prev: CrmActionState, formData: FormData): Promise<CrmActionState> {
-  const auth = await requirePermission("lead:update");
-  const { user } = auth;
-
-  const dealId = String(formData.get("dealId") ?? "").trim();
-  if (!dealId) return { error: "Missing lead." };
-
-  // The id arrives from the form, so it has to be checked against what this
-  // user can see rather than trusted.
-  const graph = await getCrmGraph();
-  const deal = graph.deals.find((d) => d.id === dealId);
-  if (!deal) return { error: "That lead no longer exists." };
-  await authorizeLead(auth, deal);
-
-  await getCrmOverlayStore().unlinkDeal(dealId);
-  await logAudit({
-    actorId: user.id,
-    actorName: user.name,
-    action: "company.unlink",
-    entity: "deal",
-    entityId: dealId,
-    summary: `Unlinked ${deal.name} from its company`,
-  });
-
-  revalidatePath("/dashboard/companies");
-  revalidatePath(`/dashboard/companies/${deal.companyId}`);
-  revalidatePath(`/dashboard/pipeline/${dealId}`);
-  return { ok: true };
-}
 
 // ---------------------------------------------------------------------------
 // Proposals

@@ -7,8 +7,9 @@ import { clsx } from "clsx";
 export const NAV = [
   { href: "/dashboard", label: "Overview" },
   { href: "/dashboard/pipeline", label: "Pipeline" },
-  { href: "/dashboard/companies", label: "Companies" },
   // Agents/agencies hidden from nav (we don't convert through them); /dashboard/agents still exists.
+  // Companies was retired: the client relationship is on the lead page, and
+  // merging duplicates moved to Data Quality.
   { href: "/dashboard/scoring", label: "Scoring" },
   { href: "/dashboard/industries", label: "Industries" },
   { href: "/dashboard/whitespace", label: "Whitespace" },

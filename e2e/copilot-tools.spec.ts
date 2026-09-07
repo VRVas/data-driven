@@ -360,34 +360,6 @@ test.describe("copilot finishes a request before it acts", () => {
   });
 });
 
-test.describe("copilot comments", () => {
-  test("add_comment records a turn without touching the notes", async ({ request }) => {
-    const before = await callTool(request, "get_lead", { id: "alibaba" });
-    const notesBefore = before.body.data!.notes ?? null;
-
-    const added = await callTool(request, "add_comment", {
-      leadId: "alibaba",
-      body: "ZZ probe - copilot wrote this",
-    });
-    expect(added.body.ok).toBe(true);
-    expect(added.body.data!.ok).toBe(true);
-
-    const listed = await callTool(request, "list_comments", { leadId: "alibaba" });
-    const comments = listed.body.data!.comments as { author: string; body: string }[];
-    expect(comments[0].body).toBe("ZZ probe - copilot wrote this");
-    expect(comments[0].author.length).toBeGreaterThan(0);
-    // The summary field is untouched, which is the whole distinction.
-    expect(listed.body.data!.notes ?? null).toEqual(notesBefore);
-  });
-
-  test("comments on a lead that does not exist are refused, not invented", async ({ request }) => {
-    const { body } = await callTool(request, "add_comment", { leadId: "no-such-lead", body: "ZZ probe" });
-    expect(body.data!.ok).toBe(false);
-    const listed = await callTool(request, "list_comments", { leadId: "no-such-lead" });
-    expect(listed.body.data!.found).toBe(false);
-  });
-});
-
 test.describe("copilot tool gating", () => {
   test("an unknown tool is a 404, not a silent success", async ({ request }) => {
     const res = await request.post("/api/copilot/tools/no_such_tool", { data: {} });

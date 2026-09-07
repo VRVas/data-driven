@@ -113,7 +113,6 @@ test.describe("the tool surface survives abuse", () => {
     { label: "unicode and emoji", tool: "search_leads", args: { query: "日本語 🚀 café" } },
     { label: "a reminder in the past", tool: "set_reminder", args: { title: "QA", dueAt: "1970-01-01T00:00:00Z" } },
     { label: "a reminder with an unparseable time", tool: "set_reminder", args: { title: "QA", dueAt: "next tuesday-ish" } },
-    { label: "a comment on nothing", tool: "add_comment", args: { leadId: "", body: "" } },
   ];
 
   for (const c of nasty) {

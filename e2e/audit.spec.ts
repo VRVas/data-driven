@@ -38,7 +38,6 @@ const DASHBOARD_ROUTES = [
   { slug: "industries", path: "/dashboard/industries" },
   { slug: "whitespace", path: "/dashboard/whitespace" },
   { slug: "quality", path: "/dashboard/quality" },
-  { slug: "companies", path: "/dashboard/companies" },
   { slug: "copilot", path: "/dashboard/copilot" },
   { slug: "reminders", path: "/dashboard/reminders" },
   { slug: "outbox", path: "/dashboard/outbox" },
