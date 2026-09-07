@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
 import { isPermissionKey, PERMISSIONS } from "@/lib/auth/catalogue";
 import { COPILOT_TOOLS, getToolByName, toolSchemas } from "@/lib/copilot/tools";
@@ -54,17 +54,32 @@ describe("copilot tool registry", () => {
     // Same failure as the tool count, one file over: three separate prose
     // copies of "44 permissions" outlived the catalogue reaching 47. A number
     // written by hand in four places is a number that is wrong in at least one.
-    const files = [
-      "src/lib/copilot/provider.ts",
-      "infra/resources.bicep",
-      "scripts/create-agent.sh",
-    ];
-    for (const f of files) {
-      const text = readFileSync(path.join(process.cwd(), f), "utf8");
-      const quoted = [...text.matchAll(/(\d+) permissions/g)].map((m) => Number(m[1]));
-      expect(quoted.length, `${f} quotes no permission count`).toBeGreaterThan(0);
-      for (const n of quoted) expect(n, `${f} is stale`).toBe(PERMISSIONS.length);
-    }
+    //
+    // This originally listed the files to check, and that list went stale the
+    // moment the tour started quoting the number too - it sat at 44 for weeks
+    // because no test was looking there. So find the claims instead of naming
+    // the files that make them.
+    const roots = ["src", "infra", "scripts"];
+    const found: string[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const p = path.join(dir, entry);
+        if (statSync(p).isDirectory()) {
+          if (entry !== "node_modules") walk(p);
+          continue;
+        }
+        if (!/\.(ts|tsx|bicep|sh|md|json)$/.test(p)) continue;
+        const text = readFileSync(p, "utf8");
+        for (const m of text.matchAll(/(\d+) (?:separate |distinct )?permissions/g)) {
+          found.push(`${path.relative(process.cwd(), p)} says ${m[1]}`);
+          expect(Number(m[1]), `${path.relative(process.cwd(), p)} is stale`).toBe(
+            PERMISSIONS.length,
+          );
+        }
+      }
+    };
+    for (const r of roots) walk(path.join(process.cwd(), r));
+    expect(found.length, "nothing quotes a permission count any more").toBeGreaterThan(2);
   });
 });
 

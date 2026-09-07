@@ -125,8 +125,8 @@ export function Hero({ leadCount }: Props) {
           style={{ fontSize: "clamp(16px, 1.4vw, 20px)", lineHeight: 1.5 }}
         >
           A static spreadsheet held {leadCount} leads, a hidden scoring engine and a full sales
-          playbook. We turned it into a living, interactive intelligence platform - scored,
-          segmented and ready to act on.
+          playbook. Every lead is now scored on what it is worth against how likely it is to
+          close, and every figure recomputes as the data changes.
         </p>
 
         <div className="hero-rest invisible mt-9 flex flex-wrap items-center gap-2">
