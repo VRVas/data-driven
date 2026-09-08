@@ -1,6 +1,6 @@
 import { test, expect } from "./fixtures";
 import { STORAGE_STATE } from "./constants";
-import { shot, trackConsole } from "./helpers";
+import { setBadge, shot, trackConsole } from "./helpers";
 
 /**
  * The client relationship, now that Companies is not a page.
@@ -103,15 +103,13 @@ test.describe("the lead header edits in place", () => {
 
     const before = await priority.inputValue();
     const next = before === "High" ? "Medium" : "High";
-    await priority.selectOption(next);
+    await setBadge(page, "Priority", next);
 
-    await expect(page.getByLabel("Priority", { exact: true })).toHaveValue(next);
     await page.reload();
     await expect(page.getByLabel("Priority", { exact: true })).toHaveValue(next);
 
     // Leave the fixture as it was found.
-    await page.getByLabel("Priority", { exact: true }).selectOption(before);
-    await expect(page.getByLabel("Priority", { exact: true })).toHaveValue(before);
+    await setBadge(page, "Priority", before);
   });
 
   test("comments are gone from the lead page", async ({ page }) => {

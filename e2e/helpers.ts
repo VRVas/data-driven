@@ -29,3 +29,22 @@ export async function login(page: Page, who: { email: string; password: string }
   await page.waitForURL("**/dashboard");
   await expect(page.getByRole("heading", { level: 1, name: "Overview" })).toBeVisible();
 }
+
+/**
+ * Change one of the editable badges on a lead header and wait for it to land.
+ *
+ * The badge is an uncontrolled select, so `toHaveValue` passes the instant the
+ * option is picked - before the server action has written anything. A test that
+ * navigates on the strength of that assertion reads stale data and fails
+ * somewhere else entirely, which is how this was first noticed. Waiting on the
+ * POST is the only honest signal that the write happened.
+ */
+export async function setBadge(page: Page, label: string, value: string) {
+  const badge = page.getByLabel(label, { exact: true });
+  await expect(badge).toBeVisible();
+  await Promise.all([
+    page.waitForResponse((r) => r.request().method() === "POST" && r.status() < 400),
+    badge.selectOption(value),
+  ]);
+  await expect(page.getByLabel(label, { exact: true })).toHaveValue(value);
+}

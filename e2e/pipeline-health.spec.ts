@@ -141,10 +141,14 @@ test.describe("lead detail - next move and pace", () => {
     await expect(panel).toContainText("estimated");
 
     await page.getByRole("button", { name: "New proposal" }).click();
-    await page.locator("input[name='value']").fill("52000");
-    await page.locator("select[name='status']").selectOption("accepted");
-    await page.getByRole("button", { name: "Add proposal" }).click();
-    await expect(page.locator("input[name='value']")).toHaveCount(0);
+    // Scoped to the drawer: the lead header now carries its own
+    // select[name="status"] for the pipeline stage, so an unscoped locator
+    // matches two elements.
+    const drawer = page.getByRole("dialog");
+    await drawer.locator("input[name='value']").fill("52000");
+    await drawer.locator("select[name='status']").selectOption("accepted");
+    await drawer.getByRole("button", { name: "Add proposal" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await page.goto("/dashboard/pipeline/alleanza");
     const after = page.locator("section").filter({ hasText: "Next move & pace" }).first();

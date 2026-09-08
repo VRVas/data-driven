@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "./fixtures";
 import { STORAGE_STATE } from "./constants";
+import { setBadge } from "./helpers";
 
 /**
  * The numbers, end to end, through the real app.
@@ -43,11 +44,14 @@ async function openPipelineValue(page: Page): Promise<number> {
   return kpi(page, "Pipeline value");
 }
 
-/** The client rollup, which now lives on the lead page rather than its own. */
+/** The client rollup, which now lives on the lead page rather than on its own. */
 async function clientRollup(page: Page, label: string): Promise<number> {
   await page.goto(`/dashboard/pipeline/${SLUG}`);
-  const cell = page.locator("div").filter({ has: page.getByText(label, { exact: true }) }).last();
-  const text = await cell.textContent();
+  const dd = page
+    .locator("dt", { hasText: new RegExp(`^${label}$`, "i") })
+    .first()
+    .locator("xpath=following-sibling::dd[1]");
+  const text = await dd.textContent();
   const match = text?.match(/\u20ac([\d,.]+)/);
   return match ? Number(match[1].replace(/[,.]/g, "")) : Number.NaN;
 }
@@ -84,10 +88,11 @@ test.describe("value wiring", () => {
     const before = (await metric(page, "Priority").textContent())!;
 
     await page.getByRole("button", { name: "New proposal" }).click();
-    await page.locator("input[name='value']").fill("80000");
-    await page.locator("select[name='status']").selectOption("sent");
-    await page.getByRole("button", { name: "Add proposal" }).click();
-    await expect(page.locator("input[name='value']")).toHaveCount(0);
+    const draft = page.getByRole("dialog");
+    await draft.locator("input[name='value']").fill("80000");
+    await draft.locator("select[name='status']").selectOption("sent");
+    await draft.getByRole("button", { name: "Add proposal" }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await page.goto(`/dashboard/pipeline/${SLUG}`);
     // The budget follows the proposal, not the opening guess.
@@ -104,9 +109,10 @@ test.describe("value wiring", () => {
   test("accepting the proposal confirms the budget and keeps the estimate", async ({ page }) => {
     await page.goto(`/dashboard/pipeline/${SLUG}`);
     await page.getByRole("button", { name: "Edit" }).last().click();
-    await page.locator("select[name='status']").selectOption("accepted");
-    await page.getByRole("button", { name: /Save|Add proposal/ }).click();
-    await expect(page.locator("select[name='status']")).toHaveCount(0);
+    const edit = page.getByRole("dialog");
+    await edit.locator("select[name='status']").selectOption("accepted");
+    await edit.getByRole("button", { name: /Save|Add proposal/ }).click();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await page.goto(`/dashboard/pipeline/${SLUG}`);
     // 45,000 was typed at creation; 80,000 was accepted.
@@ -118,8 +124,10 @@ test.describe("value wiring", () => {
     const openBefore = await openPipelineValue(page);
 
     await page.goto(`/dashboard/pipeline/${SLUG}`);
-    await page.getByLabel("Pipeline stage", { exact: true }).selectOption("Deal Closed");
-    await expect(page.getByLabel("Pipeline stage", { exact: true })).toHaveValue("Deal Closed");
+    await setBadge(page, "Pipeline stage", "Deal Closed");
+    // The win probability is the observable proof the server re-rendered, not
+    // just that the select is showing what was clicked.
+    await expect(metric(page, "Expected value")).toContainText("100% win prob.");
 
     // Out of the live book...
     expect(await openPipelineValue(page)).toBe(openBefore - 80_000);

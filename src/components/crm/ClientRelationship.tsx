@@ -42,6 +42,18 @@ export function ClientRelationship({
       (b.wonValue ?? dealValue(b, proposals).value) - (a.wonValue ?? dealValue(a, proposals).value),
   );
 
+  // "EUR 0" is a claim, and these figures are zero for two very different
+  // reasons: nothing has happened yet, or it has happened and nobody recorded
+  // what it was worth. The lead's own Expected value card already draws this
+  // distinction; the rollups have to draw it too, or a client we have never
+  // billed reads as a client worth nothing.
+  const money = (value: number, has: boolean, why: string) =>
+    !has || value === 0 ? { value: "-", hint: why } : { value: eur(value), hint: undefined as string | undefined };
+
+  const lifetime = money(rollup.lifetimeValue, rollup.wonDealCount > 0, rollup.wonDealCount === 0 ? "nothing won yet" : "no value recorded on the wins");
+  const repeat = money(rollup.repeatValue, rollup.wonDealCount > 1, rollup.wonDealCount > 1 ? "no value beyond the first win" : "needs a second win");
+  const open = money(rollup.openPipelineValue, rollup.openDealCount > 0, rollup.openDealCount === 0 ? "no open deals" : "no values set yet");
+
   return (
     <section className="glass overflow-hidden">
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--color-border)] px-4 py-4 sm:px-6">
@@ -59,14 +71,14 @@ export function ClientRelationship({
       </header>
 
       <dl className="grid grid-cols-2 gap-px border-b border-[var(--color-border)] bg-[var(--color-border)] lg:grid-cols-4">
-        <Rollup label="Lifetime value" value={eur(rollup.lifetimeValue)} accent="var(--color-brand)" />
+        <Rollup label="Lifetime value" value={lifetime.value} hint={lifetime.hint} accent="var(--color-brand)" />
         <Rollup
           label="Repeat value"
-          value={eur(rollup.repeatValue)}
-          hint="won beyond the first deal"
+          value={repeat.value}
+          hint={repeat.hint ?? "won beyond the first deal"}
           accent="var(--color-mint)"
         />
-        <Rollup label="Open pipeline" value={eur(rollup.openPipelineValue)} accent="var(--color-amber)" />
+        <Rollup label="Open pipeline" value={open.value} hint={open.hint} accent="var(--color-amber)" />
         <Rollup
           label="Deal win rate"
           value={rollup.dealWinRate == null ? "-" : `${Math.round(rollup.dealWinRate * 100)}%`}

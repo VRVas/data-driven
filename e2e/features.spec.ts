@@ -1,15 +1,25 @@
 import { test, expect } from "./fixtures";
 import { STORAGE_STATE } from "./constants";
-import { shot } from "./helpers";
+import { setBadge, shot } from "./helpers";
 
 // The seeded account is the founding user → normalised to admin, so these
 // specs exercise the admin-only surfaces and the full outreach loop.
 test.use({ storageState: STORAGE_STATE });
 
 test.describe("roles + admin surfaces", () => {
-  test("topbar shows the Admin badge and every admin page loads", async ({ page }) => {
+  test("the topbar badge agrees with the Team panel, and every admin page loads", async ({ page }) => {
+    // This used to assert the literal string "Admin", which came from the legacy
+    // role claim on the session and was wrong for anyone granted admin after
+    // their last sign-in. The badge reads the profiles now, so the assertion
+    // that matters is that it says the same thing the Team panel says.
+    await page.goto("/dashboard/team");
+    const mine = page.getByRole("row").filter({ hasText: "E2E" }).first();
+    const onTeamPage = (await mine.count()) > 0 ? await mine.innerText() : "";
+
     await page.goto("/dashboard");
-    await expect(page.getByText("Admin", { exact: true })).toBeVisible();
+    const badge = page.getByText("Administrator", { exact: true }).first();
+    await expect(badge).toBeVisible();
+    if (onTeamPage) expect(onTeamPage).toContain("Administrator");
 
     const pages: [string, string][] = [
       ["/dashboard/reminders", "Reminders"],
@@ -28,12 +38,30 @@ test.describe("roles + admin surfaces", () => {
 test.describe("pipeline workflow", () => {
   test("advance a lead through a stage transition", async ({ page }) => {
     await page.goto("/dashboard/pipeline/alibaba");
-    const advance = page.getByRole("button", { name: /^→\s/ }).first();
-    await expect(advance).toBeVisible();
-    const target = ((await advance.textContent()) ?? "").replace("→", "").trim();
-    await advance.click();
-    // The new stage badge shows once the move lands.
-    await expect(page.getByText(target, { exact: true }).first()).toBeVisible();
+
+    // The stage used to have its own panel of "-> Stage" buttons below the
+    // headline metrics, which meant it was on the page twice. The badge under
+    // the name is the control now.
+    const stage = page.getByLabel("Pipeline stage", { exact: true });
+    await expect(stage).toBeVisible();
+
+    const current = await stage.inputValue();
+    const options = await stage.locator("option").evaluateAll((els) =>
+      els.map((el) => (el as HTMLOptionElement).value),
+    );
+    const target = options.find((o) => o !== current);
+    expect(target, "a lead with no legal next stage cannot exercise this").toBeTruthy();
+
+    await setBadge(page, "Pipeline stage", target!);
+    await page.reload();
+    await expect(page.getByLabel("Pipeline stage", { exact: true })).toHaveValue(target!);
+
+    // Put it back. Alibaba is seeded data that other specs read, and the old
+    // version of this test left it on whatever stage it happened to click.
+    const back = page.getByLabel("Pipeline stage", { exact: true });
+    if ((await back.locator(`option[value="${current}"]`).count()) > 0) {
+      await setBadge(page, "Pipeline stage", current);
+    }
   });
 });
 
