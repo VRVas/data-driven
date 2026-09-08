@@ -1466,7 +1466,7 @@ const checkRequest: CopilotTool = {
   name: "check_request",
   permission: "copilot:use",
   description:
-    "Before making a change, check whether you have enough to make it well. Give the tool you intend to call and every value gathered so far; it returns what is still missing, split into what the call REQUIRES, what it merely accepts but the record is broken without, and what is simply nice to have - each with the question to ask and what leaving it out actually costs. Call this first for create_lead, record_proposal, set_reminder, draft_outreach, set_next_move, set_budget, set_strategic_value, assign_lead and add_comment. It reads nothing and changes nothing.",
+    "Before making a change, check whether you have enough to make it well. Give the tool you intend to call and every value gathered so far; it returns what is still missing, split into what the call REQUIRES, what it merely accepts but the record is broken without, and what is simply nice to have - each with the question to ask and what leaving it out actually costs. Call this first for create_lead, record_proposal, set_reminder, draft_outreach, set_next_move, set_budget, set_strategic_value, assign_lead. It reads nothing and changes nothing.",
   parameters: {
     type: "object",
     properties: {

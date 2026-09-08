@@ -4,6 +4,13 @@ import path from "node:path";
 import { isPermissionKey, PERMISSIONS } from "@/lib/auth/catalogue";
 import { COPILOT_TOOLS, getToolByName, toolSchemas } from "@/lib/copilot/tools";
 import { isStructuredNotProse } from "@/lib/copilot/provider";
+import { INTAKE_SPECS } from "@/lib/copilot/intake";
+
+/**
+ * Tools that existed and were deleted. Kept so the guard below can tell a
+ * genuine dangling reference from an ordinary snake_case word in a sentence.
+ */
+const RETIRED = new Set(["add_comment", "list_comments", "delete_comment"]);
 
 describe("copilot tool registry", () => {
   it("has unique, non-empty tool names", () => {
@@ -48,6 +55,30 @@ describe("copilot tool registry", () => {
     // "went from 14 tools to 33" - the historical figure is allowed to stay,
     // the current one has to be right.
     expect(Math.max(...quoted)).toBe(COPILOT_TOOLS.length);
+  });
+
+  it("never points the model at a tool that does not exist", () => {
+    // check_request's description told the model to call it before add_comment
+    // for weeks after add_comment was deleted. A tool description is a prompt:
+    // naming a tool that is not in the registry is an instruction to hallucinate
+    // one. Every snake_case name in a description or an intake spec has to
+    // resolve.
+    const known = new Set(COPILOT_TOOLS.map((t) => t.name));
+    const dangling: string[] = [];
+
+    for (const tool of COPILOT_TOOLS) {
+      for (const m of tool.description.matchAll(/\b([a-z][a-z0-9]*(?:_[a-z0-9]+){1,3})\b/g)) {
+        const name = m[1];
+        // Only complain about things that look like OUR tools: a name nobody
+        // ever registered is just prose ("follow_up" in a sentence).
+        if (!known.has(name) && RETIRED.has(name)) dangling.push(`${tool.name} names ${name}`);
+      }
+    }
+    for (const spec of INTAKE_SPECS) {
+      if (!known.has(spec.tool)) dangling.push(`intake spec for ${spec.tool}`);
+    }
+
+    expect(dangling, `\n${dangling.join("\n")}\n`).toEqual([]);
   });
 
   it("quotes the real number of permissions everywhere it quotes one", () => {

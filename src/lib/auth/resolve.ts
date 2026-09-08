@@ -120,7 +120,14 @@ export async function accessLabel(): Promise<{ label: string; elevated: boolean 
   const ctx = await getAuthzContext();
   if (!ctx) return { label: "Member", elevated: false };
   const profiles = await loadProfiles(ctx.profileIds);
-  const label = profiles.map((p) => p.name).join(", ");
+  // Elevated first. Someone can hold several profiles - the reported bug was a
+  // user with both Sales rep and Administrator - and the badge is narrow enough
+  // to truncate, so the word that answers "am I an admin" must not be the one
+  // that gets cut off the end.
+  const label = [...profiles]
+    .sort((a, b) => Number(b.superuser === true) - Number(a.superuser === true))
+    .map((p) => p.name)
+    .join(", ");
   return {
     label: label || (ctx.superuser ? "Admin" : "Member"),
     elevated: ctx.superuser || profiles.some((p) => p.superuser),
