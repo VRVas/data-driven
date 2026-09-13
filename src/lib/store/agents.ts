@@ -3,17 +3,20 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import datasetJson from "@/data/dataset.json";
 import type { Agent, Dataset } from "@/lib/types";
-import { isPriority, toPriority } from "@/lib/vocab";
+import { isBrandStatus, isPriority, toBrandStatus, toPriority } from "@/lib/vocab";
 import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
 const SEED = (datasetJson as unknown as Dataset).agents;
 
-/** Agents carry the same priority vocabulary as leads, so they heal the same way. */
+/** Agents carry the same vocabularies as leads, so they heal the same way. */
 const normaliseAgent = (a: Agent): Agent => {
-  const p: unknown = a.priority;
-  if (typeof p !== "string" || p === "" || isPriority(p)) return a;
-  return { ...a, priority: toPriority(p) };
+  let out = a;
+  const p: unknown = out.priority;
+  if (typeof p === "string" && p !== "" && !isPriority(p)) out = { ...out, priority: toPriority(p) };
+  const s: unknown = out.status;
+  if (typeof s === "string" && s !== "" && !isBrandStatus(s)) out = { ...out, status: toBrandStatus(s) };
+  return out;
 };
 const normaliseAll = (rows: Agent[]): Agent[] => rows.map(normaliseAgent);
 

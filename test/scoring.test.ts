@@ -64,15 +64,15 @@ describe("leadScore + quadrant", () => {
 
 describe("pipeline weighting", () => {
   it("maps stages to win probability", () => {
-    expect(winProbability("Deal Closed")).toBe(1);
-    expect(winProbability("Did not work out")).toBe(0);
+    expect(winProbability("Closed deal")).toBe(1);
+    expect(winProbability("Lost")).toBe(0);
     expect(winProbability(null)).toBe(0);
   });
 
   it("weightedValue = budget × probability", () => {
-    expect(weightedValue(brand({ budget: 40000, status: "Advanced" }))).toBe(24000);
-    expect(weightedValue(brand({ budget: 40000, status: "Deal Closed" }))).toBe(40000);
-    expect(weightedValue(brand({ budget: 40000, status: "Did not work out" }))).toBe(0);
+    expect(weightedValue(brand({ budget: 40000, status: "Shape proposal" }))).toBe(24000);
+    expect(weightedValue(brand({ budget: 40000, status: "Closed deal" }))).toBe(40000);
+    expect(weightedValue(brand({ budget: 40000, status: "Lost" }))).toBe(0);
   });
 });
 

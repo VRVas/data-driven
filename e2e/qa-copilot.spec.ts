@@ -21,8 +21,8 @@ let alpha: Planted;
 let beta: Planted;
 
 test.beforeAll(async ({ request }) => {
-  alpha = await plant(request, { label: "Alpha", industry: "Fashion", status: "Advanced", valueEur: 64_000, confidence: "Confirmed", lastContact: ymd(-3) });
-  beta = await plant(request, { label: "Beta", industry: "FMCG", status: "Early", valueEur: 12_000, lastContact: ymd(-200) });
+  alpha = await plant(request, { label: "Alpha", industry: "Fashion", status: "Shape proposal", valueEur: 64_000, confidence: "Confirmed", lastContact: ymd(-3) });
+  beta = await plant(request, { label: "Beta", industry: "FMCG", status: "Qualify lead", valueEur: 12_000, lastContact: ymd(-200) });
   planted.push(alpha, beta);
 });
 

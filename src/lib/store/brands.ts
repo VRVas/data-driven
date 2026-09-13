@@ -3,7 +3,7 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import datasetJson from "@/data/dataset.json";
 import type { Brand, Dataset } from "@/lib/types";
-import { isPriority, toPriority } from "@/lib/vocab";
+import { isBrandStatus, isPriority, toBrandStatus, toPriority } from "@/lib/vocab";
 import { withFileLock, writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 
@@ -12,10 +12,11 @@ const SEED = (datasetJson as unknown as Dataset).brands;
 /**
  * Heal records written under an older vocabulary.
  *
- * Two renames so far: `followUp` became `followUpDate`, and the Hot/Warm/Cold
- * Lead priorities became High/Medium/Low. Reading through this is what stops a
- * rename silently blanking data already in Cosmos - the old shape is dropped on
- * the way through, so the next save heals the record for good.
+ * Three renames so far: `followUp` became `followUpDate`, the Hot/Warm/Cold
+ * Lead priorities became High/Medium/Low, and the eight workbook stages became
+ * the six the team agreed. Reading through this is what stops a rename silently
+ * blanking data already in Cosmos - the old shape is dropped on the way through,
+ * so the next save heals the record for good.
  */
 export function normaliseBrand(raw: Brand): Brand {
   const legacy = raw as Brand & { followUp?: string | null };
@@ -29,6 +30,10 @@ export function normaliseBrand(raw: Brand): Brand {
   const priority: unknown = out.priority;
   if (typeof priority === "string" && priority !== "" && !isPriority(priority)) {
     out = { ...out, priority: toPriority(priority) };
+  }
+  const status: unknown = out.status;
+  if (typeof status === "string" && status !== "" && !isBrandStatus(status)) {
+    out = { ...out, status: toBrandStatus(status) };
   }
   return out;
 }

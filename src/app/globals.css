@@ -70,12 +70,10 @@
 
   /* pipeline status → accents */
   --color-status-closed: #abff84;
-  --color-status-advanced: #00bae2;
-  --color-status-followup: #fec5fb;
-  --color-status-early: #9d95ff;
-  --color-status-attack: #ff8709;
+  --color-status-shape: #00bae2;
+  --color-status-qualify: #9d95ff;
   --color-status-lost: #ff3d57;
-  --color-status-open: #7c7c6f;
+  --color-status-seed: #7c7c6f;
   --color-status-recurring: #0ae448;
 
   /* valuation heat */

@@ -37,7 +37,7 @@ export function followUpsFrom(brands: Brand[], now: Date = new Date(), horizon =
   const out: FollowUp[] = [];
   for (const b of brands) {
     if (!b.followUpDate) continue;
-    if (b.status === "Deal Closed" || b.status === "Did not work out") continue;
+    if (b.status === "Closed deal" || b.status === "Lost") continue;
     const days = daysUntil(b.followUpDate, now);
     if (Number.isNaN(days) || days > horizon) continue;
     out.push({ brand: b, date: b.followUpDate, days, bucket: bucketFor(days) });

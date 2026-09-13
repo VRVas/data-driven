@@ -7,7 +7,7 @@ function brand(o: Partial<Brand> = {}): Brand {
     id: "b",
     name: "Acme",
     aliases: [],
-    status: "Early",
+    status: "Qualify lead",
     priority: null,
     owner: null,
     poc: null,
@@ -42,8 +42,8 @@ describe("followUpsFrom", () => {
       brand({ id: "c", followUpDate: "2026-07-20" }), // upcoming
       brand({ id: "d", followUpDate: "2026-09-30" }), // beyond horizon
       brand({ id: "e", followUpDate: null }), // no date
-      brand({ id: "f", followUpDate: "2026-07-08", status: "Deal Closed" }), // closed
-      brand({ id: "g", followUpDate: "2026-07-09", status: "Did not work out" }), // lost
+      brand({ id: "f", followUpDate: "2026-07-08", status: "Closed deal" }), // closed
+      brand({ id: "g", followUpDate: "2026-07-09", status: "Lost" }), // lost
     ];
     const r = followUpsFrom(brands, NOW);
     expect(r.map((x) => x.brand.id)).toEqual(["a", "b", "c"]);

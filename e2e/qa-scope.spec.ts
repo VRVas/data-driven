@@ -46,9 +46,9 @@ test.describe("as an administrator", () => {
       return p;
     };
 
-    mine = await make("Mine", SCOPED_USER.name, MINE_EUR, "Early");
-    theirs = await make("Theirs", TEST_USER.name, THEIRS_EUR, "Advanced");
-    theirsWon = await make("TheirsWon", TEST_USER.name, THEIRS_WON_EUR, "Deal Closed");
+    mine = await make("Mine", SCOPED_USER.name, MINE_EUR, "Qualify lead");
+    theirs = await make("Theirs", TEST_USER.name, THEIRS_EUR, "Shape proposal");
+    theirsWon = await make("TheirsWon", TEST_USER.name, THEIRS_WON_EUR, "Closed deal");
 
     // A proposal on the invisible lead: overlay records inherit their deal's
     // visibility, and money totals read the overlay.

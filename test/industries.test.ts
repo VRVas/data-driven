@@ -18,7 +18,7 @@ const reference: IndustryStat[] = [
 ];
 
 const lead = (over: Partial<Brand> = {}): Brand => ({
-  id: "l", name: "L", aliases: [], status: "Early", priority: null,
+  id: "l", name: "L", aliases: [], status: "Qualify lead", priority: null,
   owner: null, poc: null, email: null, industry: "Finance", industryRaw: null,
   initialContact: null, lastContact: null, followUpDate: null, closingFailed: null,
   notes: null, scored: false,

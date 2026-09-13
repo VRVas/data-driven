@@ -4,7 +4,7 @@ import { priorityOf } from "@/lib/priority";
 import type { Brand } from "@/lib/types";
 
 const lead = (over: Partial<Brand> = {}): Brand => ({
-  id: "l1", name: "L", aliases: [], status: "Advanced", priority: null,
+  id: "l1", name: "L", aliases: [], status: "Shape proposal", priority: null,
   owner: null, poc: null, email: null, industry: "Fashion", industryRaw: null,
   initialContact: null, lastContact: null, followUpDate: null, closingFailed: null,
   notes: null, scored: false,

@@ -47,9 +47,9 @@ test.describe("as an administrator", () => {
     };
 
     // The same client typed two ways, plus a third owned by somebody else.
-    survivorDeal = await make("Zenith Group", 40_000, "Deal Closed", TEST_USER.name);
-    absorbedDeal = await make("Zenith Holdings", 25_000, "Advanced", TEST_USER.name);
-    foreignDeal = await make("Vertex Partners", 90_000, "Advanced", SCOPED_USER.name);
+    survivorDeal = await make("Zenith Group", 40_000, "Closed deal", TEST_USER.name);
+    absorbedDeal = await make("Zenith Holdings", 25_000, "Shape proposal", TEST_USER.name);
+    foreignDeal = await make("Vertex Partners", 90_000, "Shape proposal", SCOPED_USER.name);
 
     await must(request, "set_budget", { id: survivorDeal.id, valueEur: 40_000, confidence: "Confirmed" });
 

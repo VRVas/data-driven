@@ -175,8 +175,8 @@ export function suggestLeadFields(brands: Brand[], draft: LeadDraft = {}): Sugge
   if (!draft.status) {
     suggestions.push({
       field: "status",
-      value: "Still to open",
-      label: "Still to open",
+      value: "Seed",
+      label: "Seed",
       confidence: "high",
       basis: "A lead being created has not been approached yet unless you say it has. Move it on with advance_lead_stage once contact is made.",
       sampleSize: 0,

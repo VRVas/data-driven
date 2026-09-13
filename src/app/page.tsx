@@ -11,7 +11,7 @@ export default function Home() {
   const ds = getDataset();
   const brands = ds.brands;
   const scored = brands.filter((b) => b.scored && b.scores);
-  const closed = brands.filter((b) => b.status === "Deal Closed").length;
+  const closed = brands.filter((b) => b.status === "Closed deal").length;
   const weighted = openLeads(brands).reduce((sum, b) => sum + weightedValue(b), 0);
   // "In play" means still open - a won or lost deal is not in play.
   const totalBudget = openLeads(scored).reduce((s, b) => s + (b.scores?.budget ?? 0), 0);

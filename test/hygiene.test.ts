@@ -8,7 +8,7 @@ const lead = (over: Partial<Brand> = {}): Brand => ({
   id: over.id ?? "x",
   name: over.name ?? "X",
   aliases: [],
-  status: "Early",
+  status: "Qualify lead",
   priority: null,
   owner: "Ada",
   poc: null,
@@ -85,14 +85,14 @@ describe("pipeline hygiene", () => {
   it("does not chase a finished deal for a follow-up it does not need", () => {
     // Won and lost deals are out of the working set, so most checks are simply
     // not applicable to them.
-    const done = checks(lead({ status: "Deal Closed", followUpDate: null, lastContact: null }));
+    const done = checks(lead({ status: "Closed deal", followUpDate: null, lastContact: null }));
     expect(done).not.toContain("no-follow-up");
     expect(done).not.toContain("gone-quiet");
     expect(done).not.toContain("untriaged");
   });
 
   it("flags a finished deal that still carries a follow-up", () => {
-    expect(checks(lead({ status: "Deal Closed" }))).toContain("finished-with-follow-up");
+    expect(checks(lead({ status: "Closed deal" }))).toContain("finished-with-follow-up");
   });
 
   it("flags dates that cannot both be true", () => {

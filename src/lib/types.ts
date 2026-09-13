@@ -14,14 +14,12 @@ export type Industry =
 export type Priority = "High" | "Medium" | "Low";
 
 export type BrandStatus =
-  | "Deal Closed"
-  | "Advanced"
-  | "Follow Up"
-  | "Early"
+  | "Seed"
+  | "Qualify lead"
+  | "Shape proposal"
+  | "Closed deal"
   | "Recurring"
-  | "Back to Attack"
-  | "Did not work out"
-  | "Still to open";
+  | "Lost";
 
 export type Valuation = "High" | "Medium" | "Low";
 

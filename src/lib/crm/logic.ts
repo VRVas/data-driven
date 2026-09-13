@@ -91,8 +91,8 @@ export function duplicateCandidates(companies: Company[]): Company[][] {
 // Lifecycle
 // ---------------------------------------------------------------------------
 
-const WON_STAGE: DealStage = "Deal Closed";
-const LOST_STAGE: DealStage = "Did not work out";
+const WON_STAGE: DealStage = "Closed deal";
+const LOST_STAGE: DealStage = "Lost";
 
 export function outcomeOfStage(stage: DealStage | null | undefined): DealOutcome {
   if (stage === WON_STAGE) return "won";

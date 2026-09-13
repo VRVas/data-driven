@@ -25,7 +25,7 @@ export const LEAD_FIELD_HELP: Record<string, FieldHelp> = {
     what: "The brand or client, as you would say it out loud. Search matches on this, and so does duplicate detection when a second deal opens with the same client.",
   },
   status: {
-    what: "Where the deal sits in the funnel: Still to open, Early, Follow Up, Advanced, Deal Closed, plus Recurring, Back to Attack and Did not work out.",
+    what: "Where the deal sits in the funnel: Seed, Qualify lead, Shape proposal, Closed deal, plus Recurring for repeat work and Lost.",
     feeds:
       "The stage win probability, which is 45% of the winnability axis and the multiplier behind weighted pipeline value. Leaving it blank treats the deal as not yet opened, so it counts as live but scores as cold.",
   },

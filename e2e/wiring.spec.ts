@@ -63,7 +63,7 @@ test.describe("value wiring", () => {
     await page.goto("/dashboard/pipeline");
     await page.getByRole("button", { name: "+ New lead" }).click();
     await page.locator("input[name='name']").fill(NAME);
-    await page.locator("select[name='status']").selectOption("Advanced");
+    await page.locator("select[name='status']").selectOption("Shape proposal");
     await page.locator("input[name='budget']").fill("45000");
     await page.locator("select[name='industry']").selectOption("Finance");
     await page.getByRole("button", { name: "Create lead" }).click();
@@ -124,7 +124,7 @@ test.describe("value wiring", () => {
     const openBefore = await openPipelineValue(page);
 
     await page.goto(`/dashboard/pipeline/${SLUG}`);
-    await setBadge(page, "Pipeline stage", "Deal Closed");
+    await setBadge(page, "Pipeline stage", "Closed deal");
     // The win probability is the observable proof the server re-rendered, not
     // just that the select is showing what was clicked.
     await expect(metric(page, "Expected value")).toContainText("100% win prob.");

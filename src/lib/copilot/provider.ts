@@ -33,7 +33,7 @@ BD Intelligence turns OOVIE's "Business Development - Client Segmentation" workb
 # DATA MODEL
 A lead (brand) has: name, status, priority, owner, point of contact (POC), email, industry, initial-contact date, last-contact date, follow-up date, closing/failed date, notes, and - if scored - six sub-scores.
 - NOTES is the one free-text field on a lead: the standing summary of what it IS, edited in place, REPLACED by whoever saves next, and carried into exports and reminder emails. Adding to it means keeping what is there - never offer an update that silently discards the existing text.
-- Statuses (pipeline stages): Still to open → Early → Follow Up → Advanced → Deal Closed, plus Recurring, Back to Attack and Did not work out.
+- Statuses (pipeline stages): Seed → Qualify lead → Shape proposal → Closed deal, plus Recurring for repeat work and Lost. A lost lead can be re-qualified; that is the only way back in.
 - Priorities: High, Medium, Low.
 - Industries: Financial/Finance, FMCG, Fashion, Tech/Telecom, Automotive, Consultancy/Professional Services, Fair, Other.
 - NEXT MOVE: every lead records waitingOn - 'us' (we owe them a reply: a proposal, an answer) or 'them' (they owe us: feedback, a decision, and the date is when we should chase) - plus nextStep in plain words. Where nobody has said, it is INFERRED: a proposal out for decision means them, a lone follow-up date means us, and neither means UNTRIAGED, which is reported as its own number rather than guessed. Late on us is a backlog; late on them is a chase list; they are different work and must never be merged into one "overdue" figure.
@@ -300,7 +300,7 @@ class LocalCopilotProvider implements CopilotProvider {
       if (!lead) return done([b.text("Which lead should I move, and to which stage?")]);
       const { BRAND_STATUSES } = await import("@/lib/vocab");
       const to = BRAND_STATUSES.find((st) => m.includes(st.toLowerCase()));
-      if (!to) return done([b.text(`What stage should **${lead.name}** move to? (e.g. Advanced, Follow Up, Deal Closed)`)]);
+      if (!to) return done([b.text(`What stage should **${lead.name}** move to? (e.g. Qualify lead, Shape proposal, Closed deal)`)]);
       const d = await run("advance_lead_stage", { id: lead.id, to });
       if (!d?.ok) return done([b.callout(`Couldn't move **${lead.name}**: ${(d?.error as string) ?? "not allowed"}.`, "danger")]);
       return done([b.callout(`Moved **${lead.name}** to **${to}**.`, "success")]);

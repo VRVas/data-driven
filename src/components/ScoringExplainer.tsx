@@ -37,7 +37,7 @@ function Term({ label, children }: { label: string; children: React.ReactNode })
  */
 export function ScoringExplainer() {
   const openStages = Object.entries(STAGE_PROBABILITY)
-    .filter(([status]) => status !== "Deal Closed" && status !== "Did not work out")
+    .filter(([status]) => status !== "Closed deal" && status !== "Lost")
     .sort((a, b) => b[1] - a[1]);
 
   return (

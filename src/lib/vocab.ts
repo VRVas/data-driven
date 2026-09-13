@@ -2,15 +2,47 @@ import type { BrandStatus, Priority, Industry } from "./types";
 
 // Controlled vocabularies - mirror the original workbook's data-validation lists.
 export const BRAND_STATUSES: readonly BrandStatus[] = [
-  "Deal Closed",
-  "Advanced",
-  "Follow Up",
-  "Early",
+  "Seed",
+  "Qualify lead",
+  "Shape proposal",
+  "Closed deal",
   "Recurring",
-  "Back to Attack",
-  "Did not work out",
-  "Still to open",
+  "Lost",
 ];
+
+/**
+ * The workbook's eight stages, and what each became.
+ *
+ * Early, Follow Up and Back to Attack all collapse into Qualify lead: the new
+ * vocabulary is a straight funnel, and all three described the same phase -
+ * working out whether the lead is real. Back to Attack was the revival case,
+ * which is now Lost -> Qualify lead in the transition graph rather than a
+ * stage of its own.
+ *
+ * Records written under the old names are still in Cosmos, so reads translate
+ * rather than migrate - see `normaliseBrand`.
+ */
+export const LEGACY_STATUSES: Readonly<Record<string, BrandStatus>> = {
+  "Still to open": "Seed",
+  Early: "Qualify lead",
+  "Follow Up": "Qualify lead",
+  "Back to Attack": "Qualify lead",
+  Advanced: "Shape proposal",
+  "Deal Closed": "Closed deal",
+  "Did not work out": "Lost",
+};
+
+/** True for a stage already written in today's vocabulary. */
+export function isBrandStatus(raw: unknown): raw is BrandStatus {
+  return typeof raw === "string" && (BRAND_STATUSES as readonly string[]).includes(raw);
+}
+
+/** Any stored stage as today's vocabulary, or null if it is not one at all. */
+export function toBrandStatus(raw: unknown): BrandStatus | null {
+  if (typeof raw !== "string" || raw === "") return null;
+  if (isBrandStatus(raw)) return raw;
+  return LEGACY_STATUSES[raw] ?? null;
+}
 
 export const PRIORITIES: readonly Priority[] = ["High", "Medium", "Low"];
 
@@ -41,12 +73,10 @@ export function toPriority(raw: unknown): Priority | null {
 
 // Agents/agencies use a shorter status list (from the AgentsAgencies sheet).
 export const AGENT_STATUSES: readonly string[] = [
-  "Deal Closed",
-  "Advanced",
-  "Follow Up",
-  "Early",
+  "Qualify lead",
+  "Shape proposal",
+  "Closed deal",
   "Recurring",
-  "Back to Attack",
 ];
 
 export const INDUSTRIES: readonly Industry[] = [

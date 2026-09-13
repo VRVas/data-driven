@@ -15,7 +15,7 @@ import { writeRubric } from "@/lib/pipeline/rubric";
 import type { Brand } from "@/lib/types";
 
 const lead = (over: Partial<Brand> = {}): Brand => ({
-  id: "acme", name: "Acme", aliases: [], status: "Advanced", priority: "Medium",
+  id: "acme", name: "Acme", aliases: [], status: "Shape proposal", priority: "Medium",
   owner: "Ada", poc: null, email: null, industry: "Finance", industryRaw: null,
   initialContact: "2026-01-01", lastContact: "2026-08-01", followUpDate: null,
   closingFailed: null, notes: null, scored: false,

@@ -27,9 +27,9 @@ const num = async (locator: import("@playwright/test").Locator, attr: string) =>
   Number(await locator.getAttribute(attr));
 
 test.beforeAll(async ({ request }) => {
-  atCeiling = await plant(request, { label: "Ceiling", industry: "Fashion", status: "Early", valueEur: 80_000, confidence: "Confirmed", lastContact: ymd(-1) });
-  farPast = await plant(request, { label: "Mega", industry: "Fashion", status: "Early", valueEur: 10_000_000, confidence: "Confirmed", lastContact: ymd(-1) });
-  tiny = await plant(request, { label: "Tiny", industry: "Fashion", status: "Early", valueEur: 2_000, confidence: "Confirmed", lastContact: ymd(-1) });
+  atCeiling = await plant(request, { label: "Ceiling", industry: "Fashion", status: "Qualify lead", valueEur: 80_000, confidence: "Confirmed", lastContact: ymd(-1) });
+  farPast = await plant(request, { label: "Mega", industry: "Fashion", status: "Qualify lead", valueEur: 10_000_000, confidence: "Confirmed", lastContact: ymd(-1) });
+  tiny = await plant(request, { label: "Tiny", industry: "Fashion", status: "Qualify lead", valueEur: 2_000, confidence: "Confirmed", lastContact: ymd(-1) });
   planted.push(atCeiling, farPast, tiny);
 });
 
@@ -101,7 +101,7 @@ test.describe("the funnel counts what the pipeline holds", () => {
     // with the bar the user sees.
     const res = await request.post("/api/copilot/tools/pipeline_summary", { data: {} });
     const summary = (await res.json()) as { data: { byStatus: Record<string, number> } };
-    const early = summary.data.byStatus["Early"];
+    const early = summary.data.byStatus["Qualify lead"];
 
     const bar = page.locator("section", { hasText: "Pipeline by stage" }).locator("[data-bar]");
     const texts = await bar.allInnerTexts();

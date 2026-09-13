@@ -130,10 +130,10 @@ export function modelSpec() {
         note: "The lead's own budget is kept in step with this whenever a proposal is recorded or deleted, so the ranking and the money totals read the same number.",
       },
       totals: {
-        openPipeline: "Deals still open - every stage except Deal Closed and Did not work out.",
+        openPipeline: "Deals still open - every stage except Closed deal and Lost.",
         weightedPipeline: "The same deals, each multiplied by its stage probability. Won deals are excluded: at probability 1.0 they would add banked revenue to a pipeline figure.",
         awaitingDecision: "Proposals whose newest revision is SENT, on deals that are still open. A re-quote replaces the earlier figure rather than adding to it, and a proposal left marked sent on a deal since won or lost is stale, not outstanding.",
-        lifetimeValue: "Deals at Deal Closed, valued at what was banked.",
+        lifetimeValue: "Deals at Closed deal, valued at what was banked.",
         repeatValue: "Lifetime value beyond the first win - what the relationship earned after landing it.",
         proposalWinRate: "Accepted / decided, one vote per deal decided by its most recent accept or reject. A deal re-quoted twice and finally won counts as one win.",
       },

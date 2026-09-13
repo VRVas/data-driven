@@ -94,10 +94,29 @@ def clean_str(v):
 # to High/Medium/Low, so translate here and keep dataset.json in one vocabulary.
 PRIORITY = {"Hot Lead": "High", "Warm Lead": "Medium", "Cold Lead": "Low"}
 
+# The workbook's eight stages became the six the team agreed. Early, Follow Up
+# and Back to Attack all describe working out whether the lead is real, so they
+# land on Qualify lead; going after a dead one again is a transition, not a
+# stage.
+STATUS = {
+    "Still to open": "Seed",
+    "Early": "Qualify lead",
+    "Follow Up": "Qualify lead",
+    "Back to Attack": "Qualify lead",
+    "Advanced": "Shape proposal",
+    "Deal Closed": "Closed deal",
+    "Did not work out": "Lost",
+}
+
 
 def norm_priority(v):
     s = clean_str(v)
     return PRIORITY.get(s, s) if s else None
+
+
+def norm_status(v):
+    s = clean_str(v)
+    return STATUS.get(s, s) if s else None
 
 
 wb = openpyxl.load_workbook(XLSX, data_only=True)
@@ -117,7 +136,7 @@ for r in range(2, op.max_row + 1):
         poc = None
     op_rows.append({
         "name": name,
-        "status": clean_str(op.cell(r, 2).value),
+        "status": norm_status(op.cell(r, 2).value),
         "priority": norm_priority(op.cell(r, 3).value),
         "owner": clean_str(op.cell(r, 4).value),
         "poc": clean_str(poc),
@@ -266,7 +285,7 @@ for r in range(2, ag.max_row + 1):
         continue
     agents.append({
         "id": slug(name), "name": name,
-        "status": clean_str(ag.cell(r, 2).value),
+        "status": norm_status(ag.cell(r, 2).value),
         "priority": norm_priority(ag.cell(r, 3).value),
         "owner": clean_str(ag.cell(r, 4).value),
         "poc": clean_str(ag.cell(r, 5).value),

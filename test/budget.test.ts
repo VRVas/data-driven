@@ -8,7 +8,7 @@ import type { Brand } from "@/lib/types";
 const confirmBudget = (b: Brand, value: number) => writeProposalValue(b, value, "Confirmed");
 
 const lead = (over: Partial<Brand> = {}, budget: number | null = 40_000): Brand => ({
-  id: "l1", name: "L", aliases: [], status: "Advanced", priority: null,
+  id: "l1", name: "L", aliases: [], status: "Shape proposal", priority: null,
   owner: null, poc: null, email: null, industry: null, industryRaw: null,
   initialContact: null, lastContact: null, followUpDate: null, closingFailed: null,
   notes: null, scored: true,

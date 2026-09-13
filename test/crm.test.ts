@@ -24,7 +24,7 @@ const prob = (d: Pick<Deal, "stage" | "dealType">) =>
 const deal = (over: Partial<Deal> = {}): Deal => ({
   id: "d", type: "deal", companyId: "c", schemaVersion: 2,
   createdAt: "2026-01-01", updatedAt: "2026-01-01",
-  companyName: "C", name: "C", stage: "Early", outcome: "open", dealType: "New Business",
+  companyName: "C", name: "C", stage: "Qualify lead", outcome: "open", dealType: "New Business",
   priority: null, owner: null, ownerId: null, poc: null, email: null,
   initialContact: null, lastContact: null, followUpDate: null, closingFailed: null,
   notes: null, scored: false,
@@ -83,9 +83,9 @@ describe("duplicateCandidates", () => {
 
 describe("deal lifecycle", () => {
   it("treats only the two terminal stages as finished", () => {
-    expect(outcomeOfStage("Deal Closed")).toBe("won");
-    expect(outcomeOfStage("Did not work out")).toBe("lost");
-    expect(outcomeOfStage("Back to Attack")).toBe("open");
+    expect(outcomeOfStage("Closed deal")).toBe("won");
+    expect(outcomeOfStage("Lost")).toBe("lost");
+    expect(outcomeOfStage("Qualify lead")).toBe("open");
     expect(openDeals([deal({ outcome: "open" }), deal({ outcome: "won" })])).toHaveLength(1);
   });
 });
@@ -203,13 +203,13 @@ describe("rollupFor", () => {
     // The reported bug: an accepted 2,222,222 EUR offer sat next to 0 EUR
     // lifetime value because the rollup only ever read the lead's own budget,
     // and a lead created in the app has none.
-    const won = deal({ id: "d1", outcome: "won", stage: "Deal Closed", wonValue: null });
+    const won = deal({ id: "d1", outcome: "won", stage: "Closed deal", wonValue: null });
     const r = rollupFor([won], prob, [proposal({ dealId: "d1", value: 2_222_222, status: "accepted" })]);
     expect(r.lifetimeValue).toBe(2_222_222);
   });
 
   it("counts an open deal's live quote as its pipeline value", () => {
-    const open = deal({ id: "d1", outcome: "open", stage: "Advanced" });
+    const open = deal({ id: "d1", outcome: "open", stage: "Shape proposal" });
     const r = rollupFor([open], prob, [proposal({ dealId: "d1", value: 80_000, status: "sent" })]);
     expect(r.openPipelineValue).toBe(80_000);
     expect(r.weightedPipelineValue).toBeCloseTo(80_000 * prob(open));
@@ -218,44 +218,44 @@ describe("rollupFor", () => {
   it("separates landing a client from what the relationship earned after", () => {
     const r = rollupFor(
       [
-        deal({ id: "1", outcome: "won", stage: "Deal Closed", wonValue: 40_000, wonAt: "2026-01-10" }),
-        deal({ id: "2", outcome: "won", stage: "Deal Closed", wonValue: 25_000, wonAt: "2026-06-01" }),
-        deal({ id: "3", outcome: "open", stage: "Advanced", economics: { ...deal().economics, budget: 30_000 } }),
-        deal({ id: "4", outcome: "lost", stage: "Did not work out" }),
+        deal({ id: "1", outcome: "won", stage: "Closed deal", wonValue: 40_000, wonAt: "2026-01-10" }),
+        deal({ id: "2", outcome: "won", stage: "Closed deal", wonValue: 25_000, wonAt: "2026-06-01" }),
+        deal({ id: "3", outcome: "open", stage: "Shape proposal", economics: { ...deal().economics, budget: 30_000 } }),
+        deal({ id: "4", outcome: "lost", stage: "Lost" }),
       ],
       prob,
     );
     expect(r.lifetimeValue).toBe(65_000);
     expect(r.repeatValue).toBe(25_000); // everything after the first win
     expect(r.openPipelineValue).toBe(30_000);
-    expect(r.weightedPipelineValue).toBeCloseTo(30_000 * prob({ stage: "Advanced", dealType: "New Business" }));
+    expect(r.weightedPipelineValue).toBeCloseTo(30_000 * prob({ stage: "Shape proposal", dealType: "New Business" }));
     expect(r.dealWinRate).toBeCloseTo(2 / 3);
     expect(r.firstWonAt).toBe("2026-01-10");
   });
 
   it("weights recurring work the same as the lead pages do", () => {
     // Recurring moved off the stage axis onto the deal type, so the deal now
-    // sits at "Advanced". Weighting by stage alone valued it at 0.6 here while
+    // sits at "Shape proposal". Weighting by stage alone valued it at 0.6 here while
     // the lead pages still used winProbability("Recurring") = 0.85.
     const recurring = rollupFor(
-      [deal({ stage: "Advanced", dealType: "Recurring", economics: { ...deal().economics, budget: 100_000 } })],
+      [deal({ stage: "Shape proposal", dealType: "Recurring", economics: { ...deal().economics, budget: 100_000 } })],
       prob,
     );
     expect(recurring.weightedPipelineValue).toBeCloseTo(100_000 * winProbability("Recurring"));
 
     const newBusiness = rollupFor(
-      [deal({ stage: "Advanced", dealType: "New Business", economics: { ...deal().economics, budget: 100_000 } })],
+      [deal({ stage: "Shape proposal", dealType: "New Business", economics: { ...deal().economics, budget: 100_000 } })],
       prob,
     );
-    expect(newBusiness.weightedPipelineValue).toBeCloseTo(100_000 * winProbability("Advanced"));
+    expect(newBusiness.weightedPipelineValue).toBeCloseTo(100_000 * winProbability("Shape proposal"));
   });
 
   it("reports no win rate rather than zero when nothing has closed", () => {    expect(rollupFor([deal()], prob).dealWinRate).toBeNull();
   });
 
   it("picks the same first win regardless of order when wins are undated", () => {
-    const a = deal({ id: "a", outcome: "won", stage: "Deal Closed", wonValue: 10_000, wonAt: null });
-    const b = deal({ id: "b", outcome: "won", stage: "Deal Closed", wonValue: 40_000, wonAt: null });
+    const a = deal({ id: "a", outcome: "won", stage: "Closed deal", wonValue: 10_000, wonAt: null });
+    const b = deal({ id: "b", outcome: "won", stage: "Closed deal", wonValue: 40_000, wonAt: null });
     // Repeat value must not depend on the order deals happened to arrive in.
     expect(rollupFor([a, b], prob).repeatValue).toBe(rollupFor([b, a], prob).repeatValue);
     expect(rollupFor([a, b], prob).repeatValue).toBe(40_000);
@@ -278,7 +278,7 @@ describe("migrateBrands against the real dataset", () => {
 
   it("moves Recurring off the stage axis and onto the deal type", () => {
     expect(result.deals.every((d) => (d.stage as string) !== "Recurring")).toBe(true);
-    expect(stageOf({ status: "Recurring" } as Brand)).toEqual({ stage: "Advanced", dealType: "Recurring" });
+    expect(stageOf({ status: "Recurring" } as Brand)).toEqual({ stage: "Shape proposal", dealType: "Recurring" });
   });
 
   it("keeps every deal attached to a real company", () => {

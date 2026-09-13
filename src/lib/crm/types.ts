@@ -86,22 +86,20 @@ export interface Company extends CrmBase {
 // Deal
 // ---------------------------------------------------------------------------
 
-/** The sheet's vocabulary, minus the two values that were outcomes not stages. */
+/** The pipeline vocabulary, minus the value that is a deal type not a stage. */
 export type DealStage =
-  | "Still to open"
-  | "Early"
-  | "Follow Up"
-  | "Advanced"
-  | "Back to Attack"
-  | "Deal Closed"
-  | "Did not work out";
+  | "Seed"
+  | "Qualify lead"
+  | "Shape proposal"
+  | "Closed deal"
+  | "Lost";
 
 export type DealOutcome = "open" | "won" | "lost";
 
 /**
- * `Recurring` was a pipeline status nobody could use - a company can't be
- * simultaneously "Advanced" on a new deal and "Recurring" from an old one. As a
- * deal type it finally does the job: repeat business per company.
+ * `Recurring` is a pipeline status nobody can use as a stage - a company can't
+ * be simultaneously "Shape proposal" on a new deal and "Recurring" from an old
+ * one. As a deal type it finally does the job: repeat business per company.
  */
 export type DealType = "New Business" | "Repeat" | "Recurring" | "Upsell";
 
@@ -135,7 +133,7 @@ export interface Deal extends CrmBase {
   email: string | null;
   initialContact: string | null;
   lastContact: string | null;
-  /** Renamed from `followUp`, which collided with the "Follow Up" stage. */
+  /** Renamed from `followUp`, which collided with the old "Follow Up" stage. */
   followUpDate: string | null;
   closingFailed: string | null;
   notes: string | null;

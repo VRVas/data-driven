@@ -20,7 +20,7 @@ const ago = (days: number): string => {
 const ahead = (days: number) => ago(-days);
 
 const lead = (over: Partial<Brand> = {}): Brand => ({
-  id: "l1", name: "Lead One", aliases: [], status: "Early", priority: null,
+  id: "l1", name: "Lead One", aliases: [], status: "Qualify lead", priority: null,
   owner: null, poc: null, email: null, industry: null, industryRaw: null,
   initialContact: null, lastContact: null, followUpDate: null, closingFailed: null,
   notes: null, scored: false,
@@ -114,7 +114,7 @@ describe("healthOf - the two questions the pipeline has to answer", () => {
     // that includes having no side at all, not just no overdue flag. The
     // pipeline table renders waitingOn directly, so leaving it set showed a
     // closed deal as still waiting on us.
-    for (const status of ["Deal Closed", "Did not work out"] as const) {
+    for (const status of ["Closed deal", "Lost"] as const) {
       const h = healthOf(
         lead({ status, waitingOn: "us", followUpDate: ago(200), lastContact: ago(400) }),
         [],
@@ -131,7 +131,7 @@ describe("healthOf - the two questions the pipeline has to answer", () => {
   });
 
   it("gives a closed deal no side even when a proposal is still out", () => {
-    const h = healthOf(lead({ status: "Deal Closed" }), [proposal({ status: "sent" })], NOW);
+    const h = healthOf(lead({ status: "Closed deal" }), [proposal({ status: "sent" })], NOW);
     expect(h.waitingOn).toBeNull();
   });
 
@@ -179,7 +179,7 @@ describe("pipelineHealth", () => {
     lead({ id: "b", waitingOn: "them", followUpDate: ago(1) }),
     lead({ id: "c" }),
     lead({ id: "d", lastContact: ago(120) }),
-    lead({ id: "e", status: "Deal Closed", waitingOn: "us", followUpDate: ago(99) }),
+    lead({ id: "e", status: "Closed deal", waitingOn: "us", followUpDate: ago(99) }),
   ];
 
   it("counts each problem separately over open leads only", () => {

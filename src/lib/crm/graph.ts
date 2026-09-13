@@ -11,7 +11,7 @@ import type { Company, Deal, DealStage, Proposal } from "./types";
 
 /**
  * Recurring work moved off the stage axis and onto the deal type, so a
- * recurring deal now sits at stage "Advanced". Weighting it by that stage gave
+ * recurring deal now sits at stage "Shape proposal". Weighting it by that stage gave
  * it 0.6 here while every lead-facing surface still read
  * winProbability("Recurring") = 0.85 - the same deal, two different weighted
  * values depending on which page you were on.

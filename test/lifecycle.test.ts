@@ -27,12 +27,12 @@ function brand(
 
 describe("outcomeOf", () => {
   it("treats only the two terminal statuses as finished", () => {
-    expect(outcomeOf("Deal Closed")).toBe("won");
-    expect(outcomeOf("Did not work out")).toBe("lost");
+    expect(outcomeOf("Closed deal")).toBe("won");
+    expect(outcomeOf("Lost")).toBe("lost");
   });
 
   it("treats every other status - including Recurring - as open", () => {
-    const terminal = new Set(["Deal Closed", "Did not work out"]);
+    const terminal = new Set(["Closed deal", "Lost"]);
     for (const s of BRAND_STATUSES.filter((s) => !terminal.has(s))) {
       expect(outcomeOf(s), `${s} should be open`).toBe("open");
     }
@@ -47,9 +47,9 @@ describe("outcomeOf", () => {
 describe("openLeads", () => {
   it("keeps live leads and drops won and lost ones", () => {
     const all = [
-      brand("Early", null, "Early co", "a"),
-      brand("Deal Closed", null, "Won co", "b"),
-      brand("Did not work out", null, "Lost co", "c"),
+      brand("Qualify lead", null, "Early co", "a"),
+      brand("Closed deal", null, "Won co", "b"),
+      brand("Lost", null, "Lost co", "c"),
       brand("Recurring", null, "Recurring co", "d"),
     ];
     expect(openLeads(all).map((b) => b.id)).toEqual(["a", "d"]);
@@ -59,31 +59,31 @@ describe("openLeads", () => {
 
 describe("outcomeConflictOf", () => {
   it("flags a won status carrying an open process", () => {
-    const c = outcomeConflictOf(brand("Deal Closed", { process: "Open" }));
-    expect(c).toMatchObject({ status: "Deal Closed", process: "Open", outcome: "won" });
+    const c = outcomeConflictOf(brand("Closed deal", { process: "Open" }));
+    expect(c).toMatchObject({ status: "Closed deal", process: "Open", outcome: "won" });
   });
 
   it("flags an open status carrying a closed or failed process", () => {
-    expect(outcomeConflictOf(brand("Back to Attack", { process: "Closed" }))).not.toBeNull();
-    expect(outcomeConflictOf(brand("Early", { process: "Failed" }))).not.toBeNull();
+    expect(outcomeConflictOf(brand("Qualify lead", { process: "Closed" }))).not.toBeNull();
+    expect(outcomeConflictOf(brand("Qualify lead", { process: "Failed" }))).not.toBeNull();
   });
 
   it("stays quiet when the two signals agree", () => {
-    expect(outcomeConflictOf(brand("Early", { process: "Open" }))).toBeNull();
-    expect(outcomeConflictOf(brand("Deal Closed", { process: "Closed" }))).toBeNull();
-    expect(outcomeConflictOf(brand("Did not work out", { process: "Failed" }))).toBeNull();
+    expect(outcomeConflictOf(brand("Qualify lead", { process: "Open" }))).toBeNull();
+    expect(outcomeConflictOf(brand("Closed deal", { process: "Closed" }))).toBeNull();
+    expect(outcomeConflictOf(brand("Lost", { process: "Failed" }))).toBeNull();
   });
 
   it("stays quiet when there is nothing to compare against", () => {
-    expect(outcomeConflictOf(brand("Early", { process: null }))).toBeNull();
-    expect(outcomeConflictOf(brand("Early", null))).toBeNull();
+    expect(outcomeConflictOf(brand("Qualify lead", { process: null }))).toBeNull();
+    expect(outcomeConflictOf(brand("Qualify lead", null))).toBeNull();
   });
 
   it("collects conflicts alphabetically", () => {
     const rows = outcomeConflicts([
-      brand("Deal Closed", { process: "Open" }, "Zeta", "z"),
-      brand("Early", { process: "Open" }, "Fine", "f"),
-      brand("Early", { process: "Failed" }, "Alpha", "a"),
+      brand("Closed deal", { process: "Open" }, "Zeta", "z"),
+      brand("Qualify lead", { process: "Open" }, "Fine", "f"),
+      brand("Qualify lead", { process: "Failed" }, "Alpha", "a"),
     ]);
     expect(rows.map((r) => r.name)).toEqual(["Alpha", "Zeta"]);
   });
@@ -91,9 +91,9 @@ describe("outcomeConflictOf", () => {
 
 describe("reconcileImportedOutcome", () => {
   it("clears a conflict the user had no way to resolve", () => {
-    // Reported: a lead correctly marked "Did not work out", with a closing
+    // Reported: a lead correctly marked "Lost", with a closing
     // date, kept being flagged against an imported "Open" that has no UI.
-    const flagged = brand("Did not work out", { process: "Open" });
+    const flagged = brand("Lost", { process: "Open" });
     expect(outcomeConflictOf(flagged)).not.toBeNull();
 
     const after = reconcileImportedOutcome(flagged);
@@ -102,22 +102,22 @@ describe("reconcileImportedOutcome", () => {
   });
 
   it("maps a win to the sheet's own word for it", () => {
-    expect(reconcileImportedOutcome(brand("Deal Closed", { process: "Open" })).scores!.process).toBe("Closed");
+    expect(reconcileImportedOutcome(brand("Closed deal", { process: "Open" })).scores!.process).toBe("Closed");
   });
 
   it("reopens the imported outcome when the lead goes back to work", () => {
-    expect(reconcileImportedOutcome(brand("Back to Attack", { process: "Closed" })).scores!.process).toBe("Open");
+    expect(reconcileImportedOutcome(brand("Qualify lead", { process: "Closed" })).scores!.process).toBe("Open");
   });
 
   it("leaves an agreeing record untouched", () => {
-    const agreed = brand("Early", { process: "Open" });
+    const agreed = brand("Qualify lead", { process: "Open" });
     expect(reconcileImportedOutcome(agreed)).toBe(agreed);
   });
 
   it("has nothing to reconcile when the import said nothing", () => {
-    const noProcess = brand("Early", { process: null });
+    const noProcess = brand("Qualify lead", { process: null });
     expect(reconcileImportedOutcome(noProcess)).toBe(noProcess);
-    const unscored = brand("Early", null);
+    const unscored = brand("Qualify lead", null);
     expect(reconcileImportedOutcome(unscored)).toBe(unscored);
   });
 });

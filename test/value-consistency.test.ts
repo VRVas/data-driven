@@ -23,7 +23,7 @@ const prob = (d: Pick<Deal, "stage" | "dealType">) =>
   winProbability((d.dealType === "Recurring" ? "Recurring" : d.stage) as never);
 
 const lead = (over: Partial<Brand>): Brand => ({
-  id: "x", name: "X", aliases: [], status: "Advanced", priority: null,
+  id: "x", name: "X", aliases: [], status: "Shape proposal", priority: null,
   owner: null, poc: null, email: null, industry: "Finance", industryRaw: null,
   initialContact: "2026-01-01", lastContact: "2026-08-01", followUpDate: null,
   closingFailed: null, notes: null, scored: false,
@@ -59,7 +59,7 @@ describe("a deal is worth the same on every surface", () => {
     // Score side.
     expect(after.scores!.budget).toBe(80_000);
     expect(priorityOf(after)!.adjustedBudget).toBe(80_000 * confidenceFor("Estimated"));
-    expect(weightedValue(after)).toBe(80_000 * winProbability("Advanced"));
+    expect(weightedValue(after)).toBe(80_000 * winProbability("Shape proposal"));
     // The opening guess survives, so the variance report still works.
     expect(after.budgetAtOpen).toBe(30_000);
   });
@@ -96,10 +96,10 @@ describe("a deal is worth the same on every surface", () => {
 
 describe("aggregates agree with the rows they aggregate", () => {
   const brands = [
-    writeBudget(lead({ id: "a", name: "A", status: "Advanced" }), 30_000, "Estimated"),
-    writeBudget(lead({ id: "b", name: "B", status: "Early" }), 50_000, "Estimated"),
-    writeBudget(lead({ id: "c", name: "C", status: "Deal Closed", closingFailed: "2026-05-01" }), 100_000, "Confirmed"),
-    writeBudget(lead({ id: "d", name: "D", status: "Did not work out", closingFailed: "2026-07-01" }), 40_000, "Estimated"),
+    writeBudget(lead({ id: "a", name: "A", status: "Shape proposal" }), 30_000, "Estimated"),
+    writeBudget(lead({ id: "b", name: "B", status: "Qualify lead" }), 50_000, "Estimated"),
+    writeBudget(lead({ id: "c", name: "C", status: "Closed deal", closingFailed: "2026-05-01" }), 100_000, "Confirmed"),
+    writeBudget(lead({ id: "d", name: "D", status: "Lost", closingFailed: "2026-07-01" }), 40_000, "Estimated"),
   ];
   const proposals = [proposal({ id: "pd", dealId: "d", value: 70_000, status: "sent" })];
   const { deals } = migrateBrands(brands, prob);
@@ -125,7 +125,7 @@ describe("aggregates agree with the rows they aggregate", () => {
     const everything = brands.reduce((s, b) => s + weightedValue(b), 0);
 
     expect(everything - live).toBe(100_000);
-    expect(live).toBe(30_000 * winProbability("Advanced") + 50_000 * winProbability("Early"));
+    expect(live).toBe(30_000 * winProbability("Shape proposal") + 50_000 * winProbability("Qualify lead"));
   });
 
   it("counts a proposal as awaiting a decision only while its deal is live", () => {

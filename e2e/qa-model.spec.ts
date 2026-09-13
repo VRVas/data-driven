@@ -40,22 +40,22 @@ test.beforeAll(async ({ request }) => {
   // Pairs. Each differs from its partner in ONE field.
   // Both of these must clear the cap AFTER the confidence discount, or the
   // pair is testing the discount rather than the cap.
-  capped = await keep(plant(request, { label: "Capped", industry: "Fashion", status: "Early", valueEur: 80_000, confidence: "Confirmed", lastContact: ymd(-1) }));
-  outlier = await keep(plant(request, { label: "Outlier", industry: "Fashion", status: "Early", valueEur: 10_000_000, confidence: "Confirmed", lastContact: ymd(-1) }));
-  zero = await keep(plant(request, { label: "Zero", industry: "Fashion", status: "Early", valueEur: 0, lastContact: ymd(-1) }));
-  unset = await keep(plant(request, { label: "Unset", industry: "Fashion", status: "Early", lastContact: ymd(-1) }));
+  capped = await keep(plant(request, { label: "Capped", industry: "Fashion", status: "Qualify lead", valueEur: 80_000, confidence: "Confirmed", lastContact: ymd(-1) }));
+  outlier = await keep(plant(request, { label: "Outlier", industry: "Fashion", status: "Qualify lead", valueEur: 10_000_000, confidence: "Confirmed", lastContact: ymd(-1) }));
+  zero = await keep(plant(request, { label: "Zero", industry: "Fashion", status: "Qualify lead", valueEur: 0, lastContact: ymd(-1) }));
+  unset = await keep(plant(request, { label: "Unset", industry: "Fashion", status: "Qualify lead", lastContact: ymd(-1) }));
 
-  confirmed = await keep(plant(request, { label: "Confirmed", industry: "Fashion", status: "Early", valueEur: 50_000, confidence: "Confirmed", lastContact: ymd(-1) }));
-  estimated = await keep(plant(request, { label: "Estimated", industry: "Fashion", status: "Early", valueEur: 50_000, confidence: "Estimated", lastContact: ymd(-1) }));
+  confirmed = await keep(plant(request, { label: "Confirmed", industry: "Fashion", status: "Qualify lead", valueEur: 50_000, confidence: "Confirmed", lastContact: ymd(-1) }));
+  estimated = await keep(plant(request, { label: "Estimated", industry: "Fashion", status: "Qualify lead", valueEur: 50_000, confidence: "Estimated", lastContact: ymd(-1) }));
 
-  fresh = await keep(plant(request, { label: "Fresh", industry: "Fashion", status: "Early", valueEur: 50_000, lastContact: ymd(-1) }));
-  stale = await keep(plant(request, { label: "Stale", industry: "Fashion", status: "Early", valueEur: 50_000, lastContact: ymd(-370) }));
+  fresh = await keep(plant(request, { label: "Fresh", industry: "Fashion", status: "Qualify lead", valueEur: 50_000, lastContact: ymd(-1) }));
+  stale = await keep(plant(request, { label: "Stale", industry: "Fashion", status: "Qualify lead", valueEur: 50_000, lastContact: ymd(-370) }));
 
-  advanced = await keep(plant(request, { label: "Advanced", industry: "Fashion", status: "Advanced", valueEur: 50_000, lastContact: ymd(-1) }));
-  charity = await keep(plant(request, { label: "Charity", industry: "Fashion", status: "Early", valueEur: 0, strategicValue: 3, lastContact: ymd(-1) }));
+  advanced = await keep(plant(request, { label: "Shape proposal", industry: "Fashion", status: "Shape proposal", valueEur: 50_000, lastContact: ymd(-1) }));
+  charity = await keep(plant(request, { label: "Charity", industry: "Fashion", status: "Qualify lead", valueEur: 0, strategicValue: 3, lastContact: ymd(-1) }));
 
-  won = await keep(plant(request, { label: "Won", industry: "Fashion", status: "Deal Closed", valueEur: 45_000, confidence: "Confirmed" }));
-  lost = await keep(plant(request, { label: "Lost", industry: "Fashion", status: "Did not work out", valueEur: 45_000 }));
+  won = await keep(plant(request, { label: "Won", industry: "Fashion", status: "Closed deal", valueEur: 45_000, confidence: "Confirmed" }));
+  lost = await keep(plant(request, { label: "Lost", industry: "Fashion", status: "Lost", valueEur: 45_000 }));
 });
 
 test.afterAll(async ({ request }) => {

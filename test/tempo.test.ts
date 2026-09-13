@@ -8,7 +8,7 @@ import type { Brand } from "@/lib/types";
 const brands = (dataset as unknown as { brands: Brand[] }).brands;
 
 const lead = (over: Partial<Brand> = {}): Brand => ({
-  id: "l1", name: "L", aliases: [], status: "Early", priority: null,
+  id: "l1", name: "L", aliases: [], status: "Qualify lead", priority: null,
   owner: null, poc: null, email: null, industry: null, industryRaw: null,
   initialContact: null, lastContact: null, followUpDate: null, closingFailed: null,
   notes: null, scored: false,
@@ -69,7 +69,7 @@ describe("effectiveTempoMonths", () => {
 
   it("switches to measured time once the deal closes", () => {
     const b = scored({
-      status: "Deal Closed", expectedMonths: 8,
+      status: "Closed deal", expectedMonths: 8,
       initialContact: "2026-01-01", closingFailed: "2026-03-01",
     });
     const t = effectiveTempoMonths(b);
@@ -78,13 +78,13 @@ describe("effectiveTempoMonths", () => {
   });
 
   it("keeps the estimate when a closed deal has no close date", () => {
-    const b = scored({ status: "Deal Closed", expectedMonths: 8, initialContact: "2026-01-01" });
+    const b = scored({ status: "Closed deal", expectedMonths: 8, initialContact: "2026-01-01" });
     expect(effectiveTempoMonths(b)).toEqual({ months: 8, basis: "expected" });
   });
 
   it("keeps the estimate rather than trusting a backwards close date", () => {
     const b = scored({
-      status: "Deal Closed", expectedMonths: 8,
+      status: "Closed deal", expectedMonths: 8,
       initialContact: "2026-10-25", closingFailed: "2025-11-14",
     });
     expect(effectiveTempoMonths(b)).toEqual({ months: 8, basis: "expected" });

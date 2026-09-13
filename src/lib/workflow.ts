@@ -7,18 +7,18 @@ import type { Brand, BrandStatus } from "./types";
  * quick-advance control on the lead page.
  */
 export const STATUS_FLOW: Record<BrandStatus, BrandStatus[]> = {
-  "Still to open": ["Early", "Did not work out"],
-  Early: ["Follow Up", "Advanced", "Back to Attack", "Did not work out"],
-  "Follow Up": ["Advanced", "Back to Attack", "Early", "Did not work out"],
-  Advanced: ["Deal Closed", "Follow Up", "Back to Attack", "Did not work out"],
-  "Back to Attack": ["Follow Up", "Advanced", "Early", "Did not work out"],
-  Recurring: ["Advanced", "Deal Closed", "Follow Up"],
-  "Deal Closed": ["Recurring", "Back to Attack"],
-  "Did not work out": ["Back to Attack", "Early"],
+  Seed: ["Qualify lead", "Lost"],
+  "Qualify lead": ["Shape proposal", "Lost"],
+  "Shape proposal": ["Closed deal", "Qualify lead", "Lost"],
+  "Closed deal": ["Recurring"],
+  Recurring: ["Shape proposal", "Closed deal"],
+  // The revival path. "Back to Attack" used to be a stage of its own; going
+  // after a dead lead again is just re-qualifying it.
+  Lost: ["Qualify lead"],
 };
 
 /** When a lead has no status yet, these are the sensible entry points. */
-export const ENTRY_STATUSES: BrandStatus[] = ["Still to open", "Early", "Follow Up", "Advanced"];
+export const ENTRY_STATUSES: BrandStatus[] = ["Seed", "Qualify lead", "Shape proposal"];
 
 export function allowedTransitions(from: BrandStatus | null | undefined): BrandStatus[] {
   if (!from) return ENTRY_STATUSES;
@@ -45,7 +45,7 @@ export function addDays(ymd: string, days: number): string {
  * Date side-effects when entering a status (pure - `today` injected):
  *  - any move counts as a touch → refresh `lastContact`;
  *  - closing/losing a deal stamps `closingFailed` (if not already set);
- *  - entering "Follow Up" seeds a follow-up a week out when none exists.
+ *  - entering "Qualify lead" seeds a follow-up a week out when none exists.
  */
 export function statusSideEffects(
   brand: Pick<Brand, "followUpDate" | "closingFailed">,
@@ -55,10 +55,12 @@ export function statusSideEffects(
   const patch: Partial<Pick<Brand, "lastContact" | "followUpDate" | "closingFailed">> = {
     lastContact: today,
   };
-  if (to === "Deal Closed" || to === "Did not work out") {
+  if (to === "Closed deal" || to === "Lost") {
     patch.closingFailed = brand.closingFailed ?? today;
   }
-  if (to === "Follow Up" && !brand.followUpDate) {
+  // Was "Follow Up", which merged into this stage: qualifying a lead means you
+  // owe them a next contact, so it gets a date rather than going quiet.
+  if (to === "Qualify lead" && !brand.followUpDate) {
     patch.followUpDate = addDays(today, 7);
   }
   return patch;

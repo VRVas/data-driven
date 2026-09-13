@@ -17,20 +17,12 @@ import type {
   Proposal,
 } from "./types";
 
-const STAGES = new Set<string>([
-  "Still to open",
-  "Early",
-  "Follow Up",
-  "Advanced",
-  "Back to Attack",
-  "Deal Closed",
-  "Did not work out",
-]);
+const STAGES = new Set<string>(["Seed", "Qualify lead", "Shape proposal", "Closed deal", "Lost"]);
 
-/** `Recurring` was never a stage - it described repeat business. */
+/** `Recurring` is not a stage - it describes repeat business. */
 export function stageOf(brand: Brand): { stage: DealStage; dealType: DealType } {
-  if (brand.status === "Recurring") return { stage: "Advanced", dealType: "Recurring" };
-  const stage = (brand.status && STAGES.has(brand.status) ? brand.status : "Still to open") as DealStage;
+  if (brand.status === "Recurring") return { stage: "Shape proposal", dealType: "Recurring" };
+  const stage = (brand.status && STAGES.has(brand.status) ? brand.status : "Seed") as DealStage;
   return { stage, dealType: "New Business" };
 }
 

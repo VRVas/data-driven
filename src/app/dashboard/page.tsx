@@ -16,15 +16,14 @@ import type { BrandStatus } from "@/lib/types";
 // Reads the live brand store - render per request (never prerender at build).
 export const dynamic = "force-dynamic";
 
+// Funnel order: the live stages in sequence, then the two terminal outcomes.
 const STATUS_ORDER: BrandStatus[] = [
-  "Deal Closed",
-  "Advanced",
-  "Follow Up",
-  "Early",
-  "Back to Attack",
+  "Seed",
+  "Qualify lead",
+  "Shape proposal",
+  "Closed deal",
   "Recurring",
-  "Still to open",
-  "Did not work out",
+  "Lost",
 ];
 
 export default async function DashboardOverview() {
@@ -32,7 +31,7 @@ export default async function DashboardOverview() {
   const brands = await getVisibleBrands();
   const scored = brands.filter((b) => b.scored && b.scores);
 
-  const closed = brands.filter((b) => b.status === "Deal Closed").length;
+  const closed = brands.filter((b) => b.status === "Closed deal").length;
   // Only live deals: weighting a won deal by its stage probability of 1.0 adds
   // money already banked to a figure labelled probability-adjusted pipeline.
   const weighted = openLeads(brands).reduce((s, b) => s + weightedValue(b), 0);

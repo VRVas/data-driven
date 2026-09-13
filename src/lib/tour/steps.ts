@@ -67,7 +67,7 @@ export const TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="funnel"]',
     title: "Pipeline by stage",
     body: "See how leads are distributed across the sales funnel, from first contact to closed.",
-    sheet: "Mirrors the Status column in Brands Operative (Deal Closed, Advanced, Follow Up, Early, Back to Attack, Recurring, Still to open, Did not work out).",
+    sheet: "Mirrors the Status column in Brands Operative (Seed, Qualify lead, Shape proposal, Closed deal, Recurring, Lost).",
     placement: "right",
   },
   {
@@ -297,7 +297,7 @@ export const TOUR_STEPS: TourStep[] = [
     selector: '[data-tour="topbar-reminders"]',
     title: "Follow-up reminders",
     body: "The bell counts what's due today; this inbox lists everything with snooze and done.",
-    sheet: "Driven by the Follow Up date column in Brands Operative.",
+    sheet: "Driven by the follow-up date column in Brands Operative.",
     placement: "left",
     optional: true,
   },

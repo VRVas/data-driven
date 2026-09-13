@@ -30,7 +30,7 @@
   "brands": [
     {
       "name": "Alibaba",
-      "status": "Deal Closed",
+      "status": "Closed deal",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": "Esmie Wanghui",
@@ -65,7 +65,7 @@
     },
     {
       "name": "Alleanza",
-      "status": "Follow Up",
+      "status": "Qualify lead",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -100,7 +100,7 @@
     },
     {
       "name": "Allianz Bank",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Riccardo Cervellin",
@@ -135,7 +135,7 @@
     },
     {
       "name": "Allianz CH",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Giulio Casagrande",
       "poc": "Stephan Pfaeffli",
@@ -170,7 +170,7 @@
     },
     {
       "name": "ANIMA SGR",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Cervellin",
@@ -187,7 +187,7 @@
     },
     {
       "name": "Armani",
-      "status": "Back to Attack",
+      "status": "Qualify lead",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": "Luxottica/Camerana/rebecca",
@@ -222,7 +222,7 @@
     },
     {
       "name": "BANCA ALETTI",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Cervellin",
@@ -239,7 +239,7 @@
     },
     {
       "name": "BANCA SELLA/BANCA PATRIMONI",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Cervellin",
@@ -256,7 +256,7 @@
     },
     {
       "name": "Barilla",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "Low",
       "owner": "Lorenzo Ramon",
       "poc": "Johannes Wick",
@@ -273,7 +273,7 @@
     },
     {
       "name": "Biffi",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "High",
       "owner": "Lorenzo Ramon",
       "poc": "Paolo Artoni",
@@ -290,7 +290,7 @@
     },
     {
       "name": "BMW China",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Connie Wei",
@@ -307,7 +307,7 @@
     },
     {
       "name": "BNL/BNP",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Anna Zanardi",
@@ -342,7 +342,7 @@
     },
     {
       "name": "BPER",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Bestetti\\Cervellin\\Piano B",
@@ -377,7 +377,7 @@
     },
     {
       "name": "Bridge partners",
-      "status": "Back to Attack",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -414,7 +414,7 @@
     },
     {
       "name": "Brunello Cucinelli",
-      "status": "Advanced",
+      "status": "Shape proposal",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Francesco Bottigliero",
@@ -449,7 +449,7 @@
     },
     {
       "name": "Coop CH",
-      "status": "Back to Attack",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -484,7 +484,7 @@
     },
     {
       "name": "CREDEM",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Direttore Generale Private Banking Matteo Benetti\\Cervellin",
@@ -501,7 +501,7 @@
     },
     {
       "name": "DELL EMEA",
-      "status": "Advanced",
+      "status": "Shape proposal",
       "priority": "High",
       "owner": "Giulio Casagrande",
       "poc": "Alicia Cohen",
@@ -538,7 +538,7 @@
     },
     {
       "name": "Deloitte",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "Low",
       "owner": "Marco Seco",
       "poc": null,
@@ -573,7 +573,7 @@
     },
     {
       "name": "EU Startup",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "Low",
       "owner": "Giulio Casagrande",
       "poc": "Thomas Ohr",
@@ -608,7 +608,7 @@
     },
     {
       "name": "Fastweb&Vodafone",
-      "status": "Back to Attack",
+      "status": "Qualify lead",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -643,7 +643,7 @@
     },
     {
       "name": "Festival Montecarlo AI Cinema",
-      "status": "Deal Closed",
+      "status": "Closed deal",
       "priority": "Low",
       "owner": "Lorenzo Ramon",
       "poc": null,
@@ -678,7 +678,7 @@
     },
     {
       "name": "Fincantieri",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "High",
       "owner": "Giulio Casagrande",
       "poc": null,
@@ -695,7 +695,7 @@
     },
     {
       "name": "Fineco",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "VentiCento\\Cervellin",
@@ -712,7 +712,7 @@
     },
     {
       "name": "Fondazione 101",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -729,7 +729,7 @@
     },
     {
       "name": "Fred - Machine Cinema",
-      "status": "Follow Up",
+      "status": "Qualify lead",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": "FGI Miami",
@@ -746,7 +746,7 @@
     },
     {
       "name": "Freemantle",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": "Anna Zanardi",
@@ -781,7 +781,7 @@
     },
     {
       "name": "Generali - Taverna",
-      "status": "Deal Closed",
+      "status": "Closed deal",
       "priority": "High",
       "owner": "Marco Seco",
       "poc": null,
@@ -818,7 +818,7 @@
     },
     {
       "name": "Generali Bank",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -853,7 +853,7 @@
     },
     {
       "name": "Givaudan",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Giulio Casagrande",
       "poc": "Tom McGoun",
@@ -888,7 +888,7 @@
     },
     {
       "name": "Gucci",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "VentiCento",
@@ -905,7 +905,7 @@
     },
     {
       "name": "Guerilla Classics",
-      "status": "Deal Closed",
+      "status": "Closed deal",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -940,7 +940,7 @@
     },
     {
       "name": "Herbert Smith",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -957,7 +957,7 @@
     },
     {
       "name": "IRB",
-      "status": "Advanced",
+      "status": "Shape proposal",
       "priority": "High",
       "owner": "Giulio Casagrande",
       "poc": "Elisabetta Genovese",
@@ -992,7 +992,7 @@
     },
     {
       "name": "L'Or\u00e9al",
-      "status": "Back to Attack",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -1027,7 +1027,7 @@
     },
     {
       "name": "Luxottica",
-      "status": "Back to Attack",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Marco Seco",
       "poc": null,
@@ -1062,7 +1062,7 @@
     },
     {
       "name": "Maverick",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -1097,7 +1097,7 @@
     },
     {
       "name": "MCI",
-      "status": "Advanced",
+      "status": "Shape proposal",
       "priority": "Medium",
       "owner": "Giulio Casagrande",
       "poc": "David Granite",
@@ -1132,7 +1132,7 @@
     },
     {
       "name": "Mediolanum",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Riccardo Cervellin",
@@ -1167,7 +1167,7 @@
     },
     {
       "name": "Mediolanum IE",
-      "status": "Follow Up",
+      "status": "Qualify lead",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -1202,7 +1202,7 @@
     },
     {
       "name": "MK2",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "Low",
       "owner": "Giulio Casagrande",
       "poc": "Elite Nebot",
@@ -1237,7 +1237,7 @@
     },
     {
       "name": "Moncler",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Marco Seco",
       "poc": null,
@@ -1272,7 +1272,7 @@
     },
     {
       "name": "NOI Techpark",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Stefania TIboni",
@@ -1307,7 +1307,7 @@
     },
     {
       "name": "ONEX - Onassis",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Katy FGI Miami",
@@ -1324,7 +1324,7 @@
     },
     {
       "name": "OTP",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Gabor Vass",
@@ -1341,7 +1341,7 @@
     },
     {
       "name": "Pagani",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "Low",
       "owner": "Marco Seco",
       "poc": "Simone Manneschi, Bruno Cerella",
@@ -1358,7 +1358,7 @@
     },
     {
       "name": "PMI",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Reza sharbabaki",
@@ -1393,7 +1393,7 @@
     },
     {
       "name": "Poste IT",
-      "status": "Advanced",
+      "status": "Shape proposal",
       "priority": "High",
       "owner": "Giulio Casagrande",
       "poc": "Antonio Sorlini / Geronimo Pirro",
@@ -1430,7 +1430,7 @@
     },
     {
       "name": "Prometeia",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Gino Mattiuzzo",
@@ -1465,7 +1465,7 @@
     },
     {
       "name": "PWC",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Marco Guaita\\Cervellin",
@@ -1500,7 +1500,7 @@
     },
     {
       "name": "Qatar Airways",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Marco Seco",
       "poc": null,
@@ -1535,7 +1535,7 @@
     },
     {
       "name": "Qatar Museums",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Marco Seco",
       "poc": null,
@@ -1570,7 +1570,7 @@
     },
     {
       "name": "QNB",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Marco Seco",
       "poc": null,
@@ -1605,7 +1605,7 @@
     },
     {
       "name": "Raiffeisen",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Pietro Masciadri / Salvatore Parise",
@@ -1640,7 +1640,7 @@
     },
     {
       "name": "Rarissima",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -1675,7 +1675,7 @@
     },
     {
       "name": "Reply",
-      "status": "Advanced",
+      "status": "Shape proposal",
       "priority": "High",
       "owner": "Marco Seco",
       "poc": null,
@@ -1710,7 +1710,7 @@
     },
     {
       "name": "SD WORX",
-      "status": "Deal Closed",
+      "status": "Closed deal",
       "priority": "High",
       "owner": "Lorenzo Ramon",
       "poc": "PV Agency",
@@ -1745,7 +1745,7 @@
     },
     {
       "name": "SMBC/Clifford Chance",
-      "status": "Deal Closed",
+      "status": "Closed deal",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": "Romolo Rossi",
@@ -1782,7 +1782,7 @@
     },
     {
       "name": "Tom Shieh",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -1799,7 +1799,7 @@
     },
     {
       "name": "UBP",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Pietro Masciadri / Waldo Alvarez Santullano",
@@ -1816,7 +1816,7 @@
     },
     {
       "name": "VivaTech",
-      "status": "Did not work out",
+      "status": "Lost",
       "priority": "High",
       "owner": "Giulio Casagrande",
       "poc": "Yasmine El Ghazi",
@@ -1851,7 +1851,7 @@
     },
     {
       "name": "WeWealth",
-      "status": "Deal Closed",
+      "status": "Closed deal",
       "priority": "Medium",
       "owner": "Marco Seco",
       "poc": null,
@@ -1886,7 +1886,7 @@
     },
     {
       "name": "Wired",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Marco Seco",
       "poc": null,
@@ -1921,7 +1921,7 @@
     },
     {
       "name": "YPO.ORG",
-      "status": "Still to open",
+      "status": "Seed",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -2145,7 +2145,7 @@
     {
       "id": "pvagency",
       "name": "PVAgency",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "High",
       "owner": "Lorenzo Ramon",
       "poc": "Paola di Bello (Project Leader)",
@@ -2157,7 +2157,7 @@
     {
       "id": "handfactory",
       "name": "Handfactory",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -2169,7 +2169,7 @@
     {
       "id": "newu-agency",
       "name": "Newu Agency",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Lorenzo Ramon",
       "poc": "Cristina Foddai",
@@ -2181,7 +2181,7 @@
     {
       "id": "blossom",
       "name": "Blossom",
-      "status": "Back to Attack",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": null,
@@ -2193,7 +2193,7 @@
     {
       "id": "glenda-maverick",
       "name": "Glenda Maverick",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Maverick 1000",
@@ -2205,7 +2205,7 @@
     {
       "id": "daniel-raphael",
       "name": "Daniel Raphael",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Miami FO",
@@ -2217,7 +2217,7 @@
     {
       "id": "talent-resources",
       "name": "Talent Resources",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Miami FO tramite Luca Villa",
@@ -2229,7 +2229,7 @@
     {
       "id": "jeffrey-stein",
       "name": "Jeffrey Stein",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "High",
       "owner": "Riccardo Acciarino",
       "poc": "Miami FO",
@@ -2241,7 +2241,7 @@
     {
       "id": "kelly-h-zou",
       "name": "Kelly H. Zou",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Miami FO",
@@ -2253,7 +2253,7 @@
     {
       "id": "mario-munoz",
       "name": "Mario Munoz",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Miami FO",
@@ -2265,7 +2265,7 @@
     {
       "id": "sister-of-nicky",
       "name": "Sister Of Nicky",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Low",
       "owner": "Riccardo Acciarino",
       "poc": "Maverick Next",
@@ -2277,7 +2277,7 @@
     {
       "id": "pedro-menocal",
       "name": "Pedro Menocal",
-      "status": "Early",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "FGI Miami",
@@ -2289,7 +2289,7 @@
     {
       "id": "vaibhav",
       "name": "Vaibhav",
-      "status": "Follow Up",
+      "status": "Qualify lead",
       "priority": "Medium",
       "owner": "Riccardo Acciarino",
       "poc": "Anmol Goel",

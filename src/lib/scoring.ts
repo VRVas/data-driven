@@ -94,14 +94,15 @@ export type Quadrant = "Prioritize" | "Quick Win" | "Strategic" | "Deprioritize"
 /*  Pipeline weighting (heuristic win-probability per stage)           */
 /* ------------------------------------------------------------------ */
 export const STAGE_PROBABILITY: Record<BrandStatus, number> = {
-  "Deal Closed": 1.0,
+  "Closed deal": 1.0,
   Recurring: 0.85,
-  Advanced: 0.6,
-  "Follow Up": 0.4,
-  Early: 0.25,
-  "Back to Attack": 0.15,
-  "Still to open": 0.05,
-  "Did not work out": 0.0,
+  "Shape proposal": 0.6,
+  // Early, Follow Up and Back to Attack merged into this one. Weighted by how
+  // many leads sat in each (23 / 3 / 6 at 0.25 / 0.4 / 0.15) the blend comes to
+  // 0.245, so 0.25 keeps almost every score where it was.
+  "Qualify lead": 0.25,
+  Seed: 0.05,
+  Lost: 0.0,
 };
 
 export function winProbability(status: BrandStatus | null): number {
@@ -118,14 +119,12 @@ export function weightedValue(brand: Brand): number {
 /*  Presentation helpers                                               */
 /* ------------------------------------------------------------------ */
 export const STATUS_TOKEN: Record<BrandStatus, string> = {
-  "Deal Closed": "var(--color-status-closed)",
-  Advanced: "var(--color-status-advanced)",
-  "Follow Up": "var(--color-status-followup)",
-  Early: "var(--color-status-early)",
+  "Closed deal": "var(--color-status-closed)",
   Recurring: "var(--color-status-recurring)",
-  "Back to Attack": "var(--color-status-attack)",
-  "Did not work out": "var(--color-status-lost)",
-  "Still to open": "var(--color-status-open)",
+  "Shape proposal": "var(--color-status-shape)",
+  "Qualify lead": "var(--color-status-qualify)",
+  Seed: "var(--color-status-seed)",
+  Lost: "var(--color-status-lost)",
 };
 
 const PRIORITY_ORDER: readonly Priority[] = ["Low", "Medium", "High"];

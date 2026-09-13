@@ -25,7 +25,7 @@ const monthsAgo = (m: number): string => {
 };
 
 const lead = (over: Partial<Brand> = {}, scores: Partial<NonNullable<Brand["scores"]>> = {}): Brand => ({
-  id: "l1", name: "L", aliases: [], status: "Advanced", priority: null,
+  id: "l1", name: "L", aliases: [], status: "Shape proposal", priority: null,
   owner: null, poc: null, email: null, industry: null, industryRaw: null,
   initialContact: monthsAgo(1), lastContact: monthsAgo(0), followUpDate: null,
   closingFailed: null, notes: null, scored: true,
@@ -58,7 +58,7 @@ describe("the geometric mean", () => {
     // nowhere still deserves a glance, unlike one worth nothing at all.
     const unwinnable = priorityOf(
       lead(
-        { status: "Did not work out", lastContact: monthsAgo(120), initialContact: monthsAgo(120) },
+        { status: "Lost", lastContact: monthsAgo(120), initialContact: monthsAgo(120) },
         { budget: BUDGET_CEILING, accessibilityScore: 0, receptivityScore: 0 },
       ),
       NOW,
@@ -131,8 +131,8 @@ describe("the opportunity axis", () => {
 
 describe("the winnability axis", () => {
   it("rises with the stage", () => {
-    const early = priorityOf(lead({ status: "Early" }), NOW)!;
-    const advanced = priorityOf(lead({ status: "Advanced" }), NOW)!;
+    const early = priorityOf(lead({ status: "Qualify lead" }), NOW)!;
+    const advanced = priorityOf(lead({ status: "Shape proposal" }), NOW)!;
     const recurring = priorityOf(lead({ status: "Recurring" }), NOW)!;
     expect(advanced.winnability).toBeGreaterThan(early.winnability);
     expect(recurring.winnability).toBeGreaterThan(advanced.winnability);
@@ -255,7 +255,7 @@ describe("against the real dataset", () => {
   });
 
   it("never ranks a finished deal, because they are gated out upstream", () => {
-    const closed = brands.filter((b) => b.status === "Deal Closed" || b.status === "Did not work out");
+    const closed = brands.filter((b) => b.status === "Closed deal" || b.status === "Lost");
     expect(closed.length).toBeGreaterThan(0);
     expect(openLeads(closed)).toEqual([]);
   });

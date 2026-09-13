@@ -23,7 +23,7 @@ test.afterAll(async ({ request }) => {
 });
 
 async function grow(request: import("@playwright/test").APIRequestContext, label: string, extra = {}) {
-  const p = await plant(request, { label, industry: "Fashion", status: "Early", lastContact: ymd(-2), ...extra });
+  const p = await plant(request, { label, industry: "Fashion", status: "Qualify lead", lastContact: ymd(-2), ...extra });
   planted.push(p);
   return p;
 }
@@ -114,14 +114,14 @@ test.describe("company rollups add up", () => {
   let companyId: string;
 
   test("a second deal joins the client rather than inventing one", async ({ request }) => {
-    first = await grow(request, "Rollup One", { valueEur: 30_000, status: "Deal Closed", confidence: "Confirmed" });
+    first = await grow(request, "Rollup One", { valueEur: 30_000, status: "Closed deal", confidence: "Confirmed" });
     const detail = await must<{ company: { id: string; name: string } }>(request, "get_company", { id: first.id });
     companyId = detail.company.id;
 
     const second = await must<{ id: string; linkedToCompany: string | null }>(request, "create_lead", {
       name: `${QA} Rollup Two`,
       industry: "Fashion",
-      status: "Advanced",
+      status: "Shape proposal",
       valueEur: 50_000,
       companyId,
     });
@@ -147,7 +147,7 @@ test.describe("company rollups add up", () => {
     const third = await must<{ id: string }>(request, "create_lead", {
       name: `${QA} Rollup Three`,
       industry: "Fashion",
-      status: "Deal Closed",
+      status: "Closed deal",
       valueEur: 20_000,
       companyId,
     });
@@ -181,7 +181,7 @@ test.describe("nonsense dates are refused, not absorbed", () => {
   test("a deal that closes before it opens does not score a perfect tempo", async ({ request }) => {
     const p = await grow(request, "Backwards", {
       valueEur: 40_000,
-      status: "Deal Closed",
+      status: "Closed deal",
       initialContact: ymd(-30),
       closingFailed: ymd(-400),
     });
@@ -216,8 +216,8 @@ test.describe("nonsense dates are refused, not absorbed", () => {
 
 test.describe("the workflow refuses illegal moves", () => {
   test("a legal step through the funnel is accepted", async ({ request }) => {
-    const p = await grow(request, "Walker", { valueEur: 25_000, status: "Still to open" });
-    for (const to of ["Early", "Follow Up", "Advanced"]) {
+    const p = await grow(request, "Walker", { valueEur: 25_000, status: "Seed" });
+    for (const to of ["Qualify lead", "Qualify lead", "Shape proposal"]) {
       const r = await must<{ ok: boolean; status: string }>(request, "advance_lead_stage", { id: p.id, to });
       expect(r.ok, `refused ${to}`).toBe(true);
       expect(r.status).toBe(to);
@@ -225,10 +225,10 @@ test.describe("the workflow refuses illegal moves", () => {
   });
 
   test("a jump the funnel does not allow is refused, and changes nothing", async ({ request }) => {
-    const p = await grow(request, "Jumper", { valueEur: 25_000, status: "Still to open" });
-    const r = await must<{ ok: boolean; error?: string }>(request, "advance_lead_stage", { id: p.id, to: "Deal Closed" });
+    const p = await grow(request, "Jumper", { valueEur: 25_000, status: "Seed" });
+    const r = await must<{ ok: boolean; error?: string }>(request, "advance_lead_stage", { id: p.id, to: "Closed deal" });
     expect(r.ok).toBe(false);
     const after = await must<{ status: string }>(request, "get_lead", { id: p.id });
-    expect(after.status).toBe("Still to open");
+    expect(after.status).toBe("Seed");
   });
 });

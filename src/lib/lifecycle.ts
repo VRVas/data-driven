@@ -3,16 +3,17 @@ import type { Brand, BrandScores, BrandStatus } from "./types";
 /**
  * Lifecycle - is a lead still live?
  *
- * The sheet's `status` vocabulary mixes pipeline STAGE ("Early", "Advanced")
- * with OUTCOME ("Deal Closed", "Did not work out"). Ranked lists and targeting
- * charts are about where to spend effort next, so they must exclude anything
- * already finished. Deriving this rather than storing it keeps `status` the
- * single source of truth and removes any chance of the two drifting apart.
+ * The sheet's `status` vocabulary mixes pipeline STAGE ("Qualify lead",
+ * "Shape proposal") with OUTCOME ("Closed deal", "Lost"). Ranked lists and
+ * targeting charts are about where to spend effort next, so they must exclude
+ * anything already finished. Deriving this rather than storing it keeps
+ * `status` the single source of truth and removes any chance of the two
+ * drifting apart.
  */
 export type Outcome = "open" | "won" | "lost";
 
-const WON_STATUS: BrandStatus = "Deal Closed";
-const LOST_STATUS: BrandStatus = "Did not work out";
+const WON_STATUS: BrandStatus = "Closed deal";
+const LOST_STATUS: BrandStatus = "Lost";
 
 /**
  * `status` wins over `scores.process` because it is the only one of the two a
@@ -66,7 +67,7 @@ export function outcomeConflicts(brands: Brand[]): OutcomeConflict[] {
  * Bring the imported outcome into line with the stage a human has just set.
  *
  * `process` came from the spreadsheet's own outcome column and had no UI, so a
- * lead correctly marked "Did not work out" in the app kept being reported as
+ * lead correctly marked "Lost" in the app kept being reported as
  * disagreeing with an imported "Open" forever - the warning named a field the
  * user could not reach, and nothing they did could clear it.
  *

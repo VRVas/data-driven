@@ -38,7 +38,7 @@ const reminder = (over: Partial<Reminder> = {}): Reminder => ({
 const lead = (over: Partial<ReminderLeadContext> = {}): ReminderLeadContext => ({
   id: "alleanza",
   name: "Alleanza",
-  status: "Advanced",
+  status: "Shape proposal",
   priority: "High",
   owner: "Ada",
   poc: "Marco Rossi",
@@ -76,7 +76,7 @@ const icsOf = (attachments: { contentInBase64: string }[]) =>
 describe("leadSummaryLines", () => {
   it("pulls the CRM detail somebody would otherwise open the app for", () => {
     const lines = leadSummaryLines(lead()).join("\n");
-    expect(lines).toContain("Stage: Advanced");
+    expect(lines).toContain("Stage: Shape proposal");
     expect(lines).toContain("Owner: Ada");
     expect(lines).toContain("Contact: Marco Rossi, marco@alleanza.example");
     expect(lines).toContain("EUR 52,000 (accepted)");
@@ -156,7 +156,7 @@ describe("composeReminderEmail", () => {
       composeReminderEmail(ctx({ reminder: reminder({ holdMinutes: 30 }), lead: lead() })).attachments,
     );
     expect(ics).toContain("DESCRIPTION:");
-    expect(ics).toContain("Stage: Advanced");
+    expect(ics).toContain("Stage: Shape proposal");
   });
 
   it("addresses the invitation from the sender to the owner", () => {
@@ -188,7 +188,7 @@ describe("composeReminderNotification", () => {
   it("is short, and points at the lead it concerns", () => {
     const note = composeReminderNotification(ctx({ lead: lead() }));
     expect(note.title).toBe("Work on the Alleanza quote");
-    expect(note.body).toContain("Alleanza - Advanced");
+    expect(note.body).toContain("Alleanza - Shape proposal");
     expect(note.href).toBe("/dashboard/pipeline/alleanza");
   });
 

@@ -37,7 +37,7 @@ test.describe("a lead typed by hand", () => {
     const form = page.locator("form").filter({ has: page.locator('input[name="name"]') });
 
     await form.locator('input[name="name"]').fill(FULL);
-    await form.locator('select[name="status"]').selectOption("Follow Up");
+    await form.locator('select[name="status"]').selectOption("Qualify lead");
     await form.locator('select[name="priority"]').selectOption("High");
     await form.locator('select[name="industry"]').selectOption("Fashion");
     await form.locator('input[name="owner"]').fill("QA Owner");
@@ -77,7 +77,7 @@ test.describe("a lead typed by hand", () => {
       timeline: { initialContact: string; lastContact: string; followUpDate: string };
     }>(request, "get_lead", { id: row.id });
 
-    expect(d.status).toBe("Follow Up");
+    expect(d.status).toBe("Qualify lead");
     expect(d.priority).toBe("High");
     expect(d.industry).toBe("Fashion");
     expect(d.owner).toBe("QA Owner");
@@ -179,7 +179,7 @@ test.describe("a lead typed with almost nothing", () => {
     await must(request, "update_lead", { id, industry: "Fashion" });
     await must(request, "set_budget", { id, valueEur: 20_000 });
     await must(request, "assign_lead", { id, owner: "QA Owner" });
-    await must(request, "advance_lead_stage", { id, to: "Early" });
+    await must(request, "advance_lead_stage", { id, to: "Qualify lead" });
     await must(request, "set_next_move", { id, waitingOn: "us", followUpDate: ymd(30) });
     await must(request, "update_lead", { id, lastContact: ymd(-2) });
 
@@ -203,7 +203,7 @@ test.describe("the derived screens react", () => {
     const extra = await must<{ id: string }>(request, "create_lead", {
       name: `${QA} Segment Mover`,
       industry: "Fashion",
-      status: "Early",
+      status: "Qualify lead",
       valueEur: 15_000,
     });
     planted.push({ id: extra.id, name: `${QA} Segment Mover` });
