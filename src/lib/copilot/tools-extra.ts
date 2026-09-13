@@ -7,6 +7,7 @@ import { getBrandStore } from "@/lib/store/brands";
 import { getAuditStore } from "@/lib/store/audit";
 import { getOutreachStore } from "@/lib/store/outreach";
 import { getCrmOverlayStore } from "@/lib/store/crm";
+import { getNoteStore, type NoteEntry } from "@/lib/store/notes";
 import { getCrmGraph } from "@/lib/crm/graph";
 import { recordProposal, syncLeadValue } from "@/lib/crm/proposals";
 import { mergeCompanyInto } from "@/lib/crm/merge";
@@ -1529,6 +1530,80 @@ const suggestLeadValues: CopilotTool = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// The notes thread - what has been learned since the lead opened
+// ---------------------------------------------------------------------------
+
+const appendNoteTool: CopilotTool = {
+  name: "append_note",
+  permission: "lead:update",
+  write: true,
+  description:
+    "Add a dated, attributed entry to a lead's notes thread. Use this for anything that HAPPENED - what a client said, what was agreed, why a date moved - rather than update_lead's notes field, which is the INITIAL note and is replaced by whoever edits it next. If somebody says 'note that they want phased pricing', this is the tool: it keeps their name and the date on it, and nothing already written is lost.",
+  parameters: {
+    type: "object",
+    properties: {
+      leadId: { type: "string", description: "Lead id" },
+      body: { type: "string", description: "The note, in the user's own words" },
+    },
+    required: ["leadId", "body"],
+  },
+  async execute(args, ctx) {
+    const a = z.object({ leadId: z.string().min(1), body: z.string().trim().min(1).max(4000) }).parse(args);
+    const lead = await writableLead(a.leadId, "lead:update");
+    if (!lead) return { ok: false, error: "Lead not found." };
+
+    const entry: NoteEntry = {
+      id: `note-${randomUUID()}`,
+      leadId: lead.id,
+      body: a.body,
+      authorId: ctx.user.id,
+      authorName: ctx.user.name,
+      createdAt: new Date().toISOString(),
+    };
+    await getNoteStore().append(entry);
+    await logAudit({
+      actorId: ctx.user.id,
+      actorName: `${ctx.user.name} (via copilot)`,
+      action: "lead.note",
+      entity: "brand",
+      entityId: lead.id,
+      summary: `Added a note to ${lead.name}`,
+    });
+    return { ok: true, id: entry.id, leadId: lead.id, name: lead.name, author: entry.authorName, createdAt: entry.createdAt };
+  },
+};
+
+const readNotesTool: CopilotTool = {
+  name: "read_notes",
+  permission: "lead:read",
+  description:
+    "Read a lead's notes in full: the initial note it opened with, then every entry appended since, oldest first, with who wrote each and when. Use it before answering 'what's the latest on X', 'what did they say', or 'why did this stall' - update_lead's notes field holds only the opening note, while the thread holds everything learned after it.",
+  parameters: {
+    type: "object",
+    properties: {
+      leadId: { type: "string", description: "Lead id" },
+      limit: { type: "integer", minimum: 1, maximum: 100 },
+    },
+    required: ["leadId"],
+  },
+  async execute(args) {
+    const a = z.object({ leadId: z.string().min(1), limit: z.number().int().min(1).max(100).optional() }).parse(args);
+    const lead = await visibleLead(a.leadId);
+    if (!lead) return { found: false, leadId: a.leadId };
+    const entries = await getNoteStore().listForLead(lead.id, a.limit ?? 25);
+    return {
+      found: true,
+      leadId: lead.id,
+      name: lead.name,
+      initialNote: lead.notes,
+      initialNoteIs: "the note the lead opened with; it is replaced on edit and is NOT the history.",
+      count: entries.length,
+      entries: entries.map((n) => ({ author: n.authorName, at: n.createdAt, body: n.body })),
+    };
+  },
+};
+
 export const EXTRA_TOOLS: CopilotTool[] = [
   checkRequest,
   suggestLeadValues,
@@ -1562,4 +1637,6 @@ export const EXTRA_TOOLS: CopilotTool[] = [
   myWorkQueue,
   whitespace,
   whatCanIDo,
+  appendNoteTool,
+  readNotesTool,
 ];

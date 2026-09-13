@@ -28,7 +28,7 @@ export function platformSpec(tools: ToolSummary[]) {
 
     dataModel: {
       lead: "One engagement, and the row the sheet used to hold. Carries a name, stage, priority label, industry, owner, point of contact, contact dates, follow-up, who owes the next move, expected duration, notes, strategic value and a commercial value with a confidence.",
-      notes: "The one free-text field on a lead: the standing summary of what it IS. Replaced whole by whoever edits next, and carried into exports and reminder emails.",
+      notes: "Two parts. The initial note on the lead is what it IS, replaced whole by whoever edits next, and carried into exports and reminder emails. The thread is everything learned since: append-only, each entry attributed and dated, so nothing anyone wrote is overwritten.",
       company: "The client relationship. Projected from its deals on every read, so it can never fall out of step with an edit. Rolls up lifetime value, repeat value beyond the first win, open pipeline and a deal win rate.",
       deal: "A lead, seen from the company's side. Same record, one engagement.",
       proposal: "A commercial document with its own value, revision and status. A re-quote adds a revision rather than overwriting, so the history survives.",

@@ -36,6 +36,8 @@ export interface ReminderLeadContext {
   lastContact: string | null;
   followUpDate: string | null;
   notes: string | null;
+  /** Newest last, as the thread reads. What the single notes field cannot hold. */
+  recentNotes: { author: string; at: string; body: string }[];
   company: { name: string; openPipelineEur: number; lifetimeEur: number; dealCount: number } | null;
   latestProposal: { valueEur: number; status: string; sentAt: string | null } | null;
 }
@@ -100,7 +102,15 @@ export function leadSummaryLines(lead: ReminderLeadContext): string[] {
           }, ${eur(lead.company.openPipelineEur)} open, ${eur(lead.company.lifetimeEur)} lifetime`,
         )
       : null,
-    line("Notes", lead.notes),
+    line("Initial note", lead.notes),
+    // Trimmed and flattened: an email is read on a phone, and an entry with its
+    // own paragraphs would break the label/value shape of every line here.
+    ...(lead.recentNotes ?? []).slice(-3).map((n) =>
+      line(
+        `Note (${n.author}, ${n.at.slice(0, 10)})`,
+        n.body.replace(/\s+/g, " ").slice(0, 280) + (n.body.length > 280 ? "..." : ""),
+      ),
+    ),
   ].filter((l): l is string => l !== null);
 }
 

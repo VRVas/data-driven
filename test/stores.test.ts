@@ -135,3 +135,25 @@ describe("brand legacy-key normalisation", () => {
     expect(read("Lukewarm")).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// The notes thread
+// ---------------------------------------------------------------------------
+
+describe("notes thread", () => {
+  it("has no way to edit or delete an entry", async () => {
+    // The whole point of appending is that the record cannot be quietly
+    // rewritten. A store that grows an `update` is back to a field with no
+    // memory, which is what this replaced.
+    const { getNoteStore } = await import("@/lib/store/notes");
+    const store = getNoteStore();
+    const surface = new Set([
+      ...Object.getOwnPropertyNames(Object.getPrototypeOf(store)),
+      ...Object.keys(store),
+    ]);
+    for (const forbidden of ["update", "edit", "remove", "delete"]) {
+      expect(surface.has(forbidden), `NoteStore exposes ${forbidden}`).toBe(false);
+    }
+    expect(surface.has("append")).toBe(true);
+  });
+});

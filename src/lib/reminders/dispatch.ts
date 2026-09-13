@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { getReminderStore, type Reminder } from "@/lib/store/reminders";
 import { getNotificationStore } from "@/lib/store/notifications";
 import { getBrandStore } from "@/lib/store/brands";
+import { getNoteStore } from "@/lib/store/notes";
 import { getCrmOverlayStore } from "@/lib/store/crm";
 import { getEmailProvider } from "@/lib/mail/provider";
 import { dealValue, latestProposal, rollupFor } from "@/lib/crm/logic";
@@ -62,6 +63,11 @@ export async function leadContextFor(brandId: string): Promise<ReminderLeadConte
   const siblings = (await getBrandStore().list()).filter((b) => siblingIds.has(b.id));
   const rollup = rollupFor(migrateBrands(siblings, prob).deals, prob, overlay.proposals);
 
+  // A store that is unavailable costs the email its thread, not the email.
+  const notes = await getNoteStore()
+    .listForLead(brandId, 3)
+    .catch(() => []);
+
   return {
     id: brand.id,
     name: brand.name,
@@ -83,6 +89,7 @@ export async function leadContextFor(brandId: string): Promise<ReminderLeadConte
     lastContact: brand.lastContact,
     followUpDate: brand.followUpDate,
     notes: brand.notes,
+    recentNotes: notes.map((n) => ({ author: n.authorName, at: n.createdAt, body: n.body })),
     company: {
       name: companyName,
       openPipelineEur: rollup.openPipelineValue,

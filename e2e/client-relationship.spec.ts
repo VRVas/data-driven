@@ -112,10 +112,54 @@ test.describe("the lead header edits in place", () => {
     await setBadge(page, "Priority", before);
   });
 
-  test("comments are gone from the lead page", async ({ page }) => {
+  test("there is one Notes section, not a separate Comments box", async ({ page }) => {
     await page.goto("/dashboard/pipeline/alibaba");
     await expect(page.getByRole("heading", { name: /^Discussion$|^Comments$/i })).toHaveCount(0);
-    await expect(page.getByPlaceholder(/comment/i)).toHaveCount(0);
     await expect(page.getByRole("heading", { name: "Notes" })).toBeVisible();
+  });
+
+  test("a note appends to the thread and leaves the initial note alone", async ({ page }) => {
+    await page.goto("/dashboard/pipeline/alibaba");
+
+    const notes = page.locator("section").filter({ has: page.getByRole("heading", { name: "Notes" }) });
+    // The entries themselves, not the whole section: the section also holds the
+    // empty-state copy, which correctly disappears once there is an entry.
+    const entries = notes.locator("ol > li");
+    const before = await entries.allInnerTexts();
+
+    // "ZZ " so the teardown can find it: members cannot delete a lead, so the
+    // probe has to live on a real one.
+    const body = `ZZ probe note ${Date.now()}`;
+    await notes.getByLabel("Add to notes").fill(body);
+    await notes.getByRole("button", { name: "Add" }).click();
+
+    await expect(notes.getByText(body)).toBeVisible();
+    // Attributed and dated, which is the whole reason it is not a text field.
+    await expect(notes.getByText(new Date().toISOString().slice(0, 10)).first()).toBeVisible();
+
+    await page.reload();
+    const after = await entries.allInnerTexts();
+    expect(after).toHaveLength(before.length + 1);
+    for (const entry of before) expect(after, `the thread dropped an entry`).toContain(entry);
+    expect(after.join("\n")).toContain(body);
+  });
+
+  test("a second note does not displace the first", async ({ page }) => {
+    await page.goto("/dashboard/pipeline/alibaba");
+    const notes = page.locator("section").filter({ has: page.getByRole("heading", { name: "Notes" }) });
+
+    const first = `ZZ probe first ${Date.now()}`;
+    await notes.getByLabel("Add to notes").fill(first);
+    await notes.getByRole("button", { name: "Add" }).click();
+    await expect(notes.getByText(first)).toBeVisible();
+
+    const second = `ZZ probe second ${Date.now()}`;
+    await notes.getByLabel("Add to notes").fill(second);
+    await notes.getByRole("button", { name: "Add" }).click();
+    await expect(notes.getByText(second)).toBeVisible();
+
+    // The failure this guards against is a single field where the second save
+    // silently replaces the first.
+    await expect(notes.getByText(first)).toBeVisible();
   });
 });

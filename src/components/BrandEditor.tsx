@@ -203,11 +203,11 @@ export function BrandEditor({
             </div>
           </fieldset>
 
-          <FormField label="Notes" help="notes">
+          <FormField label="Initial note" help="notes">
             <textarea name="notes" defaultValue={brand?.notes ?? ""} rows={4} className="auth-input resize-none" />
             <span className="mt-1 block text-xs text-[var(--color-ink-faint)]">
-              The standing summary of this lead. Saving REPLACES it, so keep what is already there
-              and add to it rather than typing over someone else&rsquo;s work.
+              What this lead is, how it came in, what to be careful of. Set once when it opens - to add
+              what you learn later, use Add to notes on the lead page, which keeps this one intact.
             </span>
           </FormField>
 

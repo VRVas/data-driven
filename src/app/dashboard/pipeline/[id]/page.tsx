@@ -9,12 +9,14 @@ import { OutreachItem } from "@/components/OutreachItem";
 import { LeadToolbar } from "@/components/LeadToolbar";
 import { ClientRelationship } from "@/components/crm/ClientRelationship";
 import { CompanyProposals } from "@/components/crm/CompanyProposals";
+import { NotesThread } from "@/components/notes/NotesThread";
 import { getBrand } from "@/lib/data";
 import { getCrmGraph, getDealWithCompany } from "@/lib/crm/graph";
 import { ownerIdResolver } from "@/lib/crm/owners";
 import { getSessionUser } from "@/lib/auth/guards";
 import { can, requirePermission } from "@/lib/auth/authorize";
 import { getOutreachStore } from "@/lib/store/outreach";
+import { getNoteStore } from "@/lib/store/notes";
 import { allowedTransitions } from "@/lib/workflow";
 import { INDUSTRIES, PRIORITIES } from "@/lib/vocab";
 import {
@@ -70,6 +72,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     can("proposal:manage"),
   ]);
   const outreach = await getOutreachStore().listForBrand(brand.id);
+  const noteEntries = await getNoteStore()
+    .listForLead(brand.id)
+    .catch(() => []);
 
   // The client relationship, not just this deal: every piece of work under the
   // same company, and the proposals across all of them. This is what the
@@ -311,27 +316,14 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
         </Reveal>
       </div>
 
-      {brand.notes ? (
-        <Reveal>
-          <section className="glass p-6">
-            <h2 className="mb-1 font-display text-lg font-semibold">Notes</h2>
-            <p className="mb-3 text-xs text-[var(--color-ink-faint)]">
-              The standing summary of this lead. Edit replaces the whole field.
-            </p>
-            <p className="whitespace-pre-line text-sm leading-relaxed text-[var(--color-ink-muted)]">{brand.notes}</p>
-          </section>
-        </Reveal>
-      ) : (
-        <Reveal>
-          <section className="glass p-6">
-            <h2 className="mb-1 font-display text-lg font-semibold">Notes</h2>
-            <p className="text-sm text-[var(--color-ink-muted)]">
-              Nothing recorded. Use Edit to add the standing summary - what this lead is, how it came in, what
-              to be careful of. It travels with the lead into exports and reminder emails.
-            </p>
-          </section>
-        </Reveal>
-      )}
+      <Reveal>
+        <NotesThread
+          leadId={brand.id}
+          initialNote={brand.notes}
+          entries={noteEntries}
+          canAppend={canUpdate}
+        />
+      </Reveal>
 
       {outreach.length > 0 && (
         <Reveal>

@@ -124,8 +124,8 @@ export const LEAD_FIELD_HELP: Record<string, FieldHelp> = {
     feeds: "The ease index only. Fit makes a deal pleasant to deliver; it does not make it more likely to close.",
   },
   notes: {
-    what: "The standing summary of what this lead is - how it came in, what was agreed, what to be careful of.",
+    what: "The first note: what this lead is, how it came in, what to be careful of. Anything learned later is appended to the notes thread on the lead page instead, attributed and dated, so this one stays as written.",
     feeds:
-      "Search, every export and any reminder email about this lead. Saving REPLACES the whole field, so add to what is there rather than typing over it."
+      "Search, every export and any reminder email about this lead, which all lead with it. Saving replaces it, which is why later additions go to the thread rather than here."
   },
 };

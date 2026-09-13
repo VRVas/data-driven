@@ -56,6 +56,7 @@ const lead = (over: Partial<ReminderLeadContext> = {}): ReminderLeadContext => (
   lastContact: "2026-08-01",
   followUpDate: "2026-08-19",
   notes: "They asked for a phased rollout.",
+  recentNotes: [],
   company: { name: "Alleanza Group", openPipelineEur: 130_000, lifetimeEur: 52_000, dealCount: 3 },
   latestProposal: { valueEur: 52_000, status: "accepted", sentAt: "2026-07-20T00:00:00.000Z" },
   ...over,

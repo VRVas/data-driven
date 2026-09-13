@@ -410,10 +410,11 @@ var containers = [
   { name: 'reminders', pk: '/ownerId', ttl: null }
   // In-app notifications, partitioned the same way for the same reason.
   { name: 'notifications', pk: '/userId', ttl: null }
-  // Discussion on a record. Partitioned by the record, not the author: every
+  // The notes thread on a lead. Partitioned by the lead, not the author: every
   // read is "this lead's thread", and a thread split across partitions would
-  // cost a cross-partition query on every lead page.
-  { name: 'comments', pk: '/recordId', ttl: null }
+  // cost a cross-partition query on every lead page. Replaces 'comments', which
+  // was the same idea under a name the review retired.
+  { name: 'notes', pk: '/leadId', ttl: null }
   // Login codes and reset tokens. Partitioned by email because every read is
   // "the challenges for this address". defaultTtl -1 turns TTL ON with no
   // default: without it Cosmos IGNORES the per-item ttl the app writes, and
