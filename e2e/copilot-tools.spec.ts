@@ -360,6 +360,43 @@ test.describe("copilot finishes a request before it acts", () => {
   });
 });
 
+test.describe("copilot notes", () => {
+  test("append_note records a turn without touching the initial note", async ({ request }) => {
+    const before = await callTool(request, "get_lead", { id: "alibaba" });
+    const initialBefore = before.body.data!.notes ?? null;
+
+    const body = `ZZ probe - copilot wrote this ${Date.now()}`;
+    const added = await callTool(request, "append_note", { leadId: "alibaba", body });
+    expect(added.body.ok).toBe(true);
+    expect(added.body.data!.ok).toBe(true);
+
+    const read = await callTool(request, "read_notes", { leadId: "alibaba" });
+    const entries = read.body.data!.entries as { author: string; body: string }[];
+    expect(entries.at(-1)!.body).toBe(body);
+    expect(entries.at(-1)!.author.length).toBeGreaterThan(0);
+    // The opening note is untouched, which is the whole distinction.
+    expect(read.body.data!.initialNote ?? null).toEqual(initialBefore);
+  });
+
+  test("a note written to the thread is findable by searching for it", async ({ request }) => {
+    const phrase = `ZZ probe phased pricing ${Date.now()}`;
+    await callTool(request, "append_note", { leadId: "alibaba", body: phrase });
+
+    // The gap this closes: search used to read only the opening note, so
+    // anything learned after the lead opened could not be found at all.
+    const found = await callTool(request, "search_leads", { query: phrase });
+    const leads = found.body.data!.leads as { id: string }[];
+    expect(leads.map((l) => l.id)).toContain("alibaba");
+  });
+
+  test("notes on a lead that does not exist are refused, not invented", async ({ request }) => {
+    const { body } = await callTool(request, "append_note", { leadId: "no-such-lead", body: "ZZ probe" });
+    expect(body.data!.ok).toBe(false);
+    const read = await callTool(request, "read_notes", { leadId: "no-such-lead" });
+    expect(read.body.data!.found).toBe(false);
+  });
+});
+
 test.describe("copilot tool gating", () => {
   test("an unknown tool is a 404, not a silent success", async ({ request }) => {
     const res = await request.post("/api/copilot/tools/no_such_tool", { data: {} });

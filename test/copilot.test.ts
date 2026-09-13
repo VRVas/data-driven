@@ -179,3 +179,32 @@ describe("structured output that is not an answer", () => {
     expect(isStructuredNotProse("The result is {a: 1} roughly")).toBe(false);
   });
 });
+
+// ---------------------------------------------------------------------------
+// The notes thread is reachable
+// ---------------------------------------------------------------------------
+
+describe("notes are part of the record the copilot can reach", () => {
+  it("offers both halves: the opening note and the thread", () => {
+    // update_lead writes the initial note. Without append_note the model's only
+    // way to record what a client said is to overwrite that note, which
+    // destroys whatever somebody else put there.
+    const names = new Set(COPILOT_TOOLS.map((t) => t.name));
+    expect(names.has("append_note"), "no way to add to a lead's notes").toBe(true);
+    expect(names.has("read_notes"), "no way to read a lead's notes thread").toBe(true);
+  });
+
+  it("appending a note is a write, and reading one is not", () => {
+    expect(getToolByName("append_note")?.write).toBe(true);
+    expect(getToolByName("read_notes")?.write).toBeFalsy();
+  });
+
+  it("free-text search says it covers the thread", () => {
+    // A note nobody can find is half a feature, and the description is what
+    // tells the model the search is worth trying for "what did we say about X".
+    const q = getToolByName("search_leads")?.parameters as
+      | { properties?: { query?: { description?: string } } }
+      | undefined;
+    expect(q?.properties?.query?.description ?? "").toMatch(/thread/i);
+  });
+});

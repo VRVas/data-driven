@@ -24,6 +24,7 @@ import { followUpsFrom } from "@/lib/leads/followups";
 import { advanceStage as applyStageChange, todayYmd } from "@/lib/workflow";
 import { renderTemplate, DEFAULT_TEMPLATE_ID, OUTREACH_TEMPLATES } from "@/lib/mail/templates";
 import { BRAND_STATUSES, PRIORITIES, INDUSTRIES } from "@/lib/vocab";
+import { getNoteStore } from "@/lib/store/notes";
 import type { Brand, BrandStatus } from "@/lib/types";
 import type { SessionUser } from "@/lib/auth/guards";
 import { EXTRA_TOOLS } from "./tools-extra";
@@ -122,7 +123,7 @@ const searchLeads: CopilotTool = {
   parameters: {
     type: "object",
     properties: {
-      query: { type: "string", description: "Free-text match on name, POC, notes or industry" },
+      query: { type: "string", description: "Free-text match on name, POC, industry, the initial note and every entry in the notes thread" },
       status: { type: "string", enum: [...BRAND_STATUSES] },
       outcome: {
         type: "string",
@@ -162,8 +163,20 @@ const searchLeads: CopilotTool = {
     if (outcomeFilter !== "any") brands = brands.filter((b) => outcomeOf(b.status) === outcomeFilter);
     if (a.query) {
       const q = a.query.toLowerCase();
-      brands = brands.filter((b) =>
-        `${b.name} ${b.poc ?? ""} ${b.notes ?? ""} ${b.industry ?? ""}`.toLowerCase().includes(q),
+      // The thread is only loaded when somebody actually types text, so a
+      // filtered or sorted listing pays nothing for it. Without this, anything
+      // written after the lead opened is unfindable - "what did we say about
+      // phased pricing" would miss the note that says exactly that.
+      const entries = await getNoteStore()
+        .listForLeads(brands.map((b) => b.id))
+        .catch(() => []);
+      const inThread = new Set(
+        entries.filter((n) => n.body.toLowerCase().includes(q)).map((n) => n.leadId),
+      );
+      brands = brands.filter(
+        (b) =>
+          inThread.has(b.id) ||
+          `${b.name} ${b.poc ?? ""} ${b.notes ?? ""} ${b.industry ?? ""}`.toLowerCase().includes(q),
       );
     }
     if (a.status) brands = brands.filter((b) => b.status === a.status);
