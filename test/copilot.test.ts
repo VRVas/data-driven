@@ -208,3 +208,43 @@ describe("notes are part of the record the copilot can reach", () => {
     expect(q?.properties?.query?.description ?? "").toMatch(/thread/i);
   });
 });
+
+// ---------------------------------------------------------------------------
+// The tour describes the app that exists
+// ---------------------------------------------------------------------------
+
+describe("product tour", () => {
+  const steps = () => {
+    const src = readFileSync(path.join(process.cwd(), "src/lib/tour/steps.ts"), "utf8");
+    return src;
+  };
+
+  it("cites one version, the one on the badge", () => {
+    // Every `isNew` step renders TOUR_NEW_BADGE. Two bodies still said v1.1
+    // after the badge moved to v1.2, so the walkthrough badged things "new in
+    // v1.2" and then closed by summarising v1.1.
+    const src = steps();
+    const badge = src.match(/TOUR_NEW_BADGE = "New in (v\d+\.\d+)"/)?.[1];
+    expect(badge, "TOUR_NEW_BADGE changed shape").toBeTruthy();
+    const cited = new Set([...src.matchAll(/\bv\d+\.\d+\b/g)].map((m) => m[0]));
+    cited.delete(badge!);
+    expect([...cited], `the tour cites versions other than ${badge}`).toEqual([]);
+  });
+
+  it("uses the current vocabulary, not the one it replaced", () => {
+    // The tour is 36 steps of prose about the app. A rename that misses it
+    // leaves a walkthrough teaching people words the UI no longer uses.
+    const src = steps();
+    for (const retired of [
+      "Deal Closed",
+      "Did not work out",
+      "Back to Attack",
+      "Still to open",
+      "Hot Lead",
+      "Warm Lead",
+      "Cold Lead",
+    ]) {
+      expect(src.includes(retired), `the tour still says "${retired}"`).toBe(false);
+    }
+  });
+});
