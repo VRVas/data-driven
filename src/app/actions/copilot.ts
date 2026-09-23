@@ -1,7 +1,8 @@
 "use server";
 
 import { requirePermission } from "@/lib/auth/authorize";
-import { getCopilotProvider, type AskOptions } from "@/lib/copilot/provider";
+import type { AskOptions } from "@/lib/copilot/provider";
+import { runCopilotTurn } from "@/lib/copilot/runtime";
 import { runTool } from "@/lib/copilot/dispatch";
 import { COPILOT_TOOLS } from "@/lib/copilot/tools";
 import { wantsReasoning } from "@/lib/copilot/stream";
@@ -25,7 +26,7 @@ export async function askCopilot(message: string, opts: AskOptions = {}): Promis
 
   const reasoning = opts.reasoning || wantsReasoning(text);
   try {
-    const turn = await getCopilotProvider().ask(text, user, { reasoning });
+    const turn = await runCopilotTurn(text, user, { reasoning });
     await logAudit({
       actorId: user.id,
       actorName: user.name,

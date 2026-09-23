@@ -3,6 +3,7 @@ import { getToolByName } from "./tools";
 import { can } from "@/lib/auth/authorize";
 import { isAuthzError } from "@/lib/auth/errors";
 import type { SessionUser } from "@/lib/auth/guards";
+import { executionPolicy } from "./execution";
 
 export interface ToolRun {
   ok: boolean;
@@ -29,8 +30,22 @@ export async function runTool(
   const tool = getToolByName(name);
   if (!tool) return { ok: false, tool: name, error: `Unknown tool: ${name}` };
   try {
+    const policy = executionPolicy();
+    policy?.signal?.throwIfAborted();
+    if (policy?.allowedTools && !policy.allowedTools.includes(name)) {
+      return { ok: false, tool: name, error: "This integration cannot use that tool." };
+    }
     if (tool.permission && !(await can(tool.permission))) {
       return { ok: false, tool: name, args, error: "You don't have permission to do that." };
+    }
+    if (tool.write) {
+      if (!(await can("copilot:tool:write")) || policy?.writes === "deny") {
+        return { ok: false, tool: name, error: "Writes are not allowed for this caller." };
+      }
+      if (policy?.writes === "propose") {
+        policy.propose?.({ tool: name, args });
+        return { ok: true, tool: name, data: { pending: true, requiresConfirmation: true, message: "Proposed only. Nothing has been changed." } };
+      }
     }
     // Resolved from the session, so the key-authenticated service identity gets false.
     const canApprove = await can("outreach:approve").catch(() => false);

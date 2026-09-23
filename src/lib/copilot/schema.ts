@@ -75,7 +75,10 @@ export function blocksResponseSchema() {
     strict: false,
     schema: {
       type: "object",
-      properties: { blocks: { type: "array", items: block } },
+      properties: {
+        blocks: { type: "array", items: block },
+        needsInput: { type: "boolean", description: "True only when an answer requires clarification or a user decision before the request can proceed." },
+      },
       required: ["blocks"],
       additionalProperties: false,
     },

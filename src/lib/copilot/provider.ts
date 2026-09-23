@@ -12,10 +12,12 @@ export interface CopilotTurn {
   blocks: Block[];
   toolRuns: ToolRun[];
   provider: string;
+  needsInput?: boolean;
 }
 
 export interface AskOptions {
   reasoning?: boolean;
+  signal?: AbortSignal;
   /** Earlier turns of this conversation, oldest first. Without it every turn is the first. */
   history?: ChatTurn[];
 }
@@ -539,7 +541,7 @@ class LocalCopilotProvider implements CopilotProvider {
     // nothing, and the label it maps to is today's.
     if (/(hot lead|high priorit|top lead|best lead|priorit|who should i (call|contact|chase)|top \d+)/.test(m)) {
       const wantsHigh = /\bhot\b|high priorit/.test(m);
-      const d = (await run("search_leads", { ...(wantsHigh ? { priority: "High" } : {}), sortBy: "leadScore", limit: 6 })) as
+      const d = (await run("search_leads", { ...(wantsHigh ? { priority: "High" } : {}), sortBy: "priority", limit: 6 })) as
         | { count: number; leads: Record<string, unknown>[] }
         | undefined;
       const leads = d?.leads ?? [];
@@ -739,6 +741,7 @@ class FoundryCopilotProvider implements CopilotProvider {
   private async sendWithBackoff(
     send: (payload: Record<string, unknown>) => Promise<Response>,
     body: Record<string, unknown>,
+    signal?: AbortSignal,
   ): Promise<Response> {
     const RETRYABLE = new Set([429, 500, 502, 503, 504]);
     let wait = 1_000;
@@ -747,18 +750,19 @@ class FoundryCopilotProvider implements CopilotProvider {
     for (let attempt = 0; attempt < 3 && RETRYABLE.has(res.status); attempt++) {
       const after = Number(res.headers.get("retry-after"));
       const delay = Number.isFinite(after) && after > 0 ? Math.min(after * 1000, 20_000) : wait;
-      await new Promise((r) => setTimeout(r, delay));
+      const { setTimeout: delayFor } = await import("node:timers/promises");
+      await delayFor(delay, undefined, { signal });
       wait = Math.min(wait * 2, 8_000);
       res = await send(body);
     }
     return res;
   }
 
-  private async post(endpoint: string, headers: Record<string, string>, body: Record<string, unknown>): Promise<Response> {
+  private async post(endpoint: string, headers: Record<string, string>, body: Record<string, unknown>, signal?: AbortSignal): Promise<Response> {
     const send = (payload: Record<string, unknown>) =>
-      fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload) });
+      fetch(endpoint, { method: "POST", headers, body: JSON.stringify(payload), signal });
 
-    let res = await this.sendWithBackoff(send, body);
+    let res = await this.sendWithBackoff(send, body, signal);
     if (res.ok || res.status !== 400) return res;
 
     // Only retry for the arguments a deployment can legitimately reject, so a
@@ -801,6 +805,7 @@ class FoundryCopilotProvider implements CopilotProvider {
     let retriedComposition = false;
 
     for (let step = 0; step < 6; step++) {
+      opts.signal?.throwIfAborted();
       const body: Record<string, unknown> = {
         model,
         messages,
@@ -813,7 +818,7 @@ class FoundryCopilotProvider implements CopilotProvider {
       // deployment default let a deep answer think its way to a stub.
       if (FoundryCopilotProvider.tokenParam) body[FoundryCopilotProvider.tokenParam] = completionBudget();
 
-      const res = await this.post(endpoint, headers, body);
+      const res = await this.post(endpoint, headers, body, opts.signal);
       if (!res.ok) throw new CopilotUnavailableError(res.status);
       const json = (await res.json()) as { choices: { message: Record<string, unknown> }[] };
       const msg = json.choices[0]?.message ?? {};
@@ -822,8 +827,10 @@ class FoundryCopilotProvider implements CopilotProvider {
       const toolCalls = (msg.tool_calls as { id: string; function: { name: string; arguments: string } }[]) ?? [];
       if (toolCalls.length === 0) {
         const raw = String(msg.content ?? "");
-        const blocks = parseBlocks(safeJson(raw));
-        if (blocks.length) return { blocks, toolRuns: runs, provider: this.name };
+        const decoded = safeJson(raw);
+        const blocks = parseBlocks(decoded);
+        if (blocks.length) return { blocks, toolRuns: runs, provider: this.name,
+          needsInput: !!decoded && typeof decoded === "object" && "needsInput" in decoded && decoded.needsInput === true };
 
         // Nothing valid came back. If the content is JSON at all it is not an
         // answer - under a json_schema response format the usual failure is
@@ -857,6 +864,9 @@ class FoundryCopilotProvider implements CopilotProvider {
         }
         const r = await runTool(call.function.name, args, user);
         runs.push(r);
+        if (r.data && typeof r.data === "object" && "pending" in r.data && r.data.pending === true) {
+          return { blocks: [b.text("Review the proposed change before confirming it.")], toolRuns: runs, provider: this.name, needsInput: true };
+        }
         messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(r.data ?? { error: r.error }) });
       }
     }

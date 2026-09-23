@@ -1,5 +1,6 @@
 import "server-only";
-import { getCopilotProvider, type AskOptions } from "./provider";
+import type { AskOptions } from "./provider";
+import { runCopilotTurn } from "./runtime";
 import type { Block } from "./blocks";
 import type { SessionUser } from "@/lib/auth/guards";
 
@@ -26,7 +27,7 @@ export async function* streamTurn(
   user: SessionUser,
   opts: AskOptions = {},
 ): AsyncGenerator<StreamEvent> {
-  const turn = await getCopilotProvider().ask(message, user, opts);
+  const turn = await runCopilotTurn(message, user, opts);
   for (const block of turn.blocks) {
     yield { type: "block", block };
     await sleep(60);
