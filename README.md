@@ -1,6 +1,6 @@
 # data-driven
 
-OOVIE's business development application, built with Next.js and deployed on Azure.
+Business development application, built with Next.js and deployed on Azure.
 
 - [docs/COPILOT_INTEGRATION_GUIDE.md](docs/COPILOT_INTEGRATION_GUIDE.md): external REST API, A2A, Telegram, authentication, durable tasks, deployment, testing, and extension guidance for future applications and AI coding agents.
 - [docs/DATA_RECOVERY_GUIDE.md](docs/DATA_RECOVERY_GUIDE.md): administrator backup downloads, greenfield initialization, staged data replacement, rollback, and recovery access.

@@ -28,6 +28,11 @@ yarn-error.log*
 
 # local dev data (file-based user store)
 .data/
+!/.data/
+/.data/*
+!/.data/backups/
+/.data/backups/*
+!/.data/backups/cosmos-2026-09-23T06-18-46.128Z.tar.gz
 
 # playwright
 /test-results/
