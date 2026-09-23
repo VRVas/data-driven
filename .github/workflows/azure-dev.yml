@@ -1,8 +1,8 @@
 name: Deploy
 
 # Azure Developer CLI (azd) deployment pipeline. Provisions infra
-# (infra/main.bicep) and deploys the web service on every push to main and on
-# manual dispatch. Authentication uses secretless OpenID Connect (federated)
+# (infra/main.bicep) and deploys the web service on manual dispatch.
+# Authentication uses secretless OpenID Connect (federated)
 # credentials by default; a client-credentials fallback is kept for setups
 # where OIDC is unavailable.
 #
@@ -33,6 +33,10 @@ permissions:
   id-token: write
   contents: read
 
+concurrency:
+  group: deploy-${{ vars.AZURE_ENV_NAME }}
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -43,7 +47,17 @@ jobs:
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }}
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
       AI_LOCATION: ${{ vars.AI_LOCATION }}
+      DEPLOY_EMAIL: ${{ vars.DEPLOY_EMAIL }}
+      ENABLE_OTP_LOGIN: ${{ vars.ENABLE_OTP_LOGIN }}
+      CHAT_MODEL_NAME: ${{ vars.CHAT_MODEL_NAME }}
+      CHAT_MODEL_VERSION: ${{ vars.CHAT_MODEL_VERSION }}
+      CHAT_MODEL_CAPACITY: ${{ vars.CHAT_MODEL_CAPACITY }}
+      EMBEDDING_MODEL_CAPACITY: ${{ vars.EMBEDDING_MODEL_CAPACITY }}
+      REASONING_EFFORT: ${{ vars.REASONING_EFFORT }}
+      AGENT_NAME: ${{ vars.AGENT_NAME }}
       BUDGET_CONTACT_EMAIL: ${{ vars.BUDGET_CONTACT_EMAIL }}
+      BUDGET_AMOUNT: ${{ vars.BUDGET_AMOUNT }}
+      LOG_ANALYTICS_DAILY_QUOTA_GB: ${{ vars.LOG_ANALYTICS_DAILY_QUOTA_GB }}
       ENABLE_COPILOT_INTEGRATIONS: ${{ vars.ENABLE_COPILOT_INTEGRATIONS }}
       ENABLE_TELEGRAM: ${{ vars.ENABLE_TELEGRAM }}
       COPILOT_CLIENTS_KEY_VAULT_URL: ${{ vars.COPILOT_CLIENTS_KEY_VAULT_URL }}
@@ -63,32 +77,30 @@ jobs:
       - name: Install azd
         uses: Azure/setup-azd@v2
 
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Validate application and deployment contracts
+        run: npm ci && npm run typecheck && npm test
+
       - name: Log in with Azure (Federated Credentials)
         if: ${{ env.AZURE_CLIENT_ID != '' }}
-        run: |
-          azd auth login `
-            --client-id "$Env:AZURE_CLIENT_ID" `
-            --federated-credential-provider "github" `
-            --tenant-id "$Env:AZURE_TENANT_ID"
-        shell: pwsh
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
 
       - name: Log in with Azure (Client Credentials)
-        if: ${{ env.AZURE_CREDENTIALS != '' }}
-        run: |
-          $info = $Env:AZURE_CREDENTIALS | ConvertFrom-Json -AsHashtable;
-          Write-Host "::add-mask::$($info.clientSecret)"
-          azd auth login `
-            --client-id "$($info.clientId)" `
-            --client-secret "$($info.clientSecret)" `
-            --tenant-id "$($info.tenantId)"
-        shell: pwsh
-        env:
-          AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+        if: ${{ env.AZURE_CLIENT_ID == '' }}
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Provision infrastructure
-        run: azd provision --no-prompt
+      - name: Provision, publish dependencies, deploy and verify
+        run: npm run deploy -- --environment "$AZURE_ENV_NAME" --no-prompt
         env:
           AZD_INITIAL_ENVIRONMENT_CONFIG: ${{ secrets.AZD_INITIAL_ENVIRONMENT_CONFIG }}
-
-      - name: Deploy application
-        run: azd deploy --no-prompt
