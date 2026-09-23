@@ -19,7 +19,8 @@ import path from "node:path";
  * Cosmos needs none of this - it upserts single items - which is exactly why
  * the flaw only ever showed up in dev.
  */
-const chains = new Map<string, Promise<unknown>>();
+const processState = globalThis as typeof globalThis & { __oovieFileLocks?: Map<string, Promise<unknown>> };
+const chains = processState.__oovieFileLocks ??= new Map<string, Promise<unknown>>();
 
 /** Run `job` with exclusive access to `file`, queued behind anything already running. */
 export function withFileLock<T>(file: string, job: () => Promise<T>): Promise<T> {
