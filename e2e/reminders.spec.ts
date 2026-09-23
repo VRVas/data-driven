@@ -54,6 +54,7 @@ test.describe("reminders", () => {
     await expect(row).toContainText("holds 30 min");
 
     await row.getByRole("button", { name: "Cancel" }).click();
+    await expect(row).toContainText("cancelled");
     // Reloaded rather than trusting the in-place refresh: the point is that
     // the cancellation was stored, not that the row repainted.
     await page.reload();
@@ -81,6 +82,7 @@ test.describe("reminders", () => {
     await expect(card).toBeVisible();
 
     await card.getByRole("button", { name: "Dismiss" }).click();
+    await expect(card).toHaveCount(0);
     await page.reload();
     await expect(notices(page).locator("li", { hasText: "ZZ instant probe" })).toHaveCount(0);
   });
