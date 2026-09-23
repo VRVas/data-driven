@@ -14,7 +14,7 @@ param environmentName string
 
 @minLength(1)
 @description('Primary region for the app tier: Container Apps, Cosmos, ACR, Key Vault, monitoring.')
-param location string = 'westeurope'
+param location string = 'northeurope'
 
 @description('Region for AI Foundry + all AI/model deployments. Sweden Central is required for feature availability.')
 param aiLocation string = 'swedencentral'
@@ -75,6 +75,28 @@ param principalId string = ''
 @description('Chat model to deploy in Azure AI Foundry.')
 param chatModelName string = 'gpt-5.4-mini'
 
+@description('Chat model version available in the selected AI region.')
+param chatModelVersion string = '2026-03-17'
+
+@description('Chat deployment capacity. Confirm model quota before deploying a new subscription.')
+@minValue(1)
+param chatModelCapacity int = 324
+
+@description('Embedding deployment capacity.')
+@minValue(1)
+param embeddingModelCapacity int = 50
+
+@description('Previously deployed image, maintained by the deployment runner and azd.')
+param webImage string = 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+
+@description('Monthly resource-group budget, enabled by budgetContactEmail.')
+@minValue(1)
+param budgetAmount int = 100
+
+@description('Daily Log Analytics ingestion cap in GB.')
+@minValue(1)
+param logAnalyticsDailyQuotaGb int = 1
+
 @description('reasoning_effort for "Think deeply". Ordinary asks always send "low".')
 @allowed([
   'low'
@@ -122,11 +144,17 @@ module resources 'resources.bicep' = {
     telegramWebhookSecretKeyVaultUrl: telegramWebhookSecretKeyVaultUrl
     telegramBotUsername: telegramBotUsername
     chatModelName: chatModelName
+    chatModelVersion: chatModelVersion
+    chatModelCapacity: chatModelCapacity
+    embeddingModelCapacity: embeddingModelCapacity
+    webImage: webImage
     reasoningEffort: reasoningEffort
     agentName: agentName
     authSecret: authSecret
     deployerPrincipalId: principalId
     budgetContactEmail: budgetContactEmail
+    budgetAmount: budgetAmount
+    logAnalyticsDailyQuotaGb: logAnalyticsDailyQuotaGb
   }
 }
 
@@ -140,6 +168,7 @@ output COSMOS_ENDPOINT string = resources.outputs.COSMOS_ENDPOINT
 output COSMOS_DATABASE string = resources.outputs.COSMOS_DATABASE
 output AZURE_OPENAI_ENDPOINT string = resources.outputs.AZURE_OPENAI_ENDPOINT
 output AZURE_OPENAI_DEPLOYMENT string = resources.outputs.AZURE_OPENAI_DEPLOYMENT
+output AZURE_AI_FOUNDRY_NAME string = resources.outputs.AZURE_AI_FOUNDRY_NAME
 output AZURE_AI_PROJECT_ENDPOINT string = resources.outputs.AZURE_AI_PROJECT_ENDPOINT
 output AZURE_AI_PROJECT_NAME string = resources.outputs.AZURE_AI_PROJECT_NAME
 output AZURE_AI_AGENT_NAME string = resources.outputs.AZURE_AI_AGENT_NAME
@@ -152,3 +181,4 @@ output AZURE_SEARCH_CONNECTION_NAME string = resources.outputs.AZURE_SEARCH_CONN
 output AZURE_SEARCH_WEB_KS string = resources.outputs.AZURE_SEARCH_WEB_KS
 output AZURE_SEARCH_KNOWLEDGE_BASE string = resources.outputs.AZURE_SEARCH_KNOWLEDGE_BASE
 output AZURE_EMBEDDING_DEPLOYMENT string = resources.outputs.AZURE_EMBEDDING_DEPLOYMENT
+output APP_INSIGHTS_WORKBOOK_ID string = resources.outputs.APP_INSIGHTS_WORKBOOK_ID

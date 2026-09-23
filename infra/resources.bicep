@@ -38,6 +38,9 @@ param chatModelVersion string = '2026-03-17'
 @description('Deployment SKU capacity (thousands of tokens/min) for the chat model. One copilot turn is several model calls - the whole tool surface is sent on each - so a turn costs roughly 25-30k tokens. At the original 30 this allowed about one exchange per minute and the second question in a conversation returned 429.')
 param chatModelCapacity int = 324
 
+@minValue(1)
+param embeddingModelCapacity int = 50
+
 @description('Foundry project name (new Foundry project, child of the account).')
 param aiProjectName string = 'data-driven'
 
@@ -616,7 +619,7 @@ resource embedDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-
   parent: ai
   name: embedModelName
   dependsOn: [ chatDeployment ]
-  sku: { name: 'Standard', capacity: 50 }
+  sku: { name: 'Standard', capacity: embeddingModelCapacity }
   properties: {
     model: { format: 'OpenAI', name: embedModelName, version: embedModelVersion }
   }
@@ -981,6 +984,8 @@ var recoveryEnv = enableDataRecovery ? [
 
 var baseEnv = [
   { name: 'PORT', value: '3000' }
+  { name: 'AZURE_ENV_NAME', value: tags['azd-env-name'] }
+  { name: 'RBAC_ENFORCE', value: 'true' }
   { name: 'AZURE_CLIENT_ID', value: uami.properties.clientId }
   { name: 'AUTH_SECRET', secretRef: 'auth-secret' }
   { name: 'AUTH_TRUST_HOST', value: 'true' }
@@ -1041,6 +1046,30 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           image: webImage
           resources: { cpu: json('0.5'), memory: '1Gi' }
           env: concat(baseEnv, emailEnv, reasoningEnv, otpEnv, integrationEnv, recoveryEnv)
+          probes: [
+            {
+              type: 'Startup'
+              tcpSocket: { port: 3000 }
+              initialDelaySeconds: 1
+              periodSeconds: 5
+              timeoutSeconds: 3
+              failureThreshold: 60
+            }
+            {
+              type: 'Liveness'
+              tcpSocket: { port: 3000 }
+              periodSeconds: 10
+              timeoutSeconds: 3
+              failureThreshold: 3
+            }
+            {
+              type: 'Readiness'
+              tcpSocket: { port: 3000 }
+              periodSeconds: 5
+              timeoutSeconds: 3
+              failureThreshold: 3
+            }
+          ]
         }
       ]
       // minReplicas: 1 keeps one instance always warm (no cold starts). Cost of

@@ -62,6 +62,27 @@
     "chatModelName": {
       "value": "${CHAT_MODEL_NAME=gpt-5.4-mini}"
     },
+    "chatModelVersion": {
+      "value": "${CHAT_MODEL_VERSION=2026-03-17}"
+    },
+    "chatModelCapacity": {
+      "value": "${CHAT_MODEL_CAPACITY=324}"
+    },
+    "embeddingModelCapacity": {
+      "value": "${EMBEDDING_MODEL_CAPACITY=50}"
+    },
+    "webImage": {
+      "value": "${SERVICE_WEB_IMAGE_NAME=mcr.microsoft.com/azuredocs/containerapps-helloworld:latest}"
+    },
+    "budgetAmount": {
+      "value": "${BUDGET_AMOUNT=100}"
+    },
+    "logAnalyticsDailyQuotaGb": {
+      "value": "${LOG_ANALYTICS_DAILY_QUOTA_GB=1}"
+    },
+    "agentName": {
+      "value": "${AGENT_NAME=data-driven-copilot}"
+    },
     "reasoningEffort": {
       "value": "${REASONING_EFFORT=high}"
     }

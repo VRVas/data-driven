@@ -27,7 +27,7 @@ hooks:
     continueOnError: false
   postprovision:
     shell: sh
-    run: ./scripts/create-agent.sh; ./scripts/create-web-knowledge.sh
+    run: sh ./scripts/postprovision.sh
     interactive: false
-    continueOnError: true
+    continueOnError: false
 
