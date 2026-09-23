@@ -1,6 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
+import { dataFs as fs } from "@/lib/recovery/routing";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import datasetJson from "@/data/dataset.json";
 import type { Agent, Dataset } from "@/lib/types";
 import { isBrandStatus, isPriority, toBrandStatus, toPriority } from "@/lib/vocab";
@@ -30,7 +31,7 @@ export interface AgentStore {
 // --------------------------------------------------------------------------
 // Local file store (development) - .data/agents.json, seeded from the ETL
 // --------------------------------------------------------------------------
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const AGENTS_FILE = path.join(DATA_DIR, "agents.json");
 
 class LocalAgentStore implements AgentStore {
@@ -80,7 +81,7 @@ class CosmosAgentStore implements AgentStore {
     const { resources } = await c.items.readAll<Agent>().fetchAll();
     // First run against a freshly provisioned (empty) Cosmos: seed from the
     // cleaned dataset so production matches dev (see CosmosBrandStore).
-    if (resources.length > 0 || CosmosAgentStore.seeded) return normaliseAll(resources);
+    if (resources.length > 0 || CosmosAgentStore.seeded || process.env.DATA_RECOVERY_ENABLED === "true") return normaliseAll(resources);
     CosmosAgentStore.seeded = true;
     await Promise.all(SEED.map((a) => c.items.upsert<Agent>(a)));
     return SEED;

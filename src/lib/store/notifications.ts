@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import { mutateJsonArray, readJsonArray } from "./local-json";
 
@@ -34,7 +35,7 @@ export interface NotificationStore {
   markAllRead(userId: string): Promise<number>;
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const FILE = path.join(DATA_DIR, "notifications.json");
 
 class LocalNotificationStore implements NotificationStore {

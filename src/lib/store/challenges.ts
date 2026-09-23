@@ -1,6 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
+import { dataFs as fs } from "@/lib/recovery/routing";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import { randomUUID } from "node:crypto";
 import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
@@ -53,7 +54,7 @@ async function redeemAgainst(
   return { ok: true };
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const FILE = path.join(DATA_DIR, "challenges.json");
 
 class LocalChallengeStore implements ChallengeStore {

@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import { mutateJsonArray, readJsonArray } from "./local-json";
 
@@ -61,7 +62,7 @@ export interface ReminderStore {
   remove(id: string): Promise<void>;
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const FILE = path.join(DATA_DIR, "reminders.json");
 
 class LocalReminderStore implements ReminderStore {

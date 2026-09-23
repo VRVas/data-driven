@@ -1,6 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
+import { dataFs as fs } from "@/lib/recovery/routing";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import { randomUUID } from "node:crypto";
 import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
@@ -51,7 +52,7 @@ function normalizeRoles(users: AppUser[]): AppUser[] {
 // --------------------------------------------------------------------------
 // Local file store (development only) - persists to .data/users.json
 // --------------------------------------------------------------------------
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const USERS_FILE = path.join(DATA_DIR, "users.json");
 
 class LocalUserStore implements UserStore {

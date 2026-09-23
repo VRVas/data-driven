@@ -1,6 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
+import { dataFs as fs } from "@/lib/recovery/routing";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import datasetJson from "@/data/dataset.json";
 import type { Brand, Dataset } from "@/lib/types";
 import { isBrandStatus, isPriority, toBrandStatus, toPriority } from "@/lib/vocab";
@@ -50,7 +51,7 @@ export interface BrandStore {
 // --------------------------------------------------------------------------
 // Local file store (development) - .data/brands.json, seeded from the ETL
 // --------------------------------------------------------------------------
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const BRANDS_FILE = path.join(DATA_DIR, "brands.json");
 
 class LocalBrandStore implements BrandStore {
@@ -107,7 +108,7 @@ class CosmosBrandStore implements BrandStore {
     // cleaned dataset so production matches dev. Cosmos is private (VNet-only),
     // so seeding through the app is the only way to populate it. Upsert by id
     // makes this idempotent and safe across concurrent replicas.
-    if (resources.length > 0 || CosmosBrandStore.seeded) return normaliseAll(resources);
+    if (resources.length > 0 || CosmosBrandStore.seeded || process.env.DATA_RECOVERY_ENABLED === "true") return normaliseAll(resources);
     CosmosBrandStore.seeded = true;
     await Promise.all(SEED.map((b) => c.items.upsert<Brand>(b)));
     return SEED;

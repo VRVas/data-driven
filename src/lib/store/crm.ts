@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import { mutateJsonObject, readJsonObject } from "./local-json";
 import type { Proposal } from "@/lib/crm/types";
@@ -40,7 +41,7 @@ export interface CrmOverlayStore {
   purgeDeal(dealId: string): Promise<void>;
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const FILE = path.join(DATA_DIR, "crm.json");
 
 class LocalCrmOverlayStore implements CrmOverlayStore {

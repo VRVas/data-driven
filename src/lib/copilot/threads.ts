@@ -1,6 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
+import { dataFs as fs } from "@/lib/recovery/routing";
 import path from "node:path";
+import { dataDirectory } from "@/lib/store/location";
 import { randomUUID } from "node:crypto";
 import { getCosmosDb, isCosmosConfigured } from "@/lib/store/cosmos";
 import type { Block } from "./blocks";
@@ -42,7 +43,7 @@ function titleFrom(text: string): string {
   return t.length > 48 ? `${t.slice(0, 47)}…` : t || "New chat";
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const FILE = path.join(DATA_DIR, "conversations.json");
 
 class LocalConversationStore implements ConversationStore {

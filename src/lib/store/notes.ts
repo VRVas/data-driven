@@ -1,5 +1,6 @@
 import "server-only";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import { mutateJsonArray, readJsonArray } from "./local-json";
 
@@ -38,7 +39,7 @@ export interface NoteStore {
   countByLead(): Promise<Record<string, number>>;
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const FILE = path.join(DATA_DIR, "notes.json");
 
 /** Oldest first: a notes thread reads as a story, not as a feed. */

@@ -1,6 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
+import { dataFs as fs } from "@/lib/recovery/routing";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
 import { SYSTEM_PROFILES, type Profile } from "@/lib/auth/profiles";
@@ -19,7 +20,7 @@ function withSystemProfiles(stored: Profile[]): Profile[] {
   return [...byId.values()];
 }
 
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const FILE = path.join(DATA_DIR, "profiles.json");
 
 class LocalProfileStore implements ProfileStore {

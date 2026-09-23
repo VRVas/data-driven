@@ -1,6 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
+import { dataFs as fs } from "@/lib/recovery/routing";
 import path from "node:path";
+import { dataDirectory } from "@/lib/store/location";
 import { randomUUID } from "node:crypto";
 import { getCosmosDb } from "@/lib/store/cosmos";
 import { withFileLock, writeJsonAtomic } from "@/lib/store/local-json";
@@ -135,7 +136,7 @@ export function integrationStore(): IntegrationStore {
       throw new Error("External copilot requires Cosmos in production");
     }
     store = process.env.COSMOS_ENDPOINT ? new CosmosIntegrationStore()
-      : new LocalIntegrationStore(path.join(process.cwd(), ".data", "copilot-integrations.json"));
+      : new LocalIntegrationStore(path.join(dataDirectory(), "copilot-integrations.json"));
   }
   return store;
 }

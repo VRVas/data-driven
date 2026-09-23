@@ -1,6 +1,7 @@
 import "server-only";
-import { promises as fs } from "node:fs";
+import { dataFs as fs } from "@/lib/recovery/routing";
 import path from "node:path";
+import { dataDirectory } from "./location";
 import type { DocFile } from "@/lib/copilot/documents";
 import { writeJsonAtomic } from "./local-json";
 import { getCosmosDb, isCosmosConfigured } from "./cosmos";
@@ -23,7 +24,7 @@ const empty = (userId: string): DocRegistry => ({ userId, vectorStoreId: null, f
 // --------------------------------------------------------------------------
 // Local file store (development) - .data/documents.json keyed by userId.
 // --------------------------------------------------------------------------
-const DATA_DIR = path.join(process.cwd(), ".data");
+const DATA_DIR = dataDirectory();
 const FILE = path.join(DATA_DIR, "documents.json");
 
 class LocalDocRegistryStore implements DocRegistryStore {
