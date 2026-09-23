@@ -165,6 +165,19 @@ three marked *optional*; they are `azd env set` overrides.
   never sends - it queues for admin approval.
 
 
+## Data recovery
+
+Data & Recovery uses a separate `bd-recovery` control database and a dedicated
+managed identity for creating staged databases/containers. Existing data-plane
+access remains keyless and private. The app selects the active dataset through
+the independent control record; imported data is verified before activation.
+
+The preprovision hook generates `DATA_RECOVERY_KEY` once alongside `AUTH_SECRET`.
+Both values must remain stable across CI deployments. Empty recovery-enabled
+environments open `/recovery` instead of automatically seeding the bundled data.
+See [../docs/DATA_RECOVERY_GUIDE.md](../docs/DATA_RECOVERY_GUIDE.md) for setup,
+permissions, backup encryption, import transformations, and rollback limits.
+
 ## External copilot integrations
 
 REST v1, A2A 1.0, and Telegram are opt-in. The deployment declares the
