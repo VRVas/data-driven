@@ -1,4 +1,19 @@
 import path from "node:path";
+import { createHash } from "node:crypto";
+
+export const EXTERNAL_TOKENS = {
+  read: "copilot.ext.e2e-read.fixtureOnlyNotAProductionToken000000000000",
+  write: "copilot.ext.e2e-write.fixtureOnlyNotAProductionToken00000000000",
+  other: "copilot.ext.e2e-other.fixtureOnlyNotAProductionToken00000000000",
+};
+export const TELEGRAM_FIXTURE = { botId: "999000111", userId: 777000111, secret: "playwright-telegram-fixture-secret-00000000000" };
+export const EXTERNAL_CLIENTS = Object.entries(EXTERNAL_TOKENS).map(([mode, token]) => ({
+  id: `e2e-${mode}`, name: `E2E ${mode}`, tokenSha256: createHash("sha256").update(token).digest("hex"),
+  scopes: mode === "write" ? ["copilot:read", "copilot:propose", "copilot:approve"] : ["copilot:read"],
+  permissions: { "copilot:use": "all", "lead:read": "all", "scoring:read": "all",
+    ...(mode === "write" ? { "copilot:tool:write": "all", "lead:stage:advance": "all", "lead:update": "all" } : {}) },
+  requestsPerMinute: 300,
+}));
 
 /** Credentials for the seeded E2E account (see seed-user.ts). */
 export const TEST_USER = {

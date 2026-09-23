@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { EXTERNAL_CLIENTS, TELEGRAM_FIXTURE } from "./e2e/constants";
 
 /**
  * Playwright UI test harness for the OOVIE BD-intelligence platform.
@@ -63,6 +64,16 @@ export default defineConfig({
     env: {
       AUTH_SECRET: process.env.AUTH_SECRET ?? "playwright-e2e-development-secret-0000000000",
       AUTH_TRUST_HOST: "true",
+      APP_URL: BASE_URL,
+      COPILOT_CHAT_ENDPOINT: "",
+      COSMOS_ENDPOINT: "",
+      COPILOT_EXTERNAL_ENABLED: "true",
+      COPILOT_CLIENTS_JSON: JSON.stringify(EXTERNAL_CLIENTS),
+      TELEGRAM_ENABLED: "true",
+      TELEGRAM_BOT_TOKEN: `${TELEGRAM_FIXTURE.botId}:fixture-only`,
+      TELEGRAM_BOT_USERNAME: "fixture_copilot_bot",
+      TELEGRAM_WEBHOOK_SECRET: TELEGRAM_FIXTURE.secret,
+      TELEGRAM_TEST_API_ROOT: `http://127.0.0.1:${PORT + 1}`,
     },
   },
 });

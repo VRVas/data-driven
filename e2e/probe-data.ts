@@ -1,5 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { createHash } from "node:crypto";
+import { EXTERNAL_CLIENTS, SCOPED_USER, TELEGRAM_FIXTURE } from "./constants";
 
 /**
  * Remove what the probing specs create.
@@ -27,6 +29,11 @@ async function rewrite<T>(file: string, edit: (data: T) => T): Promise<void> {
 
 export async function purgeProbeData(): Promise<void> {
   const dataDir = path.join(process.cwd(), ".data");
+
+  const integrationOwners = new Set(EXTERNAL_CLIENTS.flatMap((client) => ["api", "a2a"].map((channel) => createHash("sha256").update(JSON.stringify([channel, client.id, null, null])).digest("hex").slice(0, 40))));
+  integrationOwners.add(`telegram:${TELEGRAM_FIXTURE.botId}`);
+  for (const userId of ["e2e-user", SCOPED_USER.id]) integrationOwners.add(createHash("sha256").update(JSON.stringify(["telegram", `telegram:${TELEGRAM_FIXTURE.botId}`, userId, String(TELEGRAM_FIXTURE.userId)])).digest("hex").slice(0, 40));
+  await rewrite<Array<{ partitionKey: string }>>(path.join(dataDir, "copilot-integrations.json"), (rows) => rows.filter((row) => !integrationOwners.has(row.partitionKey)));
 
   await rewrite<Array<{ id: string }>>(path.join(dataDir, "brands.json"), (brands) =>
     brands.filter((b) => !PROBE.test(b.id)),
