@@ -19,22 +19,20 @@
 # ---------------------------------------------------------------------------
 set -eu
 
-existing=""
-if azd env get-value AUTH_SECRET >/dev/null 2>&1; then
-  existing=$(azd env get-value AUTH_SECRET 2>/dev/null || true)
-fi
-
-if [ -n "$existing" ]; then
-  echo "AUTH_SECRET already set for this environment - leaving it untouched."
-  exit 0
-fi
-
-if command -v openssl >/dev/null 2>&1; then
-  secret=$(openssl rand -base64 32)
-else
-  # Fallback for images without openssl; same 256 bits from the kernel CSPRNG.
-  secret=$(head -c 32 /dev/urandom | base64 | tr -d '\n')
-fi
-
-azd env set AUTH_SECRET "$secret"
-echo "AUTH_SECRET generated and stored in the azd environment."
+for name in AUTH_SECRET DATA_RECOVERY_KEY; do
+  if existing=$(azd env get-value "$name" 2>/dev/null) && test -n "$existing"; then
+    if test "${#existing}" -lt 32; then
+      echo "$name must contain at least 32 characters." >&2
+      exit 1
+    fi
+    echo "$name already set for this environment - leaving it untouched."
+    continue
+  fi
+  if command -v openssl >/dev/null 2>&1; then
+    secret=$(openssl rand -base64 32)
+  else
+    secret=$(head -c 32 /dev/urandom | base64 | tr -d '\n')
+  fi
+  azd env set "$name" "$secret"
+  echo "$name generated and stored in the azd environment."
+done

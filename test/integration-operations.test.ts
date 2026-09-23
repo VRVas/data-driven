@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import Ajv2020 from "ajv/dist/2020";
 import { marked } from "marked";
@@ -10,6 +11,37 @@ import { validateIntegrationEnvironment } from "../scripts/validate-integrations
 import { verifyCopilotIntegration } from "../scripts/verify-copilot-integration.mjs";
 
 describe("integration deployment validation", () => {
+  it("generates missing recovery credentials without treating azd error output as a secret", () => {
+    const directory = mkdtempSync(resolve(tmpdir(), "recovery-preprovision-"));
+    const stateFile = resolve(directory, "state.json");
+    const original = "existing-auth-secret-fixture-0000000000";
+    writeFileSync(stateFile, JSON.stringify({ AUTH_SECRET: original }));
+    writeFileSync(resolve(directory, "azd"), `#!/usr/bin/env node
+const fs = require("node:fs");
+const args = process.argv.slice(2);
+const file = process.env.FIXTURE_AZD_STATE;
+const state = JSON.parse(fs.readFileSync(file, "utf8"));
+if (args[1] === "get-value") {
+  if (!(args[2] in state)) { console.log("ERROR: key not found in environment values"); process.exit(1); }
+  console.log(state[args[2]]);
+} else if (args[1] === "set") {
+  state[args[2]] = args[3]; fs.writeFileSync(file, JSON.stringify(state));
+} else process.exit(2);
+`, { mode: 0o700 });
+    try {
+      const run = () => spawnSync("sh", [resolve("scripts/preprovision.sh")], { encoding: "utf8", env: { ...process.env, PATH: `${directory}:${process.env.PATH}`, FIXTURE_AZD_STATE: stateFile } });
+      const first = run();
+      expect(first.status, first.stderr).toBe(0);
+      const created = JSON.parse(readFileSync(stateFile, "utf8"));
+      expect(created.AUTH_SECRET).toBe(original);
+      expect(created.DATA_RECOVERY_KEY.length).toBeGreaterThanOrEqual(32);
+      expect(first.stdout).not.toContain(created.DATA_RECOVERY_KEY);
+      const second = run();
+      expect(second.status, second.stderr).toBe(0);
+      expect(JSON.parse(readFileSync(stateFile, "utf8"))).toEqual(created);
+    } finally { rmSync(directory, { recursive: true, force: true }); }
+  });
+
   it("keeps integrations opt-in and rejects incomplete channel setup", () => {
     expect(validateIntegrationEnvironment({})).toEqual([]);
     expect(validateIntegrationEnvironment({ ENABLE_TELEGRAM: "true" })).toHaveLength(4);
