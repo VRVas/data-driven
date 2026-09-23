@@ -2,10 +2,13 @@ import type { Metadata } from "next";
 import { AuthForm } from "@/components/AuthForm";
 import { loginAction } from "@/app/actions/auth";
 import { otpLoginEnabled } from "@/lib/auth/challenge";
+import { recoveryState } from "@/lib/recovery/control";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Sign in - OOVIE" };
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  if ((await recoveryState()).mode !== "ready") redirect("/recovery");
   return (
     <div>
       <h1 className="font-display text-2xl font-semibold tracking-tight">Welcome back</h1>

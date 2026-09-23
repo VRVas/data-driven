@@ -12,6 +12,10 @@
 // - and every node import inside it must be dynamic.
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    if (process.env.DATA_RECOVERY_ENABLED === "true") {
+      const { startRecoveryWorker } = await import("@/lib/recovery/jobs");
+      startRecoveryWorker();
+    }
     if (process.env.COPILOT_EXTERNAL_ENABLED === "true") {
       const { startCopilotWorker } = await import("@/lib/copilot/external/worker");
       startCopilotWorker();
@@ -28,7 +32,7 @@ export async function register() {
     }
 
     // Dev uses the local file store (self-seeding); only act when Cosmos-backed.
-    if (!process.env.COSMOS_ENDPOINT) return;
+    if (!process.env.COSMOS_ENDPOINT || process.env.DATA_RECOVERY_ENABLED === "true") return;
     try {
       const [{ getBrandStore }, { getAgentStore }] = await Promise.all([
         import("@/lib/store/brands"),

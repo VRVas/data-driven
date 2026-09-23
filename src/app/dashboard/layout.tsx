@@ -6,8 +6,13 @@ import { SmoothScrollProvider } from "@/lib/gsap/SmoothScrollProvider";
 import { auth, signOut } from "@/auth";
 import { capabilities } from "@/lib/auth/authorize";
 import { getVisibleBrands } from "@/lib/leads/visible";
+import { recoveryState } from "@/lib/recovery/control";
+import { getSessionUser } from "@/lib/auth/guards";
+import { redirect } from "next/navigation";
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
+  if ((await recoveryState()).mode !== "ready") redirect("/recovery");
+  if (!(await getSessionUser())) redirect("/login");
   const session = await auth();
   // Same two gates the top bar uses. The legacy role claim is not one of them:
   // it stays "member" no matter which profile the user holds.

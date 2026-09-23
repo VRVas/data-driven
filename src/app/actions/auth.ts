@@ -9,6 +9,7 @@ import { z } from "zod";
 import { getChallengeStore } from "@/lib/store/challenges";
 import { generateOtp, generateResetToken, issueBlockedReason, otpLoginEnabled } from "@/lib/auth/challenge";
 import { sendLoginCode, sendResetLink } from "@/lib/auth/notify";
+import { recoveryState } from "@/lib/recovery/control";
 
 export type AuthState = { error?: string; notice?: string } | undefined;
 
@@ -30,6 +31,7 @@ export async function loginAction(_prev: AuthState, formData: FormData): Promise
 
 /** Create an account, then sign in. */
 export async function signupAction(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  if ((await recoveryState()).mode !== "ready") return { error: "Initialize this environment in Data & Recovery first." };
   const parsed = signupSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -72,6 +74,7 @@ const SENT = "If that address has an account, a message is on its way.";
 
 /** Email a one-time sign-in code. */
 export async function requestLoginCode(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  if ((await recoveryState()).mode !== "ready") return { error: "Sign-in is paused during data recovery." };
   // Checked here as well as on the page: a hidden link is not an access control.
   if (!otpLoginEnabled()) return { error: "Signing in with a code isn't enabled here." };
 
@@ -97,6 +100,7 @@ export async function requestLoginCode(_prev: AuthState, formData: FormData): Pr
 
 /** Email a single-use password-reset link. */
 export async function requestPasswordReset(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  if ((await recoveryState()).mode !== "ready") return { error: "Password recovery is paused during data recovery." };
   const parsed = emailSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
   const { email } = parsed.data;
@@ -118,6 +122,7 @@ export async function requestPasswordReset(_prev: AuthState, formData: FormData)
 
 /** Consume a reset link and set a new password. */
 export async function resetPassword(_prev: AuthState, formData: FormData): Promise<AuthState> {
+  if ((await recoveryState()).mode !== "ready") return { error: "Password recovery is paused during data recovery." };
   const parsed = z
     .object({
       email: z.string().trim().toLowerCase().email(),

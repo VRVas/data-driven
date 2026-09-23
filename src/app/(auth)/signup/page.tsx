@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
 import { AuthForm } from "@/components/AuthForm";
 import { signupAction } from "@/app/actions/auth";
+import { recoveryState } from "@/lib/recovery/control";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = { title: "Create account - OOVIE" };
 
-export default function SignupPage() {
+export default async function SignupPage() {
+  if ((await recoveryState()).mode !== "ready") redirect("/recovery");
   return (
     <div>
       <h1 className="font-display text-2xl font-semibold tracking-tight">Create your account</h1>

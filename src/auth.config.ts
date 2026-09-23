@@ -25,6 +25,7 @@ export const authConfig = {
       if (user) {
         token.id = user.id ?? token.id;
         token.role = (user as { role?: UserRole }).role ?? "member";
+        token.dataEpoch = user.dataEpoch ?? 0;
       }
       return token;
     },
@@ -33,6 +34,7 @@ export const authConfig = {
       if (session.user) {
         session.user.id = (token.id as string) ?? "";
         session.user.role = (token.role as UserRole) ?? "member";
+        session.user.dataEpoch = typeof token.dataEpoch === "number" ? token.dataEpoch : 0;
       }
       return session;
     },

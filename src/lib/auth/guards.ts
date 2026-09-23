@@ -1,6 +1,7 @@
 import "server-only";
 import { auth } from "@/auth";
 import type { UserRole } from "./roles";
+import { recoveryState } from "@/lib/recovery/control";
 
 export interface SessionUser {
   id: string;
@@ -14,6 +15,8 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const session = await auth();
   const u = session?.user;
   if (!u) return null;
+  const state = await recoveryState();
+  if (state.mode !== "ready" || (u.dataEpoch ?? 0) !== state.epoch) return null;
   return {
     id: (u.id as string) ?? "",
     email: u.email ?? "",
