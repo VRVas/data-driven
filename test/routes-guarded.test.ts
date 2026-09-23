@@ -26,6 +26,11 @@ const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
  */
 const PRE_AUTH_ALLOWLIST: readonly { route: string; handlers: readonly string[]; reason: string }[] = [
   {
+    route: "src/app/api/health/route.ts",
+    handlers: ["GET"],
+    reason: "Readiness is public for deployment checks. It returns only ok/unavailable, caches checks, and never exposes configuration, records, or errors. Setup and maintenance remain reachable through recovery.",
+  },
+  {
     route: "src/app/api/admin/recovery/session/route.ts",
     handlers: ["POST"],
     reason: "Recovery must work before application users exist. A same-origin, rate-limited fresh-password or environment-key check creates a short-lived HttpOnly recovery capability in the independent control store.",
