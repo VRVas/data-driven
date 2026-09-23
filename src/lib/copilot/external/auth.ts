@@ -10,6 +10,7 @@ import { can, resolvePermissions, scopeFor } from "@/lib/auth/effective";
 import { isPermissionKey, PERMISSION_KEYS, type PermissionKey, type PermissionMap, type Scope } from "@/lib/auth/catalogue";
 import { IntegrationError, type IdentityRef, type IntegrationDocument, type IntegrationScope } from "./contracts";
 import { integrationStore } from "./store";
+import { assertOutboundAllowed } from "@/lib/recovery/control";
 
 const scopes = ["copilot:read", "copilot:propose", "copilot:approve"] as const;
 const ClientSchema = z.object({
@@ -105,6 +106,7 @@ export function telegramPartition(): string {
 }
 
 export async function resolveIdentity(identity: IdentityRef): Promise<ExternalCaller> {
+  await assertOutboundAllowed();
   if (process.env.COPILOT_EXTERNAL_ENABLED !== "true") throw new IntegrationError(503, "integration_disabled", "The external copilot is disabled.");
   if (identity.kind === "telegram") {
     if (process.env.TELEGRAM_ENABLED !== "true" || identity.clientId !== telegramPartition()) {

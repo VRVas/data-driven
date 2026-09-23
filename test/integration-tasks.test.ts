@@ -7,6 +7,7 @@ import { ownerKey, type ExternalCaller } from "@/lib/copilot/external/auth";
 import { submitTask, processTask, getTask, decideAction, cancelTask, recoverUncertainActions } from "@/lib/copilot/external/tasks";
 import type { CopilotTurn } from "@/lib/copilot/provider";
 import type { CopilotTask } from "@/lib/copilot/external/contracts";
+import { changeControl, recoveryState, type RecoveryState } from "@/lib/recovery/control";
 
 const mocks = vi.hoisted(() => ({ run: vi.fn(), tool: vi.fn(), resolve: vi.fn(), audit: vi.fn() }));
 vi.mock("@/lib/copilot/runtime", async (original) => ({ ...await original<object>(), runCopilotTurn: mocks.run }));
@@ -30,7 +31,7 @@ beforeEach(async () => {
   mocks.run.mockResolvedValue({ provider: "fixture", toolRuns: [], blocks: [{ type: "text", text: "Fixture answer" }] } satisfies CopilotTurn);
   mocks.tool.mockResolvedValue({ ok: true, tool: "append_note", data: { ok: true, id: "fixture-note" } });
 });
-afterEach(async () => { vi.resetAllMocks(); await rm(directory, { recursive: true, force: true }); });
+afterEach(async () => { vi.resetAllMocks(); vi.unstubAllEnvs(); await rm(directory, { recursive: true, force: true }); });
 
 describe("durable task lifecycle", () => {
   it("deduplicates requests and rejects reusing their keys for different input", async () => {
@@ -82,6 +83,31 @@ describe("durable task lifecycle", () => {
     await processTask(caller.owner, task.id, store);
     expect(mocks.run).not.toHaveBeenCalled();
     expect((await getTask(caller, task.id, store)).state).toBe("canceled");
+  });
+
+  it("holds a dataset reservation until an approved write has finished", async () => {
+    vi.stubEnv("DATA_RECOVERY_ENABLED", "true");
+    vi.stubEnv("APP_DATA_DIR", directory);
+    vi.stubEnv("COSMOS_ENDPOINT", "");
+    await recoveryState();
+    await changeControl<RecoveryState>("state", (state) => ({ ...state, mode: "ready" }));
+    mocks.run.mockResolvedValue({ provider: "fixture", toolRuns: [], blocks: [{ type: "actions", actions: [{ label: "Add note", tool: "append_note", args: { leadId: "fixture-lead", body: "Fixture" } }] }] } satisfies CopilotTurn);
+    const submitted = await submitTask(caller, { message: "Add note" }, "recovery-fence", undefined, store);
+    await processTask(caller.owner, submitted.id, store);
+    const task = await getTask(caller, submitted.id, store);
+    let finish: () => void = () => undefined;
+    let begin: () => void = () => undefined;
+    const entered = new Promise<void>((resolve) => { begin = resolve; });
+    const pending = new Promise<void>((resolve) => { finish = resolve; });
+    mocks.tool.mockImplementation(async () => { begin(); await pending; return { ok: true, data: { ok: true } }; });
+    const decision = decideAction(caller, task.id, task.actions[0].id, "approve", store);
+    try {
+      await entered;
+      const state = await changeControl<RecoveryState>("state", (current) => ({ ...current, mode: "maintenance" }));
+      expect(Object.keys(state.activities)).toHaveLength(1);
+    } finally { finish(); }
+    expect((await decision).actions[0].state).toBe("succeeded");
+    expect((await recoveryState()).activities).toEqual({});
   });
 
   it("recovers a job abandoned by a previous process after its lease expires", async () => {

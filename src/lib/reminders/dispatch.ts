@@ -19,6 +19,7 @@ import {
   type ReminderLeadContext,
 } from "./compose";
 import type { Deal } from "@/lib/crm/types";
+import { assertOutboundAllowed, withDataset } from "@/lib/recovery/control";
 
 /**
  * Delivering reminders.
@@ -127,6 +128,10 @@ export interface DeliveryResult {
  * half that always works.
  */
 export async function deliver(reminder: Reminder): Promise<DeliveryResult> {
+  return withDataset(async () => { await assertOutboundAllowed(); return deliverInDataset(reminder); });
+}
+
+async function deliverInDataset(reminder: Reminder): Promise<DeliveryResult> {
   const store = getReminderStore();
   const ctx = await contextFor(reminder);
   let inApp = false;
@@ -211,6 +216,10 @@ export interface DispatchSummary {
 
 /** Deliver everything due. Safe to call as often as you like. */
 export async function dispatchDueReminders(now: Date = new Date(), limit = 50): Promise<DispatchSummary> {
+  return withDataset(async () => { await assertOutboundAllowed(); return dispatchInDataset(now, limit); });
+}
+
+async function dispatchInDataset(now: Date, limit: number): Promise<DispatchSummary> {
   const due = await getReminderStore().listDue(now.toISOString(), limit);
   const results: DeliveryResult[] = [];
 

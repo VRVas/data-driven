@@ -6,6 +6,7 @@ import { b } from "./blocks";
 import { executionPolicy, withExecutionPolicy, type ProposedAction } from "./execution";
 import { getCopilotProvider, type AskOptions, type CopilotTurn } from "./provider";
 import { getToolByName } from "./tools";
+import { withDataset } from "@/lib/recovery/control";
 
 const validator = new Ajv({ strict: false, validateFormats: false });
 
@@ -26,6 +27,10 @@ export function actionKey(action: ProposedAction): string {
 }
 
 export async function runCopilotTurn(message: string, user: SessionUser, options: AskOptions = {}): Promise<CopilotTurn> {
+  return withDataset((_target, signal) => runInDataset(message, user, { ...options, signal: options.signal ? AbortSignal.any([signal, options.signal]) : signal }));
+}
+
+async function runInDataset(message: string, user: SessionUser, options: AskOptions): Promise<CopilotTurn> {
   const inherited = executionPolicy();
   const proposed: ProposedAction[] = [];
   const turn = await withExecutionPolicy({

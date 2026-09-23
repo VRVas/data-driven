@@ -14,6 +14,7 @@ import { digest, resolveIdentity, requireExternalScope, type ExternalCaller } fr
 import { documentBase, integrationStore, type IntegrationStore } from "./store";
 import { IntegrationError, MessageInputSchema, terminalTask, type CopilotTask, type IntegrationDocument, type PendingAction } from "./contracts";
 import type { Block } from "../blocks";
+import { withDataset } from "@/lib/recovery/control";
 
 interface ContextRecord extends IntegrationDocument {
   kind: "context";
@@ -256,6 +257,10 @@ export async function cancelTask(caller: ExternalCaller, id: string, store = int
 }
 
 export async function decideAction(caller: ExternalCaller, taskId: string, actionId: string, decision: "approve" | "reject", store = integrationStore()): Promise<CopilotTask> {
+  return withDataset(() => decideInDataset(caller, taskId, actionId, decision, store));
+}
+
+async function decideInDataset(caller: ExternalCaller, taskId: string, actionId: string, decision: "approve" | "reject", store: IntegrationStore): Promise<CopilotTask> {
   requireExternalScope(caller, "copilot:approve");
   await getTask(caller, taskId, store);
   const refreshed = await resolveIdentity(caller.identity);

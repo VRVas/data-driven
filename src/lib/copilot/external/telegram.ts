@@ -8,6 +8,7 @@ import { IntegrationError, terminalTask, type CopilotTask, type IdentityRef, typ
 import { documentBase, integrationStore, type IntegrationStore } from "./store";
 import { claimLink } from "./telegram-link";
 import { cancelTask, decideAction, getTask, integrationBaseUrl, submitTask } from "./tasks";
+import { assertOutboundAllowed, withDataset } from "@/lib/recovery/control";
 
 const PersonSchema = z.object({ id: z.number().int().safe().positive(), is_bot: z.boolean(), first_name: z.string().max(100), last_name: z.string().max(100).optional() });
 const ChatSchema = z.object({ id: z.number().int().safe(), type: z.string() });
@@ -257,6 +258,10 @@ export async function deliverTelegram(record: Outbox, client: TelegramApi, store
 let timer: ReturnType<typeof setInterval> | undefined;
 let busy = false;
 export async function sweepTelegram(client: TelegramApi = telegramApi(), store = integrationStore()): Promise<void> {
+  return withDataset(async () => { await assertOutboundAllowed(); return sweepInDataset(client, store); });
+}
+
+async function sweepInDataset(client: TelegramApi, store: IntegrationStore): Promise<void> {
   const inbox = await store.scan<Inbox>("telegram-inbox", { partitionKey: telegramPartition(), states: ["queued", "working"], limit: 20 });
   for (const event of inbox.slice(0, 4)) await processTelegramInbox(event, client, store);
   const tasks = await store.scan<CopilotTask>("task", { states: ["completed", "input-required", "failed", "rejected", "canceled"], undelivered: true, limit: 100 });

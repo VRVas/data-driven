@@ -1,4 +1,5 @@
 import "server-only";
+import { assertOutboundAllowed, withDataset } from "@/lib/recovery/control";
 
 /**
  * Email delivery behind a provider seam.
@@ -35,7 +36,7 @@ export interface SendResult {
 
 export interface EmailProvider {
   readonly name: string;
-  send(msg: EmailMessage): Promise<SendResult>;
+  send(msg: EmailMessage, signal?: AbortSignal): Promise<SendResult>;
 }
 
 class LocalOutboxProvider implements EmailProvider {
@@ -48,7 +49,7 @@ class LocalOutboxProvider implements EmailProvider {
 
 class AcsEmailProvider implements EmailProvider {
   readonly name = "acs";
-  async send(msg: EmailMessage): Promise<SendResult> {
+  async send(msg: EmailMessage, signal?: AbortSignal): Promise<SendResult> {
     const sender = process.env.ACS_SENDER_ADDRESS;
     if (!sender) return { ok: false, provider: this.name, error: "ACS_SENDER_ADDRESS is not set" };
 
@@ -73,8 +74,8 @@ class AcsEmailProvider implements EmailProvider {
         content: { subject: msg.subject, plainText: msg.body },
         recipients: { to: [{ address: msg.to, displayName: msg.toName }] },
         ...(msg.attachments?.length ? { attachments: msg.attachments } : {}),
-      });
-      const result = await poller.pollUntilDone();
+      }, { abortSignal: signal });
+      const result = await poller.pollUntilDone({ abortSignal: signal });
       return { ok: result.status === "Succeeded", provider: this.name, messageId: result.id };
     } catch (err) {
       return { ok: false, provider: this.name, error: err instanceof Error ? err.message : "send failed" };
@@ -90,6 +91,10 @@ let provider: EmailProvider | undefined;
 
 export function getEmailProvider(): EmailProvider {
   if (provider) return provider;
-  provider = isAcsConfigured() ? new AcsEmailProvider() : new LocalOutboxProvider();
+  const delegate = isAcsConfigured() ? new AcsEmailProvider() : new LocalOutboxProvider();
+  provider = { name: delegate.name, send: (message) => withDataset(async (_target, signal) => {
+    await assertOutboundAllowed();
+    return (delegate as EmailProvider).send(message, signal);
+  }) };
   return provider;
 }
