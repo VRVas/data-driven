@@ -26,6 +26,11 @@ const HTTP_METHODS = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"
  */
 const PRE_AUTH_ALLOWLIST: readonly { route: string; handlers: readonly string[]; reason: string }[] = [
   {
+    route: "src/app/api/channels/telegram/webhook/route.ts",
+    handlers: ["POST"],
+    reason: "Telegram delivers before app-user resolution. A constant-time webhook-secret check gates durable ingestion; the worker then resolves a confirmed account link and current permissions.",
+  },
+  {
     route: "src/app/api/auth/[...nextauth]/route.ts",
     handlers: ["GET", "POST"],
     reason:

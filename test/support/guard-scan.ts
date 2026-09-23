@@ -262,7 +262,7 @@ export type Guard =
  * `apiPermission`, which wraps it. Anything else is not a gate.
  */
 export const ACTION_GUARDS = ["requirePermission"] as const;
-export const ROUTE_GUARDS = ["apiPermission", "requirePermission"] as const;
+export const ROUTE_GUARDS = ["apiPermission", "requirePermission", "externalPermission"] as const;
 
 const guardCallPattern = (names: readonly string[]) =>
   new RegExp(`\\b(?:${names.join("|")})\\s*\\(`, "g");
