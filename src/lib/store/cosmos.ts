@@ -1,6 +1,7 @@
 import "server-only";
-import { CosmosClient, type Database } from "@azure/cosmos";
-import { DefaultAzureCredential } from "@azure/identity";
+import type { Database } from "@azure/cosmos";
+import { baselineDatabase, rawDatabase, recoveryEnabled } from "@/lib/recovery/backend";
+import { routedDatabase } from "@/lib/recovery/routing";
 
 /**
  * Lazily-constructed Cosmos DB (NoSQL) handle.
@@ -14,18 +15,8 @@ let db: Database | null | undefined;
 export function getCosmosDb(): Database | null {
   if (db !== undefined) return db;
 
-  const endpoint = process.env.COSMOS_ENDPOINT;
-  const databaseId = process.env.COSMOS_DATABASE ?? "bd";
-  if (!endpoint) {
-    db = null;
-    return db;
-  }
-
-  const client = new CosmosClient({
-    endpoint,
-    aadCredentials: new DefaultAzureCredential(),
-  });
-  db = client.database(databaseId);
+  const database = rawDatabase(baselineDatabase());
+  db = database && recoveryEnabled() ? routedDatabase(database) : database;
   return db;
 }
 

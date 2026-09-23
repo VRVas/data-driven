@@ -1,6 +1,7 @@
 import "server-only";
 import { promises as fs } from "node:fs";
 import path from "node:path";
+import { dataDirectory } from "./location";
 
 /**
  * Safe read-modify-write for the local JSON stores.
@@ -27,7 +28,13 @@ export function withFileLock<T>(file: string, job: () => Promise<T>): Promise<T>
   const previous = chains.get(file) ?? Promise.resolve();
   // Swallow the predecessor's rejection: one failed write must not poison the
   // queue for everything behind it.
-  const next = previous.catch(() => undefined).then(job);
+  const next = previous.catch(() => undefined).then(async () => {
+    if (process.env.DATA_RECOVERY_ENABLED === "true" && path.dirname(path.resolve(file)) === dataDirectory()) {
+      const { withLocalFile } = await import("@/lib/recovery/control");
+      return withLocalFile(file, () => job());
+    }
+    return job();
+  });
   chains.set(
     file,
     next.catch(() => undefined),
@@ -37,7 +44,8 @@ export function withFileLock<T>(file: string, job: () => Promise<T>): Promise<T>
 
 export async function readJsonArray<T>(file: string): Promise<T[]> {
   try {
-    const raw = await fs.readFile(file, "utf8");
+    const { withLocalFile } = await import("@/lib/recovery/control");
+    const raw = await withLocalFile(file, (resolved) => fs.readFile(resolved, "utf8"));
     const parsed = JSON.parse(raw) as T[];
     return Array.isArray(parsed) ? parsed : [];
   } catch {
@@ -47,6 +55,15 @@ export async function readJsonArray<T>(file: string): Promise<T[]> {
 
 /** Write via a temp file and rename, so a concurrent reader never sees a partial file. */
 export async function writeJsonAtomic(file: string, data: unknown): Promise<void> {
+  if (process.env.DATA_RECOVERY_ENABLED === "true" && path.dirname(path.resolve(file)) === dataDirectory()) {
+    const { withLocalFile } = await import("@/lib/recovery/control");
+    return withLocalFile(file, async (resolved) => {
+      await fs.mkdir(path.dirname(resolved), { recursive: true });
+      const temp = `${resolved}.${process.pid}.${Date.now().toString(36)}.tmp`;
+      await fs.writeFile(temp, JSON.stringify(data, null, 2), "utf8");
+      await fs.rename(temp, resolved);
+    });
+  }
   await fs.mkdir(path.dirname(file), { recursive: true });
   const temp = `${file}.${process.pid}.${Date.now().toString(36)}.tmp`;
   await fs.writeFile(temp, JSON.stringify(data, null, 2), "utf8");
@@ -65,7 +82,8 @@ export function mutateJsonArray<T>(file: string, mutate: (rows: T[]) => T[] | Pr
 /** As `mutateJsonArray`, for a file holding an object rather than an array. */
 export async function readJsonObject<T extends object>(file: string, fallback: T): Promise<T> {
   try {
-    const parsed = JSON.parse(await fs.readFile(file, "utf8")) as T;
+    const { withLocalFile } = await import("@/lib/recovery/control");
+    const parsed = JSON.parse(await withLocalFile(file, (resolved) => fs.readFile(resolved, "utf8"))) as T;
     return parsed && typeof parsed === "object" ? parsed : fallback;
   } catch {
     return fallback;
