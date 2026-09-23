@@ -335,7 +335,7 @@ export const TOUR_STEPS: TourStep[] = [
     route: "/dashboard",
     selector: '[data-tour="topbar-team"]',
     title: "Access - far past admin vs member",
-    body: "There are now 47 separate permissions across ten areas, and most are scoped: none, only your own records, your team's, or everything. So “see every lead but only edit mine” is a real, expressible answer. They are bundled into profiles - Administrator, Sales manager, Sales rep, Operations & analysis, Read only - which you assign per person, with individual grants or denials on top. A denial always wins. Ask the Copilot “What am I allowed to do?” and it will tell you exactly.",
+    body: "There are now 49 separate permissions across ten areas, and most are scoped: none, only your own records, your team's, or everything. So “see every lead but only edit mine” is a real, expressible answer. They are bundled into profiles - Administrator, Sales manager, Sales rep, Operations & analysis, Read only - which you assign per person, with individual grants or denials on top. A denial always wins. Ask the Copilot “What am I allowed to do?” and it will tell you exactly.",
     isNew: true,
     placement: "left",
     optional: true,

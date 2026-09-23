@@ -35,6 +35,7 @@ export type PermissionCategory =
   | "Audit"
   | "Team & access"
   | "Copilot"
+  | "Recovery"
   | "Exports";
 
 export interface PermissionDef {
@@ -113,6 +114,9 @@ export const PERMISSIONS = [
   { key: "copilot:websearch", category: "Copilot", label: "Let the copilot search the web", scoped: false },
   { key: "copilot:documents", category: "Copilot", label: "Upload documents to the copilot", scoped: false },
 
+  { key: "data:backup", category: "Recovery", label: "Download full database backups", scoped: false, risk: "high" },
+  { key: "data:restore", category: "Recovery", label: "Replace and recover application data", scoped: false, risk: "high" },
+
   // ---- Exports ------------------------------------------------------------
   { key: "export:csv", category: "Exports", label: "Export CSV", scoped: false },
   { key: "export:excel", category: "Exports", label: "Export Excel", scoped: false },
@@ -146,6 +150,7 @@ export const PERMISSION_CATEGORIES = [
   "Audit",
   "Team & access",
   "Copilot",
+  "Recovery",
   "Exports",
 ] as const satisfies readonly PermissionCategory[];
 
