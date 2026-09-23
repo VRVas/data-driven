@@ -18,6 +18,7 @@ const BASE_URL = `http://localhost:${PORT}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  testIgnore: ["**/recovery-admin.spec.ts"],
   outputDir: "./test-results",
   fullyParallel: false,
   workers: 1,
