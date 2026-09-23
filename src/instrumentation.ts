@@ -12,6 +12,14 @@
 // - and every node import inside it must be dynamic.
 export async function register() {
   if (process.env.NEXT_RUNTIME === "nodejs") {
+    if (process.env.COPILOT_EXTERNAL_ENABLED === "true") {
+      const { startCopilotWorker } = await import("@/lib/copilot/external/worker");
+      startCopilotWorker();
+      if (process.env.TELEGRAM_ENABLED === "true") {
+        const { startTelegramWorker } = await import("@/lib/copilot/external/telegram");
+        startTelegramWorker();
+      }
+    }
     try {
       const { startReminderLoop } = await import("@/lib/reminders/loop");
       startReminderLoop();
