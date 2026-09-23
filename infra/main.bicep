@@ -25,6 +25,34 @@ param deployEmail bool = false
 @description('Allow signing in with an emailed code. Needs a custom mail domain - a managed domain only permits 10 sends an hour per subscription.')
 param enableOtpLogin bool = false
 
+@description('Enable the authenticated external copilot API and A2A interface.')
+param enableCopilotIntegrations bool = false
+
+@description('Enable the Telegram adapter. Requires external copilot and pre-existing Key Vault secrets.')
+param enableTelegram bool = false
+
+@description('Key Vault secret URI holding the integration client configuration JSON.')
+param copilotClientsKeyVaultUrl string = ''
+
+@description('Allowed Entra tenant for external access tokens. Empty disables Entra authentication.')
+param copilotEntraTenantId string = ''
+
+@description('Expected audience of Entra access tokens for this API.')
+param copilotEntraAudience string = ''
+
+@description('Required Entra delegated scope or application role.')
+param copilotEntraRole string = 'Copilot.Invoke'
+
+@description('Key Vault secret URI holding the Telegram bot token.')
+param telegramBotTokenKeyVaultUrl string = ''
+
+@description('Key Vault secret URI holding a random Telegram webhook secret of at least 32 characters.')
+@secure()
+param telegramWebhookSecretKeyVaultUrl string = ''
+
+@description('Telegram bot username without the at-sign.')
+param telegramBotUsername string = ''
+
 @description('Email address for the monthly cost-budget alert on the resource group. Empty disables it.')
 param budgetContactEmail string = ''
 
@@ -74,6 +102,15 @@ module resources 'resources.bicep' = {
     tags: tags
     deployEmail: deployEmail
     enableOtpLogin: enableOtpLogin
+    enableCopilotIntegrations: enableCopilotIntegrations
+    enableTelegram: enableTelegram
+    copilotClientsKeyVaultUrl: copilotClientsKeyVaultUrl
+    copilotEntraTenantId: copilotEntraTenantId
+    copilotEntraAudience: copilotEntraAudience
+    copilotEntraRole: copilotEntraRole
+    telegramBotTokenKeyVaultUrl: telegramBotTokenKeyVaultUrl
+    telegramWebhookSecretKeyVaultUrl: telegramWebhookSecretKeyVaultUrl
+    telegramBotUsername: telegramBotUsername
     chatModelName: chatModelName
     reasoningEffort: reasoningEffort
     agentName: agentName

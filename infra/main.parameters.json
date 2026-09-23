@@ -17,6 +17,33 @@
     "enableOtpLogin": {
       "value": "${ENABLE_OTP_LOGIN=false}"
     },
+    "enableCopilotIntegrations": {
+      "value": "${ENABLE_COPILOT_INTEGRATIONS=false}"
+    },
+    "enableTelegram": {
+      "value": "${ENABLE_TELEGRAM=false}"
+    },
+    "copilotClientsKeyVaultUrl": {
+      "value": "${COPILOT_CLIENTS_KEY_VAULT_URL=}"
+    },
+    "copilotEntraTenantId": {
+      "value": "${COPILOT_ENTRA_TENANT_ID=}"
+    },
+    "copilotEntraAudience": {
+      "value": "${COPILOT_ENTRA_AUDIENCE=}"
+    },
+    "copilotEntraRole": {
+      "value": "${COPILOT_ENTRA_ROLE=Copilot.Invoke}"
+    },
+    "telegramBotTokenKeyVaultUrl": {
+      "value": "${TELEGRAM_BOT_TOKEN_KEY_VAULT_URL=}"
+    },
+    "telegramWebhookSecretKeyVaultUrl": {
+      "value": "${TELEGRAM_WEBHOOK_SECRET_KEY_VAULT_URL=}"
+    },
+    "telegramBotUsername": {
+      "value": "${TELEGRAM_BOT_USERNAME=}"
+    },
     "budgetContactEmail": {
       "value": "${BUDGET_CONTACT_EMAIL=}"
     },

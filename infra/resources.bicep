@@ -61,6 +61,17 @@ param deployEmail bool = false
 @description('Allow signing in with an emailed code. Requires a CUSTOM mail domain: an Azure Managed Domain permits only 10 sends per hour per subscription, which sign-in traffic would exhaust.')
 param enableOtpLogin bool = false
 
+param enableCopilotIntegrations bool = false
+param enableTelegram bool = false
+param copilotClientsKeyVaultUrl string = ''
+param copilotEntraTenantId string = ''
+param copilotEntraAudience string = ''
+param copilotEntraRole string = 'Copilot.Invoke'
+param telegramBotTokenKeyVaultUrl string = ''
+@secure()
+param telegramWebhookSecretKeyVaultUrl string = ''
+param telegramBotUsername string = ''
+
 @description('Monthly cost budget (in the billing currency) tracked on the resource group. Used only when a budget contact email is set.')
 param budgetAmount int = 100
 
@@ -420,6 +431,7 @@ var containers = [
   // default: without it Cosmos IGNORES the per-item ttl the app writes, and
   // spent codes would pile up forever.
   { name: 'authChallenges', pk: '/email', ttl: -1 }
+  { name: 'copilotIntegrations', pk: '/partitionKey', ttl: -1 }
 ]
 
 resource cosmosContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-11-15' = [
@@ -880,6 +892,32 @@ var reasoningEnv = [ { name: 'COPILOT_REASONING_EFFORT', value: reasoningEffort 
 // outreach of the same quota.
 var otpEnv = [ { name: 'OTP_LOGIN_ENABLED', value: enableOtpLogin ? 'true' : 'false' } ]
 
+var integrationSecrets = concat(
+  empty(copilotClientsKeyVaultUrl) ? [] : [
+    { name: 'copilot-clients', keyVaultUrl: copilotClientsKeyVaultUrl, identity: uami.id }
+  ],
+  enableTelegram ? [
+    { name: 'telegram-token', keyVaultUrl: telegramBotTokenKeyVaultUrl, identity: uami.id }
+    { name: 'telegram-webhook-secret', keyVaultUrl: telegramWebhookSecretKeyVaultUrl, identity: uami.id }
+  ] : []
+)
+
+var integrationEnv = concat(
+  [
+    { name: 'COPILOT_EXTERNAL_ENABLED', value: enableCopilotIntegrations ? 'true' : 'false' }
+    { name: 'TELEGRAM_ENABLED', value: enableTelegram ? 'true' : 'false' }
+    { name: 'COPILOT_ENTRA_TENANT_ID', value: copilotEntraTenantId }
+    { name: 'COPILOT_ENTRA_AUDIENCE', value: copilotEntraAudience }
+    { name: 'COPILOT_ENTRA_ROLE', value: copilotEntraRole }
+  ],
+  empty(copilotClientsKeyVaultUrl) ? [] : [ { name: 'COPILOT_CLIENTS_JSON', secretRef: 'copilot-clients' } ],
+  enableTelegram ? [
+    { name: 'TELEGRAM_BOT_TOKEN', secretRef: 'telegram-token' }
+    { name: 'TELEGRAM_WEBHOOK_SECRET', secretRef: 'telegram-webhook-secret' }
+    { name: 'TELEGRAM_BOT_USERNAME', value: telegramBotUsername }
+  ] : []
+)
+
 var baseEnv = [
   { name: 'PORT', value: '3000' }
   { name: 'AZURE_CLIENT_ID', value: uami.properties.clientId }
@@ -931,9 +969,9 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
       registries: [
         { server: acr.properties.loginServer, identity: uami.id }
       ]
-      secrets: [
+      secrets: concat([
         { name: 'auth-secret', value: authSecret }
-      ]
+      ], integrationSecrets)
     }
     template: {
       containers: [
@@ -941,7 +979,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'web'
           image: webImage
           resources: { cpu: json('0.5'), memory: '1Gi' }
-          env: concat(baseEnv, emailEnv, reasoningEnv, otpEnv)
+          env: concat(baseEnv, emailEnv, reasoningEnv, otpEnv, integrationEnv)
         }
       ]
       // minReplicas: 1 keeps one instance always warm (no cold starts). Cost of

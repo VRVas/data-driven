@@ -22,7 +22,7 @@ hooks:
   # continueOnError: without a session secret the deployment is not worth doing.
   preprovision:
     shell: sh
-    run: ./scripts/preprovision.sh
+    run: node ./scripts/validate-integrations.mjs && ./scripts/preprovision.sh
     interactive: false
     continueOnError: false
   postprovision:

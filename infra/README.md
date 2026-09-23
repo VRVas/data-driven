@@ -165,6 +165,21 @@ three marked *optional*; they are `azd env set` overrides.
   never sends - it queues for admin approval.
 
 
+## External copilot integrations
+
+REST v1, A2A 1.0, and Telegram are opt-in. The deployment declares the
+`copilotIntegrations` Cosmos container with `/partitionKey` and `defaultTtl: -1`,
+plus conditional Key Vault-backed client and Telegram settings. The complete
+variable table, activation procedure, verification gates, and recovery rules are in
+[../docs/COPILOT_INTEGRATION_GUIDE.md](../docs/COPILOT_INTEGRATION_GUIDE.md).
+
+Production application clients should use the Entra path under the policy below.
+The opaque client-token option is for development or environments where policy
+explicitly allows it. Telegram's native bot credential and CRM data transfer need
+separate policy approval before that channel is enabled. Azure data-plane account
+keys remain disabled. Keep at least one app replica running for the durable task
+and Telegram workers. Webhook registration is a separate operator action.
+
 ## Compliance: no key-based auth, private Cosmos
 
 Per the target subscription policy (MCAPS): **no key-based auth anywhere** and **no
