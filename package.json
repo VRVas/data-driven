@@ -12,12 +12,14 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:recovery": "playwright test --config=playwright.recovery.config.ts",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
     "etl": "python3 scripts/etl.py"
   },
   "dependencies": {
     "@a2a-js/sdk": "^1.2.0",
+    "@azure/arm-cosmosdb": "^17.0.0",
     "@azure/communication-email": "^1.1.0",
     "@azure/cosmos": "^4.9.3",
     "@azure/identity": "^4.13.1",
@@ -29,11 +31,13 @@
     "grammy": "^1.46.0",
     "gsap": "^3.13.0",
     "jose": "^6.2.12",
+    "lucide-react": "^1.47.0",
     "marked": "^16.4.2",
     "next": "^15.5.26",
     "next-auth": "^5.0.0-beta.32",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "tar-stream": "^3.2.1",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -43,6 +47,7 @@
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/tar-stream": "^3.1.4",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",
     "vitest": "^4.1.11"
