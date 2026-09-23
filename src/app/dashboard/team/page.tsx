@@ -9,6 +9,8 @@ import type { Profile } from "@/lib/auth/profiles";
 import { assignmentForLegacyRole } from "@/lib/auth/resolve";
 import { getProfileStore } from "@/lib/store/profiles";
 import { getUserStore } from "@/lib/store/users";
+import Link from "next/link";
+import { recoveryEnabled } from "@/lib/recovery/backend";
 
 export const dynamic = "force-dynamic";
 
@@ -65,6 +67,7 @@ export default async function TeamPage() {
     <div className="space-y-8">
       <Reveal>
         <h1 className="font-display text-3xl font-semibold tracking-tight">Team</h1>
+        {recoveryEnabled() && (await can("data:backup")) && <Link href="/recovery" className="mt-3 inline-block text-sm text-[var(--color-cyan)]">Data &amp; Recovery</Link>}
         <p className="mt-1 text-[var(--color-ink-muted)]">
           {people.length} {people.length === 1 ? "member" : "members"} - {profiles.length}{" "}
           {profiles.length === 1 ? "profile" : "profiles"}. Profiles decide what someone can do; assigning one is how
