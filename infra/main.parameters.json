@@ -17,6 +17,12 @@
     "enableOtpLogin": {
       "value": "${ENABLE_OTP_LOGIN=false}"
     },
+    "enableDataRecovery": {
+      "value": "${ENABLE_DATA_RECOVERY=true}"
+    },
+    "dataRecoveryKey": {
+      "value": "${DATA_RECOVERY_KEY}"
+    },
     "enableCopilotIntegrations": {
       "value": "${ENABLE_COPILOT_INTEGRATIONS=false}"
     },

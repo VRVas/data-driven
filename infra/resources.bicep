@@ -61,6 +61,11 @@ param deployEmail bool = false
 @description('Allow signing in with an emailed code. Requires a CUSTOM mail domain: an Azure Managed Domain permits only 10 sends per hour per subscription, which sign-in traffic would exhaust.')
 param enableOtpLogin bool = false
 
+param enableDataRecovery bool = true
+@secure()
+@minLength(32)
+param dataRecoveryKey string
+
 param enableCopilotIntegrations bool = false
 param enableTelegram bool = false
 param copilotClientsKeyVaultUrl string = ''
@@ -132,6 +137,12 @@ var roleCommunicationEmailOwner = '09976791-48a7-449e-bb21-39d1a415f350' // Comm
 // =====================================================================
 resource uami 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = {
   name: uamiName
+  location: location
+  tags: tags
+}
+
+resource recoveryIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-01-31' = if (enableDataRecovery) {
+  name: '${prefix}-recovery-${resourceToken}'
   location: location
   tags: tags
 }
@@ -453,6 +464,48 @@ resource cosmosContainers 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/co
     }
   }
 ]
+
+resource recoveryDatabase 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases@2024-11-15' = if (enableDataRecovery) {
+  parent: cosmos
+  name: '${cosmosDatabase}-recovery'
+  properties: { resource: { id: '${cosmosDatabase}-recovery' } }
+}
+
+resource recoveryOperations 'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers@2024-11-15' = if (enableDataRecovery) {
+  parent: recoveryDatabase
+  name: 'operations'
+  properties: { resource: { id: 'operations', partitionKey: { paths: [ '/partitionKey' ], kind: 'Hash' }, defaultTtl: -1 } }
+}
+
+resource recoveryManagementRole 'Microsoft.Authorization/roleDefinitions@2022-04-01' = if (enableDataRecovery) {
+  name: guid(resourceGroup().id, 'recovery-database-provisioner')
+  properties: {
+    roleName: '${prefix}-recovery-${resourceToken}'
+    description: 'Create and inspect staged Cosmos databases and containers. No account keys, deletes, networking or role assignments.'
+    type: 'CustomRole'
+    assignableScopes: [ resourceGroup().id ]
+    permissions: [{
+      actions: [
+        'Microsoft.DocumentDB/databaseAccounts/read'
+        'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/read'
+        'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/write'
+        'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/read'
+        'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/write'
+      ]
+      notActions: []
+    }]
+  }
+}
+
+resource recoveryManagementAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (enableDataRecovery) {
+  scope: cosmos
+  name: guid(cosmos.id, recoveryIdentity.id, 'recovery-provisioner')
+  properties: {
+    principalId: recoveryIdentity.?properties.principalId ?? ''
+    principalType: 'ServicePrincipal'
+    roleDefinitionId: recoveryManagementRole.id
+  }
+}
 
 // data-plane access for the app identity
 resource cosmosDataRole 'Microsoft.DocumentDB/databaseAccounts/sqlRoleAssignments@2024-11-15' = {
@@ -918,6 +971,14 @@ var integrationEnv = concat(
   ] : []
 )
 
+var recoveryEnv = enableDataRecovery ? [
+  { name: 'DATA_RECOVERY_ENABLED', value: 'true' }
+  { name: 'DATA_RECOVERY_KEY', secretRef: 'data-recovery-key' }
+  { name: 'COSMOS_CONTROL_DATABASE', value: recoveryDatabase.name }
+  { name: 'COSMOS_RESOURCE_ID', value: cosmos.id }
+  { name: 'RECOVERY_MANAGED_IDENTITY_CLIENT_ID', value: recoveryIdentity.?properties.clientId ?? '' }
+] : [ { name: 'DATA_RECOVERY_ENABLED', value: 'false' } ]
+
 var baseEnv = [
   { name: 'PORT', value: '3000' }
   { name: 'AZURE_CLIENT_ID', value: uami.properties.clientId }
@@ -954,7 +1015,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
   tags: union(tags, { 'azd-service-name': 'web' })
   identity: {
     type: 'UserAssigned'
-    userAssignedIdentities: { '${uami.id}': {} }
+    userAssignedIdentities: union({ '${uami.id}': {} }, enableDataRecovery ? { '${recoveryIdentity.id}': {} } : {})
   }
   properties: {
     managedEnvironmentId: cae.id
@@ -971,7 +1032,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
       ]
       secrets: concat([
         { name: 'auth-secret', value: authSecret }
-      ], integrationSecrets)
+      ], integrationSecrets, enableDataRecovery ? [{ name: 'data-recovery-key', value: dataRecoveryKey }] : [])
     }
     template: {
       containers: [
@@ -979,7 +1040,7 @@ resource app 'Microsoft.App/containerApps@2024-03-01' = {
           name: 'web'
           image: webImage
           resources: { cpu: json('0.5'), memory: '1Gi' }
-          env: concat(baseEnv, emailEnv, reasoningEnv, otpEnv, integrationEnv)
+          env: concat(baseEnv, emailEnv, reasoningEnv, otpEnv, integrationEnv, recoveryEnv)
         }
       ]
       // minReplicas: 1 keeps one instance always warm (no cold starts). Cost of

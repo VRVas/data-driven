@@ -25,6 +25,14 @@ param deployEmail bool = false
 @description('Allow signing in with an emailed code. Needs a custom mail domain - a managed domain only permits 10 sends an hour per subscription.')
 param enableOtpLogin bool = false
 
+@description('Enable admin backup, initialization and staged data replacement.')
+param enableDataRecovery bool = true
+
+@description('Independent environment recovery credential, generated once by preprovision.')
+@secure()
+@minLength(32)
+param dataRecoveryKey string
+
 @description('Enable the authenticated external copilot API and A2A interface.')
 param enableCopilotIntegrations bool = false
 
@@ -102,6 +110,8 @@ module resources 'resources.bicep' = {
     tags: tags
     deployEmail: deployEmail
     enableOtpLogin: enableOtpLogin
+    enableDataRecovery: enableDataRecovery
+    dataRecoveryKey: dataRecoveryKey
     enableCopilotIntegrations: enableCopilotIntegrations
     enableTelegram: enableTelegram
     copilotClientsKeyVaultUrl: copilotClientsKeyVaultUrl

@@ -54,6 +54,8 @@ jobs:
       TELEGRAM_WEBHOOK_SECRET_KEY_VAULT_URL: ${{ vars.TELEGRAM_WEBHOOK_SECRET_KEY_VAULT_URL }}
       TELEGRAM_BOT_USERNAME: ${{ vars.TELEGRAM_BOT_USERNAME }}
       AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+      ENABLE_DATA_RECOVERY: ${{ vars.ENABLE_DATA_RECOVERY }}
+      DATA_RECOVERY_KEY: ${{ secrets.DATA_RECOVERY_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
