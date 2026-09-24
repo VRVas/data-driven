@@ -91,8 +91,8 @@ export default async function ScoringPage() {
   return (
     <div className="space-y-8">
       <Reveal>
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0 flex-1 basis-64">
             <h1 className="font-display text-3xl font-semibold tracking-tight">Scoring model</h1>
             <p className="mt-1 max-w-2xl text-[var(--color-ink-muted)]">
               Leads are ranked by <strong>Priority</strong> - what a deal is worth against how likely it is to
@@ -122,7 +122,7 @@ export default async function ScoringPage() {
       </Reveal>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <Reveal className="h-full">
+        <Reveal className="h-full min-w-0">
           <ChartCard
             id="scoring-quadrant"
             title="Priority quadrant"
@@ -132,7 +132,7 @@ export default async function ScoringPage() {
           </ChartCard>
         </Reveal>
 
-        <Reveal className="h-full">
+        <Reveal className="h-full min-w-0">
           <ChartCard
             id="scoring-ranked"
             title="Top-ranked leads"
@@ -140,15 +140,15 @@ export default async function ScoringPage() {
           >
             <ol className="space-y-1.5">
               {ranked.slice(0, 12).map(({ brand, p }, i) => (
-                <li key={brand.id} className="flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-[var(--color-surface)]">
-                  <span className="w-5 text-right text-sm text-[var(--color-ink-faint)]">{i + 1}</span>
-                  <span className="flex-1 font-medium">{brand.name}</span>
-                  <span className="text-xs text-[var(--color-ink-muted)]">{p.quadrant}</span>
-                  <span className="w-16 text-right text-sm text-[var(--color-ink-muted)]">
+                <li key={brand.id} className="grid grid-cols-[1.25rem_minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-1 rounded-lg px-2 py-1.5 hover:bg-[var(--color-surface)] sm:flex">
+                  <span className="row-span-2 w-5 shrink-0 text-right text-sm text-[var(--color-ink-faint)]">{i + 1}</span>
+                  <span className="col-span-2 min-w-0 flex-1 break-words font-medium">{brand.name}</span>
+                  <span className="col-start-2 row-start-2 text-xs text-[var(--color-ink-muted)]">{p.quadrant}</span>
+                  <span className="col-start-3 row-start-2 w-16 shrink-0 text-right text-sm text-[var(--color-ink-muted)]">
                     {brand.scores?.budget ? eur(brand.scores.budget) : "-"}
                   </span>
                   <Badge color={GRADE_TOKEN[p.grade]}>{p.grade}</Badge>
-                  <span className="w-10 text-right font-display font-semibold tabular-nums text-[var(--color-brand-bright)]">
+                  <span className="col-start-4 row-start-1 w-10 shrink-0 text-right font-display font-semibold tabular-nums text-[var(--color-brand-bright)]">
                     {p.priority}
                   </span>
                 </li>

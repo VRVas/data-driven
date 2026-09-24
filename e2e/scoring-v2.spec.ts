@@ -35,7 +35,7 @@ test.describe("scoring model", () => {
   });
 
   test("the quadrant chart is plotted on the new axes", async ({ page }) => {
-    const chart = page.getByRole("img", { name: "Priority quadrant" });
+    const chart = page.getByRole("group", { name: "Priority quadrant" });
     await expect(chart).toBeVisible();
     await expect(chart.locator("text", { hasText: "Winnability" })).toBeVisible();
     await expect(chart.locator("text", { hasText: "Opportunity" })).toBeVisible();

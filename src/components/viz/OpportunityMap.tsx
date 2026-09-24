@@ -46,7 +46,7 @@ export function OpportunityMap({ industries }: { industries: IndustryStat[] }) {
   );
 
   return (
-    <div className="w-0 min-w-full overflow-x-auto">
+    <div className="w-0 min-w-full overflow-x-auto focus-visible:outline-2 focus-visible:outline-[var(--color-brand)]" role="region" aria-label="Opportunity chart" tabIndex={0}>
     <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[460px]" role="img" aria-label="Opportunity map">
       {/* prime-whitespace tint: low penetration, high value (top-left) */}
       <rect x={PAD} y={PAD} width={(W - PAD * 2) / 2} height={(H - PAD * 2) / 2}

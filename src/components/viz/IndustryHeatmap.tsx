@@ -15,7 +15,7 @@ function heat(v: number | null): string {
   const t = Math.max(0, Math.min(1, v / 5));
   const hue = 350 + t * 160; // 350 (rose) -> 150 (mint), wrapping through amber
   const h = hue % 360;
-  return `hsl(${h} 70% ${28 + t * 14}%)`;
+  return `hsl(${h} 70% ${18 + t * 8}%)`;
 }
 
 const COLS: { key: keyof IndustryStat; label: string; kind: "score" | "pct" | "num" | "val" }[] = [
@@ -48,7 +48,7 @@ export function IndustryHeatmap({ industries }: { industries: IndustryStat[] }) 
   );
 
   return (
-    <div ref={ref} className="overflow-x-auto">
+    <div ref={ref} className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-[var(--color-brand)]" role="region" aria-label="Industry comparison" tabIndex={0}>
       <table className="w-full border-separate border-spacing-1 text-sm">
         <thead>
           <tr>
@@ -93,7 +93,7 @@ export function IndustryHeatmap({ industries }: { industries: IndustryStat[] }) 
                       className="inline-flex h-9 w-full min-w-20 items-center justify-center rounded-md text-xs font-semibold"
                       style={{
                         background: dark ? `color-mix(in srgb, ${bg} 20%, transparent)` : bg,
-                        color: dark ? bg : "rgba(255,255,255,0.92)",
+                        color: dark ? `color-mix(in srgb, ${bg} 65%, white)` : "rgba(255,255,255,0.92)",
                         border: dark ? `1px solid color-mix(in srgb, ${bg} 40%, transparent)` : "none",
                       }}
                     >

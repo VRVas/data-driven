@@ -12,6 +12,19 @@ async function column(page: import("@playwright/test").Page, header: string) {
 }
 
 test.describe("pipeline sorting", () => {
+  test("sort headers work with the keyboard and announce direction", async ({ page }) => {
+    await page.goto("/dashboard/pipeline");
+    const header = page.getByRole("columnheader", { name: /^Brand/ });
+    const button = header.getByRole("button", { name: "Brand" });
+    await expect(header).toHaveAttribute("aria-sort", "ascending");
+    await button.focus();
+    await page.keyboard.press("Enter");
+    await expect(header).toHaveAttribute("aria-sort", "descending");
+    await page.keyboard.press("Space");
+    await expect(header).toHaveAttribute("aria-sort", "ascending");
+    await expect(page.getByRole("textbox", { name: "Search pipeline" })).toBeVisible();
+  });
+
   test("waiting on and priority sort like every other column", async ({ page }) => {
     await page.goto("/dashboard/pipeline");
 

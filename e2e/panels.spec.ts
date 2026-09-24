@@ -41,20 +41,20 @@ test("a chart folds away and stays folded", async ({ page }) => {
   const panel = page.locator('[data-panel="overview-quadrant"]');
   const fold = panel.getByRole("button", { name: /Collapse Priority quadrant/ });
 
-  await expect(panel.locator("svg[role='img']")).toBeVisible();
+  await expect(panel.getByRole("group", { name: "Priority quadrant" })).toBeVisible();
   const openHeight = (await panel.boundingBox())!.height;
 
   await fold.click();
-  await expect(panel.locator("svg[role='img']")).toHaveCount(0);
+  await expect(panel.getByRole("group", { name: "Priority quadrant" })).toHaveCount(0);
   expect((await panel.boundingBox())!.height).toBeLessThan(openHeight);
 
   // The preference is the point: re-collapsing it on every visit is worse
   // than not offering the control.
   await page.reload();
-  await expect(page.locator('[data-panel="overview-quadrant"] svg[role="img"]')).toHaveCount(0);
+  await expect(panel.getByRole("group", { name: "Priority quadrant" })).toHaveCount(0);
 
   await page.getByRole("button", { name: /Expand Priority quadrant/ }).click();
-  await expect(page.locator('[data-panel="overview-quadrant"] svg[role="img"]')).toBeVisible();
+  await expect(panel.getByRole("group", { name: "Priority quadrant" })).toBeVisible();
 });
 
 test("a folded card does not stretch to its open neighbour", async ({ page }) => {

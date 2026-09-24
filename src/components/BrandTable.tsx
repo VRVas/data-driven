@@ -181,14 +181,17 @@ export function BrandTable({
 
   const th = (key: SortKey, label: string, extra?: string) => (
     <th
-      onClick={() => toggleSort(key)}
+      scope="col"
+      aria-sort={sort.key === key ? (sort.dir === 1 ? "ascending" : "descending") : "none"}
       className={clsx(
-        "cursor-pointer select-none px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)] hover:text-[var(--color-ink)]",
+        "select-none text-left text-xs font-medium uppercase tracking-wider text-[var(--color-ink-faint)]",
         extra,
       )}
     >
-      {label}
-      {sort.key === key && <span className="ml-1">{sort.dir === 1 ? "↑" : "↓"}</span>}
+      <button type="button" onClick={() => toggleSort(key)} className="w-full whitespace-nowrap px-3 py-2 text-inherit uppercase [text-align:inherit] hover:text-[var(--color-ink)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[var(--color-brand)]">
+        {label}
+        {sort.key === key && <span aria-hidden className="ml-1">{sort.dir === 1 ? "↑" : "↓"}</span>}
+      </button>
     </th>
   );
 
@@ -271,15 +274,16 @@ export function BrandTable({
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search brand, POC, notes…"
+          aria-label="Search pipeline"
           data-tour="pipe-search"
-          className="h-9 w-64 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-brand)]"
+          className="h-9 w-full min-w-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-brand)] sm:w-64"
         />
         <Select label="Status" value={status} onChange={setStatus} options={statuses} />
         <Select label="Owner" value={owner} onChange={setOwner} options={owners} />
         <button
           onClick={() => setEditing(null)}
           data-tour="pipe-newlead"
-          className="ml-auto rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+          className="ml-auto rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.03]"
         >
           + New lead
         </button>
@@ -340,7 +344,7 @@ export function BrandTable({
                   {brands.length === 0 && (
                     <button
                       onClick={() => setEditing(null)}
-                      className="mt-3 rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+                      className="mt-3 rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.03]"
                     >
                       + Add your first lead
                     </button>
@@ -512,7 +516,7 @@ function SaveViewForm({
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-[var(--color-brand)] px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+        className="rounded-full bg-[var(--color-brand)] px-3 py-1 text-xs font-medium text-[var(--color-on-brand)] disabled:opacity-60"
       >
         {pending ? "…" : "Save"}
       </button>

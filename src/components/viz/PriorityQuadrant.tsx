@@ -90,7 +90,7 @@ export function PriorityQuadrant({
     // w-0 + min-w-full keeps this box's min-content contribution at zero, so an
     // ancestor grid track can't be widened by the chart's minimum width.
     <div className="w-0 min-w-full overflow-x-auto">
-    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[460px]" role="img" aria-label="Priority quadrant">
+    <svg ref={ref} viewBox={`0 0 ${W} ${H}`} className="w-full min-w-[460px]" role="group" aria-label="Priority quadrant">
       {/* quadrant background tints */}
       <rect x={sx(xMid)} y={PAD} width={W - PAD - sx(xMid)} height={sy(yMid) - PAD}
         fill="color-mix(in srgb, var(--color-mint) 8%, transparent)" />
@@ -117,7 +117,7 @@ export function PriorityQuadrant({
 
       {/* points */}
       {points.map((p) => (
-        <Link key={p.id} href={`/dashboard/pipeline#${p.id}`}>
+        <Link key={p.id} href={`/dashboard/pipeline#${p.id}`} aria-label={`${p.name}: winnability ${p.x.toFixed(0)}, opportunity ${p.y.toFixed(0)}`} onFocus={() => setHover(p)} onBlur={() => setHover(null)}>
           <circle
             data-dot
             cx={sx(p.x)}

@@ -230,7 +230,7 @@ export default async function QualityPage() {
               ))}
             </dl>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto focus-visible:outline-2 focus-visible:outline-[var(--color-brand)]" role="region" aria-label="Migration history" tabIndex={0}>
             <table className="w-full min-w-[36rem] text-sm">
               <thead className="bg-[var(--color-surface)]">
                 <tr>
