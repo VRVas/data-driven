@@ -198,7 +198,7 @@ export function ProfileEditor({
               <button
                 type="submit"
                 disabled={pending}
-                className="w-full rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.02] disabled:opacity-60"
+                className="w-full rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-semibold text-[var(--color-on-brand)] shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.02] disabled:opacity-60"
               >
                 {pending ? "Saving…" : isNew ? "Create profile" : "Save changes"}
               </button>
@@ -270,7 +270,7 @@ function ScopeControl({
             className={clsx(
               "flex-1 px-2.5 py-1.5 text-[11px] font-medium transition-colors sm:flex-none",
               active
-                ? "bg-[var(--color-brand)] text-white"
+                ? "bg-[var(--color-brand)] text-[var(--color-on-brand)]"
                 : "text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]",
             )}
           >

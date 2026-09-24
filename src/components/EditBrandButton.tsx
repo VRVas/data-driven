@@ -11,7 +11,7 @@ export function EditBrandButton({ brand, canDelete = false }: { brand: Brand; ca
     <>
       <button
         onClick={() => setOpen(true)}
-        className="rounded-full bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.03]"
+        className="rounded-full bg-[var(--color-brand)] px-4 py-2 text-sm font-semibold text-[var(--color-on-brand)] shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.03]"
       >
         Edit lead
       </button>

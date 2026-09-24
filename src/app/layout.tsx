@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { GeistMono } from "geist/font/mono";
 import { stackNotch, stackText } from "./fonts";
-import { AppParticles } from "@/components/fx/AppParticles";
 import { GrainOverlay } from "@/components/fx/GrainOverlay";
 import "./globals.css";
 
@@ -19,7 +18,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${stackNotch.variable} ${stackText.variable} ${GeistMono.variable}`}
     >
       <body className="bg-field min-h-screen antialiased">
-        <AppParticles />
         {children}
         <GrainOverlay />
       </body>

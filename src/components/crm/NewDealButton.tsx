@@ -18,7 +18,7 @@ export function NewDealButton({ company }: { company: { id: string; name: string
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+        className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.03]"
       >
         New deal
       </button>

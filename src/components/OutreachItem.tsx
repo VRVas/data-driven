@@ -66,7 +66,7 @@ export function OutreachItem({
               <input type="hidden" name="id" value={o.id} />
               <button
                 disabled={sending}
-                className="rounded-full bg-[var(--color-brand)] px-3 py-1 text-xs font-medium text-white transition-transform hover:scale-[1.03] disabled:opacity-60"
+                className="rounded-full bg-[var(--color-brand)] px-3 py-1 text-xs font-medium text-[var(--color-on-brand)] transition-transform hover:scale-[1.03] disabled:opacity-60"
               >
                 {sending ? "Sending…" : o.status === "pending_approval" ? "Approve & send" : "Send"}
               </button>

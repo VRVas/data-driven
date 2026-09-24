@@ -69,7 +69,7 @@ export function CreatePersonDrawer({ profiles, onClose }: { profiles: ProfileCho
           <button
             type="submit"
             disabled={pending}
-            className="w-full rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.02] disabled:opacity-60"
+            className="w-full rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-semibold text-[var(--color-on-brand)] shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
             {pending ? "Creating…" : "Create person"}
           </button>
@@ -130,7 +130,7 @@ export function AssignAccessDrawer({
           <button
             type="submit"
             disabled={pending || person.isSelf}
-            className="w-full rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-semibold text-white shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.02] disabled:opacity-60"
+            className="w-full rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-semibold text-[var(--color-on-brand)] shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.02] disabled:opacity-60"
           >
             {pending ? "Saving…" : "Save access"}
           </button>

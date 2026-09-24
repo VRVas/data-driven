@@ -46,7 +46,7 @@ export function CompanyProposals({
           <button
             type="button"
             onClick={() => setCreating(true)}
-            className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white"
+            className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)]"
           >
             New proposal
           </button>

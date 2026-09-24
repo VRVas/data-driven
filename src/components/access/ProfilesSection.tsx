@@ -35,7 +35,7 @@ export function ProfilesSection({
           <button
             type="button"
             onClick={() => setDrawer({ profile: null, duplicateOf: null })}
-            className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white"
+            className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)]"
           >
             New profile
           </button>

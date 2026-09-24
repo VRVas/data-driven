@@ -138,7 +138,7 @@ function ComposerPanel({
             <button
               type="submit"
               disabled={pending}
-              className="rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-white shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.02] disabled:opacity-60"
+              className="rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-brand)] shadow-[var(--shadow-glow)] transition-transform hover:scale-[1.02] disabled:opacity-60"
             >
               {pending ? "Saving…" : isAdmin ? "Save to outbox" : "Submit for approval"}
             </button>

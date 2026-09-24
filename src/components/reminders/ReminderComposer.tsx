@@ -35,7 +35,7 @@ export function ReminderComposer({ leads }: { leads: { id: string; name: string 
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+        className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.03]"
       >
         + New reminder
       </button>
@@ -142,7 +142,7 @@ export function ReminderComposer({ leads }: { leads: { id: string; name: string 
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-[1.01] disabled:opacity-60"
+        className="w-full rounded-full bg-[var(--color-brand)] px-6 py-3 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.01] disabled:opacity-60"
       >
         {pending ? "Saving..." : when === "now" ? "Send it now" : "Schedule it"}
       </button>

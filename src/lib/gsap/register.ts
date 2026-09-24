@@ -5,7 +5,7 @@
  * animate, so plugins are registered exactly once and the brand eases are
  * available by name (`ease: "brand-snap"`).
  *
- * All GSAP plugins are free as of 3.13, so we can register the full toolkit.
+ * Register only plugins used by the application.
  */
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
@@ -13,11 +13,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ScrollSmoother } from "gsap/ScrollSmoother";
 import { SplitText } from "gsap/SplitText";
 import { CustomEase } from "gsap/CustomEase";
-import { CustomWiggle } from "gsap/CustomWiggle";
-import { Flip } from "gsap/Flip";
-import { MotionPathPlugin } from "gsap/MotionPathPlugin";
-import { DrawSVGPlugin } from "gsap/DrawSVGPlugin";
-import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 
 import { curves, ease } from "@/lib/motion";
 
@@ -33,11 +28,6 @@ function registerOnce() {
     ScrollSmoother,
     SplitText,
     CustomEase,
-    CustomWiggle,
-    Flip,
-    MotionPathPlugin,
-    DrawSVGPlugin,
-    ScrollToPlugin,
   );
 
   // Register the named brand eases so `ease: "brand-snap"` resolves globally.
@@ -61,9 +51,4 @@ export {
   ScrollSmoother,
   SplitText,
   CustomEase,
-  CustomWiggle,
-  Flip,
-  MotionPathPlugin,
-  DrawSVGPlugin,
-  ScrollToPlugin,
 };

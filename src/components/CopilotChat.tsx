@@ -590,7 +590,7 @@ export function CopilotChat({ foundryEnabled, voiceEnabled = false, docsEnabled 
           <button
             type="submit"
             disabled={!input.trim()}
-            className="shrink-0 rounded-full bg-[var(--color-brand)] px-4 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03] disabled:opacity-50 sm:px-5"
+            className="shrink-0 rounded-full bg-[var(--color-brand)] px-4 py-2.5 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.03] disabled:opacity-50 sm:px-5"
           >
             Ask
           </button>

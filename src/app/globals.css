@@ -11,7 +11,7 @@
   /* ---- Brand palette ---- */
   --color-absolute-zero: #0e100f;
   --color-frosted-canvas: #fffce1;
-  --color-faded-steel: #7c7c6f;
+  --color-faded-steel: #a4a496;
   --color-deep-graphite: #42433d;
   --color-neon-pink: #fec5fb;
   --color-fiery-orange: #ff8709;
@@ -58,10 +58,11 @@
   --color-border-strong: #42433d;
 
   --color-ink: #fffce1;
-  --color-ink-muted: #9a9a8b;
-  --color-ink-faint: #6c6c60;
+  --color-ink-muted: #b8b8a8;
+  --color-ink-faint: #a4a496;
 
   --color-brand: #9d95ff;
+  --color-on-brand: #0e100f;
   --color-brand-bright: #b8b2ff;
   --color-cyan: #00bae2;
   --color-mint: #abff84;
@@ -73,7 +74,7 @@
   --color-status-shape: #00bae2;
   --color-status-qualify: #9d95ff;
   --color-status-lost: #ff3d57;
-  --color-status-seed: #7c7c6f;
+  --color-status-seed: #a4a496;
   --color-status-recurring: #0ae448;
 
   /* valuation heat */
@@ -142,7 +143,6 @@ h1, h2, h3, .font-display {
   background: color-mix(in srgb, var(--color-frosted-canvas) 3%, var(--color-absolute-zero));
   border: 1px solid var(--color-border);
   border-radius: var(--radius-card);
-  backdrop-filter: blur(6px);
 }
 
 .hairline {
@@ -205,6 +205,13 @@ option {
   -webkit-background-clip: text; background-clip: text; color: transparent;
 }
 
+@keyframes particle-drift {
+  0% { opacity: 0; transform: translate3d(0, 100%, 0); }
+  12%, 78% { opacity: var(--particle-opacity); }
+  100% { opacity: 0; transform: translate3d(var(--particle-x), var(--particle-y), 0); }
+}
+.particle { opacity: 0; animation: particle-drift 12s linear infinite; }
+
 /* Grain overlay - fixed SVG noise, very subtle, over everything. */
 .grain {
   position: fixed; inset: 0; z-index: 60; pointer-events: none;
@@ -253,6 +260,7 @@ html { scrollbar-width: thin; scrollbar-color: var(--color-digital-violet) var(-
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
+  .particle { animation: none !important; }
   *, *::before, *::after {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;

@@ -344,7 +344,7 @@ function TourOverlay({
             )}
             <button
               onClick={onNext}
-              className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+              className="rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.03]"
             >
               {isLast ? "Finish" : "Next"}
             </button>

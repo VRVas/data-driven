@@ -96,7 +96,7 @@ export function NotesThread({
             <button
               type="submit"
               disabled={pending}
-              className="shrink-0 rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="shrink-0 rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] disabled:opacity-50"
             >
               {pending ? "Adding..." : "Add"}
             </button>

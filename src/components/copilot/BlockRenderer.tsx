@@ -518,7 +518,7 @@ function ActionsBar({
             onClick={() => onAction?.(a)}
             className={
               primary
-                ? "rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-medium text-white transition-transform hover:scale-[1.03] disabled:opacity-50"
+                ? "rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-medium text-[var(--color-on-brand)] transition-transform hover:scale-[1.03] disabled:opacity-50"
                 : "rounded-full border border-[var(--color-border-strong)] px-4 py-1.5 text-sm text-[var(--color-ink-muted)] transition-colors hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] disabled:opacity-50"
             }
           >

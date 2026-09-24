@@ -50,7 +50,7 @@ export async function TopBar({ tour = false, fixed = false }: { tour?: boolean; 
   }
 
   return (
-    <header className={`${fixed ? "fixed inset-x-0" : "sticky"} top-0 z-50 border-b border-[var(--color-border)] bg-[color-mix(in_srgb,var(--color-absolute-zero)_72%,transparent)] backdrop-blur-xl`}>
+    <header className={`${fixed ? "fixed inset-x-0" : "sticky"} top-0 z-50 border-b border-[var(--color-border)] bg-[var(--color-bg-elevated)]`}>
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
         <Link href="/" className="group flex shrink-0 items-center gap-2.5">
           <span

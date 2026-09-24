@@ -55,7 +55,7 @@ export function AgentTable({ agents }: { agents: Agent[] }) {
         />
         <button
           onClick={() => setEditing(null)}
-          className="ml-auto rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-white transition-transform hover:scale-[1.03]"
+          className="ml-auto rounded-full bg-[var(--color-brand)] px-4 py-1.5 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.03]"
         >
           + New agent
         </button>

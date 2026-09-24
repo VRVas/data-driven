@@ -68,7 +68,7 @@ export function MergeCompanies({ companies }: { companies: MergeChoice[] }) {
         <button
           type="submit"
           disabled={!ready || pending}
-          className="rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-white transition-transform hover:scale-[1.02] disabled:opacity-40 disabled:hover:scale-100"
+          className="rounded-full bg-[var(--color-brand)] px-5 py-2.5 text-sm font-semibold text-[var(--color-on-brand)] transition-transform hover:scale-[1.02] disabled:opacity-40 disabled:hover:scale-100"
         >
           {pending ? "Merging…" : "Merge"}
         </button>
