@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import { NAV, isActive } from "./DashboardNav";
 import { useTour } from "@/components/tour/TourProvider";
+import { OverlayPortal } from "@/components/ui/OverlayPortal";
 
 const COMMAND_EVENT = "oovie:command-palette";
 
@@ -40,23 +40,18 @@ export function MobileMenu({
   signOutAction: () => Promise<void>;
 }) {
   const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
-  useEffect(() => setMounted(true), []);
   // Close whenever the route changes (a nav link was tapped).
   useEffect(() => setOpen(false), [pathname]);
   // Lock body scroll and wire Escape while the drawer is open.
   useEffect(() => {
     if (!open) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
     };
     window.addEventListener("keydown", onKey);
     return () => {
-      document.body.style.overflow = prev;
       window.removeEventListener("keydown", onKey);
     };
   }, [open]);
@@ -68,6 +63,7 @@ export function MobileMenu({
         onClick={() => setOpen(true)}
         aria-label="Open menu"
         aria-expanded={open}
+        aria-controls="mobile-menu-dialog"
         className="inline-flex items-center justify-center rounded-full border border-[var(--color-border-strong)] p-2 text-[var(--color-ink-muted)] transition-colors duration-300 hover:border-[var(--color-frosted-canvas)] hover:text-[var(--color-ink)] lg:hidden"
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden>
@@ -75,10 +71,9 @@ export function MobileMenu({
         </svg>
       </button>
 
-      {mounted &&
-        open &&
-        createPortal(
-          <div className="fixed inset-0 z-[200] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
+      {open && (
+        <OverlayPortal>
+          <div id="mobile-menu-dialog" className="fixed inset-0 z-[200] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
             <div
               className="absolute inset-0 bg-[rgba(3,5,20,0.6)] backdrop-blur-sm"
               onClick={() => setOpen(false)}
@@ -170,9 +165,9 @@ export function MobileMenu({
                 </form>
               </div>
             </div>
-          </div>,
-          document.body,
-        )}
+          </div>
+        </OverlayPortal>
+      )}
     </>
   );
 }

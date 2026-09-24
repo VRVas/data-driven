@@ -219,6 +219,8 @@ export function CommandPalette({
             role="combobox"
             aria-expanded="true"
             aria-controls="command-palette-list"
+            aria-autocomplete="list"
+            aria-activedescendant={filtered[active] ? `command-palette-option-${active}` : undefined}
             className="w-full bg-transparent py-3.5 text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)] focus:outline-none"
           />
         </div>
@@ -238,6 +240,8 @@ export function CommandPalette({
                 <button
                   type="button"
                   role="option"
+                  id={`command-palette-option-${i}`}
+                  tabIndex={-1}
                   aria-selected={isActive}
                   data-active={isActive}
                   onMouseMove={() => setActive(i)}

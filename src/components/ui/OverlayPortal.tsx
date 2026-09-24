@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Children, cloneElement, useEffect, useId, useState, type ReactElement } from "react";
 import { createPortal } from "react-dom";
+import FocusTrap from "focus-trap-react";
 
 /**
  * Renders a modal overlay into <body> and locks background scrolling.
@@ -13,6 +14,7 @@ import { createPortal } from "react-dom";
  */
 export function OverlayPortal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
+  const generatedId = useId();
 
   useEffect(() => setMounted(true), []);
 
@@ -25,5 +27,12 @@ export function OverlayPortal({ children }: { children: React.ReactNode }) {
   }, []);
 
   if (!mounted) return null;
-  return createPortal(children, document.body);
+  const child = Children.only(children) as ReactElement<{ id?: string; tabIndex?: number }>;
+  const id = child.props.id ?? generatedId;
+  return createPortal(
+    <FocusTrap focusTrapOptions={{ escapeDeactivates: false, allowOutsideClick: true, fallbackFocus: () => document.getElementById(id)! }}>
+      {cloneElement(child, { id, tabIndex: child.props.tabIndex ?? -1 })}
+    </FocusTrap>,
+    document.body,
+  );
 }
