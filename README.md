@@ -5,6 +5,7 @@ Business development application, built with Next.js and deployed on Azure.
 - [docs/COPILOT_INTEGRATION_GUIDE.md](docs/COPILOT_INTEGRATION_GUIDE.md): external REST API, A2A, Telegram, authentication, durable tasks, deployment, testing, and extension guidance for future applications and AI coding agents.
 - [docs/DATA_RECOVERY_GUIDE.md](docs/DATA_RECOVERY_GUIDE.md): administrator backup downloads, greenfield initialization, staged data replacement, rollback, and recovery access.
 - [infra/README.md](infra/README.md): Azure infrastructure and deployment procedures.
+- [docs/UI_PERFORMANCE_AUDIT.md](docs/UI_PERFORMANCE_AUDIT.md): measured UI changes, accessibility coverage, remaining limits, and the repeatable browser audit.
 
 After installing the prerequisites and signing in with `az login`, deploy with
 `npm run deploy -- --environment YOUR_ENVIRONMENT`. The runner creates or selects
