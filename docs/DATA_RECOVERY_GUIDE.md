@@ -162,6 +162,10 @@ Do not expose these operations as copilot tools or allow a model to approve reco
 
 ## Limits and Verification
 
+The isolated recovery browser suite uses Turbopack and warms its API routes before
+polling starts. This avoids a reproduced Next.js development-manifest read race;
+the normal production build is validated separately.
+
 Current limits: one database per package, up to 100 containers and 200,000 documents, 32 MiB compressed upload, 128 MiB expanded archive, and at most 2,500 tar entries. This is a bounded administrative workflow, not a bulk-migration service for multi-gigabyte databases. Large deployments need a streaming artifact store and a dedicated worker design before raising these limits.
 
 Run the focused unit tests:
@@ -213,6 +217,94 @@ The original broad regression was interrupted by a Codespace/browser crash. Its 
 
 ## Troubleshooting
 
+### Failed Background Operations
+
+An initial `GET /api/admin/recovery` returning 401 is expected before recovery is
+unlocked. After unlocking, that endpoint returns 200 while polling operation
+status. A 200 means the status request succeeded, not that the background import
+succeeded. Inspect `jobs` in the response for `status: "failed"`.
+
+In the recovery page, select the failed entry under Recent operations. Record its
+operation ID, timestamp, progress, source and staging dataset. New failures also
+include diagnostic fields for the error type, service code, HTTP status, Cosmos
+substatus, Azure request/activity IDs and nested cause codes when the SDK provides
+them. Filtered code locations identify application files and line/column positions
+without including the exception message or remote URLs. Request bodies, headers,
+raw exception messages, credentials and document contents are not logged.
+
+Read application logs in Azure Portal: Container App > Monitoring > Log stream >
+Console. Select the relevant revision, replica and `web` container. A worker can
+run on a different replica from the one serving browser requests, so inspect all
+active replicas or use the collected Log Analytics console logs. From the CLI:
+
+```bash
+az containerapp logs show \
+	--name YOUR_CONTAINER_APP --resource-group YOUR_RESOURCE_GROUP \
+	--type console --tail 100 --follow
+```
+
+For multiple replicas, specify `--revision`, `--replica` and `--container web`.
+Future failures emit a single `[recovery] operation failed` JSON log entry with
+the operation ID and the same diagnostic fields shown in the recovery page.
+This entry is emitted before reading or updating the control store, so a second
+storage failure cannot erase the original diagnostic. A failed control-store
+update may still leave the durable job status running until a worker retries.
+System logs are useful for container restarts and platform problems; they do not
+replace application console logs.
+
+For database/container creation failures, also check the resource group's Azure
+Activity Log at the operation time. The equivalent read-only query is:
+
+```bash
+az monitor activity-log list \
+	--resource-group YOUR_RESOURCE_GROUP --status Failed --offset 2h \
+	--query "[].{time:eventTimestamp,operation:operationName.localizedValue,correlationId:correlationId,error:properties.statusMessage}" \
+	--output json
+```
+
+Use the last progress step to choose the next check:
+
+| Progress | Next check |
+| --- | --- |
+| Creating staged database | Recovery managed identity, its account-scoped database creation role, account limits and Azure Policy |
+| Creating container NAME | Recovery management role and the container definition rejected by Azure |
+| Importing NAME | App identity's Cosmos data-plane role, item constraints, private networking and throttling |
+| Reading container definitions | Cosmos container inventory access and private connectivity |
+| Reading documents from NAME | Source/read-back document access, Cosmos data-plane permissions and private connectivity |
+| Reading stored procedures, triggers or user-defined functions from NAME | The particular Cosmos script-metadata read, its data-plane authorization and SDK response |
+| Verifying documents and policies for NAME | The read-back contents, partition key and policy comparison |
+| Reading NAME on an older build | A combined document/script-metadata step; the label cannot identify which underlying call failed |
+| Import plan saved on an older build | Staging database creation follows this step; check management-plane errors first |
+
+Successful database and container writes in Activity Log do not prove that
+document/script read-back or verification succeeded. An import is complete only
+after verification and activation. The 503 message "The environment is being
+initialized or restored" is the expected gate on normal app data access while
+maintenance is active; by itself it is not the restore worker's underlying error.
+
+The recovery identity creates databases/containers through Azure Resource Manager.
+The normal app identity reads and writes documents through Cosmos. Successful
+authentication or status polling does not prove both identities have all required
+permissions. A 403 alone does not distinguish RBAC, networking and policy failures.
+Activity Log covers management operations, not every Cosmos data-plane request.
+
+The reader also handles result-less Cosmos feed pages. Previously, passing an
+undefined resource array into the size calculation caused a JavaScript TypeError
+during read-back. A regression test reproduces that edge case, but its presence
+does not prove that it caused a particular live failure. Integrity verification
+and the activation fence still run; a successful write alone never activates a
+dataset.
+
+Older worker versions discarded unexpected exception details and have no stored
+diagnostic metadata. The status response cannot reconstruct those details; an
+Azure management failure may still be available in Activity Log. Deploy the
+diagnostic-enabled build to the affected environment, preserve its existing
+secrets, and review a new retry only after inspecting the failed step. Do not
+delete the active/control database, rotate keys or grant broad subscription access
+as a troubleshooting shortcut.
+
+### Other Symptoms
+
 - Recovery storage unavailable: check the independent control database/container, app data-plane RBAC, and private DNS. Do not delete the control database to clear an error.
 - Preprovision reports a missing recovery key: the hook must check the exit status of `azd env get-value`, not only stdout. Some azd versions print missing-key errors to stdout. The hook generates a missing key once and rejects an existing value shorter than 32 characters.
 - Initialization screen on a new environment: expected; use the environment recovery key and upload a package or create the built-in dataset.
@@ -227,6 +319,8 @@ The original broad regression was interrupted by a Codespace/browser crash. Its 
 
 ## Official References
 
+- Container Apps console/system logs: <https://learn.microsoft.com/en-us/azure/container-apps/log-streaming>
+- Azure Activity Log CLI: <https://learn.microsoft.com/en-us/cli/azure/monitor/activity-log#az-monitor-activity-log-list>
 - Cosmos control-plane versus data-plane permissions: <https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-connect-role-based-access-control>
 - Cosmos transaction and ETag boundaries: <https://learn.microsoft.com/en-us/azure/cosmos-db/nosql/database-transactions-optimistic-concurrency>
 - Cosmos TTL semantics: <https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-time-to-live>
