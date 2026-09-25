@@ -7,7 +7,7 @@ export default defineConfig({
   expect: { timeout: 15000 }, reporter: [["line"]], outputDir: "test-results-recovery",
   globalSetup: "./e2e/recovery-setup.ts",
     use: { ...devices["Desktop Chrome"], baseURL: `http://localhost:${port}`, viewport: { width: 1440, height: 900 }, contextOptions: { reducedMotion: "reduce" }, colorScheme: "dark", trace: "retain-on-failure", screenshot: "only-on-failure" },
-  webServer: { command: `npm run dev -- --port ${port}`, url: `http://localhost:${port}/recovery`, reuseExistingServer: false, timeout: 180000,
+  webServer: { command: `npm run dev -- --turbopack --port ${port}`, url: `http://localhost:${port}/recovery`, reuseExistingServer: false, timeout: 180000,
     env: { APP_URL: `http://localhost:${port}`, APP_DATA_DIR: path.join(process.cwd(), ".data", "recovery-e2e"),
       AUTH_SECRET: "recovery-playwright-session-secret-000000000000", AUTH_TRUST_HOST: "true",
       DATA_RECOVERY_ENABLED: "true", DATA_RECOVERY_KEY: "recovery-playwright-owner-key-0000000000000000",

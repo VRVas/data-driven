@@ -152,8 +152,20 @@ export function RecoveryConsole({ initialMode }: { initialMode: string }) {
     </section>}
     {currentJob && <section aria-labelledby="operation-title" className="border-y border-[var(--color-border)] py-6">
       <div className="flex flex-wrap items-start justify-between gap-3"><div><h2 id="operation-title" className="font-display text-xl" style={{ letterSpacing: 0 }}>{currentJob.status === "review" ? "Review before replacement" : "Operation status"}</h2><p role="status" className="mt-2 text-sm text-[var(--color-ink-muted)]">{currentJob.progress}</p></div><span className="font-mono text-sm">{currentJob.status}</span></div>
-      <p className="mt-3 break-all text-xs text-[var(--color-ink-muted)]">Destination: {currentJob.base}</p>
+      <div className="mt-3 space-y-1 break-all text-xs text-[var(--color-ink-muted)]">
+        <p>Operation ID: <span className="font-mono">{currentJob.id}</span></p>
+        <p>Source dataset: {currentJob.base}</p>
+        {currentJob.type !== "backup" && <p>Staging dataset: {currentJob.target}</p>}
+      </div>
       {currentJob.error && <p role="alert" className="mt-4 text-sm text-[var(--color-rose)]">{currentJob.error}</p>}
+      {currentJob.diagnostic && <dl aria-label="Failure diagnostics" className="mt-4 grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-x-4 gap-y-2 text-xs">
+        {Object.entries({ "Recorded at (UTC)": currentJob.diagnostic.recordedAt, "Error type": currentJob.diagnostic.name,
+          "Service code": currentJob.diagnostic.code, "HTTP status": currentJob.diagnostic.status, "Cosmos substatus": currentJob.diagnostic.substatus,
+          "Activity ID": currentJob.diagnostic.activityId, "Request ID": currentJob.diagnostic.requestId, "Cause code": currentJob.diagnostic.causeCode,
+          "Code locations": currentJob.diagnostic.codeLocations?.join(", ") }).filter(([, value]) => value !== undefined).map(([label, value]) => <div key={label} className="contents">
+            <dt className="text-[var(--color-ink-muted)]">{label}</dt><dd className="min-w-0 break-all font-mono">{value}</dd>
+          </div>)}
+      </dl>}
       <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3 lg:grid-cols-4">{currentJob.report.containers.map((container) => <div key={container.name} className="flex min-w-0 justify-between gap-2 border-b border-[var(--color-border)] py-2"><span className="break-all text-[var(--color-ink-muted)]">{container.name}</span><span className="font-mono">{container.documents}</span></div>)}</div>
       {!!currentJob.report.changes.length && <ul className="mt-5 space-y-2 text-sm">{currentJob.report.changes.map((change, index) => <li key={index} className="flex items-start gap-2"><AlertTriangle size={15} className="mt-0.5 shrink-0 text-[var(--color-amber)]" aria-hidden="true" /><span>{change.container}{change.count ? ` (${change.count})` : ""}: {change.reason}</span></li>)}</ul>}
       {!!currentJob.report.warnings.length && <ul className="mt-4 space-y-1 text-sm text-[var(--color-amber)]">{currentJob.report.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>}

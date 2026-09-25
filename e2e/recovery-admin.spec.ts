@@ -67,6 +67,32 @@ async function signIn(page: Page) {
   await expect(page).toHaveURL(/\/dashboard$/);
 }
 
+test("failed operations expose safe correlation details on desktop and mobile", async ({ page }) => {
+  const operationId = "11111111-2222-3333-4444-555555555555";
+  const requestId = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee";
+  await page.route("**/api/admin/recovery", (route) => route.fulfill({ json: {
+    actor: "Fixture owner", permissions: ["data:backup", "data:restore"], environment: "Fixture",
+    expiresAt: new Date(Date.now() + 60000).toISOString(), state: { active: "bd", mode: "ready", epoch: 0, outboundPaused: true },
+    jobs: [{ id: operationId, type: "import", status: "failed", createdAt: "2026-09-25T12:00:00.000Z", actor: "Fixture owner", base: "bd", target: `restore-${operationId}`,
+      progress: "Creating staged database", error: "The operation failed. The previous dataset remains active.",
+      diagnostic: { recordedAt: "2026-09-25T12:00:01.000Z", name: "RestError", code: "AuthorizationFailed", status: 403, requestId, causeCode: "ECONNRESET", codeLocations: ["chunks/321.js:4:23"] },
+      report: { containers: [], changes: [], warnings: [] }, downloadable: false, hasRollback: false }],
+  } }));
+  await page.goto("/recovery");
+  await page.getByRole("button", { name: /import.*failed/i }).click();
+  await expect(page.getByRole("heading", { name: "Operation status" })).toBeVisible();
+  await expect(page.getByText(`Operation ID: ${operationId}`)).toBeVisible();
+  const diagnostic = page.locator('dl[aria-label="Failure diagnostics"]');
+  await expect(diagnostic).toContainText("AuthorizationFailed");
+  await expect(diagnostic).toContainText("403");
+  await expect(diagnostic).toContainText(requestId);
+  await expect(diagnostic).toContainText("ECONNRESET");
+  await expect(diagnostic).toContainText("chunks/321.js:4:23");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(diagnostic).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true);
+});
+
 test("empty deployments require recovery authorization and validate before initialization", async ({ page }) => {
   const request = page.request;
   expect((await request.get("/api/admin/recovery")).status()).toBe(401);
