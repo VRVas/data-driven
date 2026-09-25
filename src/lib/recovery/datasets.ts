@@ -35,12 +35,13 @@ function localItems(name: string, input: unknown): Document[] {
 
 export async function readDataset(target: string, progress: (label: string) => Promise<void> = async () => undefined): Promise<BackupContainer[]> {
   const database = rawDatabase(target);
+  await progress("Reading container definitions");
   const definitions = database ? (await database.containers.readAll().fetchAll()).resources :
     await localJson(path.join(localTargetDirectory(target), "definitions.json"), Object.keys(CONTAINERS).map((name) => emptyContainer(name).definition)) as BackupContainer["definition"][];
   const result: BackupContainer[] = [];
   let bytes = 0;
   for (const definition of definitions) {
-    await progress(`Reading ${definition.id}`);
+    await progress(`Reading documents from ${definition.id}`);
     let items: Document[];
     let scripts: BackupContainer["scripts"];
     if (database) {
@@ -49,13 +50,19 @@ export async function readDataset(target: string, progress: (label: string) => P
       const iterator = container.items.readAll<Document>({ maxItemCount: 100 });
       while (iterator.hasMoreResults()) {
         const page = await iterator.fetchNext();
-        bytes += Buffer.byteLength(JSON.stringify(page.resources));
+        const resources = page.resources ?? [];
+        bytes += Buffer.byteLength(JSON.stringify(resources));
         if (bytes > EXPANDED_LIMIT) throw new RecoveryError("dataset_too_large", "The dataset exceeds the recovery size limit.");
-        items.push(...page.resources);
+        items.push(...resources);
       }
-      scripts = { storedProcedures: (await container.scripts.storedProcedures.readAll().fetchAll()).resources.map((script) => ({ ...script })),
-        triggers: (await container.scripts.triggers.readAll().fetchAll()).resources.map((script) => ({ ...script })),
-        userDefinedFunctions: (await container.scripts.userDefinedFunctions.readAll().fetchAll()).resources.map((script) => ({ ...script })) };
+      await progress(`Reading stored procedures from ${definition.id}`);
+      const storedProcedures = (await container.scripts.storedProcedures.readAll().fetchAll()).resources;
+      await progress(`Reading triggers from ${definition.id}`);
+      const triggers = (await container.scripts.triggers.readAll().fetchAll()).resources;
+      await progress(`Reading user-defined functions from ${definition.id}`);
+      const userDefinedFunctions = (await container.scripts.userDefinedFunctions.readAll().fetchAll()).resources;
+      scripts = { storedProcedures: storedProcedures.map((script) => ({ ...script })), triggers: triggers.map((script) => ({ ...script })),
+        userDefinedFunctions: userDefinedFunctions.map((script) => ({ ...script })) };
     } else {
       items = localItems(definition.id, await localJson(path.join(localTargetDirectory(target), CONTAINERS[definition.id]?.file ?? `${definition.id}.json`), []));
       scripts = await localJson(path.join(localTargetDirectory(target), `${definition.id}.scripts.json`), emptyContainer(definition.id).scripts) as BackupContainer["scripts"];
@@ -76,13 +83,15 @@ export async function writeDataset(target: string, containers: BackupContainer[]
   if (!/^restore-[a-f0-9-]{36}$/.test(target) || target === baselineDatabase()) throw new RecoveryError("unsafe_target", "Only a staged recovery database can be written.");
   const database = rawDatabase(target);
   if (database) {
+    await progress("Creating staged database");
     const { client, group, account } = management();
     await client.sqlResources.beginCreateUpdateSqlDatabaseAndWait(group, account, target, { resource: { id: target }, options: {} });
     for (const container of containers) {
-      await progress(`Importing ${container.definition.id}`);
+      await progress(`Creating container ${container.definition.id}`);
       const definition = Object.fromEntries(Object.entries(container.definition).filter(([key]) => !key.startsWith("_")));
       await client.sqlResources.beginCreateUpdateSqlContainerAndWait(group, account, target, container.definition.id, { resource: definition as unknown as SqlContainerResource, options: {} });
       const destination = database.container(container.definition.id);
+      await progress(`Importing ${container.definition.id}`);
       for (let offset = 0; offset < container.items.length; offset += 4) {
         await Promise.all(container.items.slice(offset, offset + 4).map((item) => destination.items.upsert(portableDocument(item))));
       }
@@ -104,8 +113,10 @@ export async function writeDataset(target: string, containers: BackupContainer[]
 }
 export async function verifyDataset(target: string, expected: BackupContainer[], progress?: (label: string) => Promise<void>): Promise<void> {
   const actual = await readDataset(target, progress);
+  await progress?.("Comparing container inventory");
   if (actual.length !== expected.length) throw new RecoveryError("verification_failed", "The staged container inventory does not match.");
   for (const container of expected) {
+    await progress?.(`Verifying documents and policies for ${container.definition.id}`);
     const restored = actual.find((entry) => entry.definition.id === container.definition.id);
     if (!restored || portableHash(restored.items) !== portableHash(container.items)
       || JSON.stringify(restored.definition.partitionKey.paths) !== JSON.stringify(container.definition.partitionKey.paths)) {

@@ -10,6 +10,17 @@ import { decryptPackage, encryptPackage, readPackage, sha256, writePackage, Reco
 import { prepareImport, type ImportMode, type ImportChange } from "./policy";
 
 export interface RecoveryActor { id: string; name: string; email: string; authority: "administrator" | "recovery-key" }
+interface RecoveryDiagnostic {
+  recordedAt: string;
+  name: string;
+  code?: string;
+  status?: number;
+  substatus?: number;
+  activityId?: string;
+  requestId?: string;
+  causeCode?: string;
+  codeLocations?: string[];
+}
 export interface RecoveryJob extends ControlRecord {
   kind: "job";
   type: "backup" | "import" | "rollback" | "seed";
@@ -28,6 +39,7 @@ export interface RecoveryJob extends ControlRecord {
   target: string;
   progress: string;
   error?: string;
+  diagnostic?: RecoveryDiagnostic;
   leaseOwner?: string;
   leaseUntil?: string;
   report: { containers: { name: string; documents: number }[]; changes: ImportChange[]; warnings: string[]; sourceDigest?: string };
@@ -35,6 +47,31 @@ export interface RecoveryJob extends ControlRecord {
 interface ArtifactRecord extends ControlRecord { kind: "artifact"; chunks: number; hash: string; bytes: number }
 interface ChunkRecord extends ControlRecord { kind: "chunk"; value: string }
 const STORAGE_TTL = 7 * 86400;
+function recoveryDiagnostic(error: unknown): RecoveryDiagnostic {
+  const details = error && typeof error === "object" ? error as Record<string, unknown> : {};
+  const identifier = (value: unknown) => typeof value === "string" && /^[A-Za-z0-9][A-Za-z0-9_.:-]{0,99}$/.test(value) ? value : undefined;
+  const response = details.response as { headers?: { get?: (name: string) => unknown } } | undefined;
+  const header = (name: string): unknown => {
+    try { return response?.headers?.get?.(name); } catch { return undefined; }
+  };
+  const status = [details.statusCode, details.status, details.code].find((value) => typeof value === "number" && Number.isInteger(value) && value >= 100 && value <= 599);
+  const cause = details.cause && typeof details.cause === "object" ? details.cause as Record<string, unknown> : {};
+  const codeLocations = typeof details.stack === "string" ? details.stack.split("\n").slice(1).flatMap((line) => {
+    const match = /^\s+at\s+.*[\\/](?:\.next[\\/]server|src[\\/]lib[\\/]recovery)[\\/]([A-Za-z0-9_./()\\-]+\.(?:[cm]?js|tsx?):\d+:\d+)\)?$/.exec(line);
+    return match && match[1].length <= 180 ? [match[1].replaceAll("\\", "/")] : [];
+  }).slice(0, 5) : [];
+  return {
+    recordedAt: new Date().toISOString(),
+    name: identifier(details.name) ?? "UnknownError",
+    code: identifier(details.code),
+    status: typeof status === "number" ? status : undefined,
+    substatus: typeof details.substatus === "number" && Number.isInteger(details.substatus) ? details.substatus : undefined,
+    activityId: identifier(details.activityId ?? header("x-ms-activity-id")),
+    requestId: identifier(details.requestId ?? header("x-ms-request-id") ?? header("x-ms-correlation-request-id")),
+    causeCode: identifier(cause.code),
+    codeLocations: codeLocations.length ? codeLocations : undefined,
+  };
+}
 function storagePassword(): string {
   const secret = process.env.AUTH_SECRET;
   if (!secret || secret.length < 32) throw new RecoveryError("configuration_error", "A stable AUTH_SECRET of at least 32 characters is required for recovery storage.", 503);
@@ -70,7 +107,7 @@ export async function getRecoveryJob(id: string): Promise<RecoveryJob> {
 }
 export function jobView(job: RecoveryJob) {
   return { id: job.id, type: job.type, status: job.status, createdAt: job.createdAt, updatedAt: job.updatedAt, actor: job.actor.name,
-    base: job.base, target: job.target, progress: job.progress, error: job.error, importMode: job.importMode, report: job.report,
+    base: job.base, target: job.target, progress: job.progress, error: job.error, diagnostic: job.diagnostic, importMode: job.importMode, report: job.report,
     downloadable: !!job.output, hasRollback: !!job.rollback, confirmation: job.initialMode === "setup" ? "INITIALIZE" : `REPLACE ${job.base}` };
 }
 function describe(containers: BackupContainer[], changes: ImportChange[] = [], warnings: string[] = []): RecoveryJob["report"] {
@@ -227,13 +264,15 @@ export async function processRecoveryJob(id: string): Promise<void> {
     });
     await checkpoint(job.type === "backup" ? "Backup ready to download" : "Import verified and activated", { status: "completed", leaseOwner: undefined, leaseUntil: undefined });
   } catch (error) {
+    const diagnostic = recoveryDiagnostic(error);
+    console.error("[recovery] operation failed", JSON.stringify({ operationId: id, type: job.type, progress: job.progress, ...diagnostic }));
     const current = await getRecoveryJob(id);
     if (current.leaseOwner === lease && current.status === "running") {
       const active = await recoveryState();
       if (active.lastOperation === id) {
         await changeControl<RecoveryJob>(id, (record) => ({ ...record, status: "completed", progress: "Import activated", leaseOwner: undefined, leaseUntil: undefined }));
       } else if (active.worker?.owner === lease) {
-        await changeControl<RecoveryJob>(id, (record) => ({ ...record, status: "failed", error: error instanceof RecoveryError ? error.message : "The operation failed. The previous dataset remains active; retry with the package after checking service access.", leaseOwner: undefined, leaseUntil: undefined }));
+        await changeControl<RecoveryJob>(id, (record) => ({ ...record, status: "failed", diagnostic, error: error instanceof RecoveryError ? error.message : "The operation failed. The previous dataset remains active. Check the operation diagnostics and server logs before retrying.", leaseOwner: undefined, leaseUntil: undefined }));
         await changeControl<RecoveryState>("state", (record) => record.operation === id && record.worker?.owner === lease ? { ...record, mode: job.initialMode, operation: undefined, worker: undefined } : record);
       }
     }
@@ -254,7 +293,7 @@ export function startRecoveryWorker(): void {
         const last = await getRecoveryJob(state.lastOperation);
         if (["running", "queued"].includes(last.status)) await changeControl<RecoveryJob>(last.id, (record) => ({ ...record, status: "completed", progress: "Operation completed", leaseOwner: undefined, leaseUntil: undefined }));
       }
-    } catch (error) { console.error("[recovery] operation check failed", { name: error instanceof Error ? error.name : "UnknownError" }); }
+    } catch (error) { console.error("[recovery] operation check failed", JSON.stringify(recoveryDiagnostic(error))); }
     finally { busy = false; }
   };
   timer = setInterval(() => { void tick(); }, 1500); timer.unref(); void tick();

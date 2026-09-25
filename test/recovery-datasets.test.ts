@@ -6,17 +6,57 @@ import { emptyContainer, readDataset, writeDataset, verifyDataset } from "@/lib/
 import { prepareImport } from "@/lib/recovery/policy";
 import { hashPassword } from "@/lib/auth/password";
 import type { BackupContainer } from "@/lib/recovery/package";
+import * as backend from "@/lib/recovery/backend";
 
 let directory: string;
 let cwd: string;
 beforeEach(async () => { cwd = process.cwd(); directory = await mkdtemp(path.join(os.tmpdir(), "recovery-data-")); process.chdir(directory); vi.stubEnv("COSMOS_ENDPOINT", ""); });
-afterEach(async () => { process.chdir(cwd); vi.unstubAllEnvs(); await rm(directory, { recursive: true, force: true }); });
+afterEach(async () => { vi.restoreAllMocks(); process.chdir(cwd); vi.unstubAllEnvs(); await rm(directory, { recursive: true, force: true }); });
 async function fixture(): Promise<BackupContainer[]> {
   return [{ ...emptyContainer("users"), items: [{ id: "admin", email: "admin@example.invalid", name: "Fixture Admin", role: "admin", passwordHash: await hashPassword("Fixture12345!") }] },
     { ...emptyContainer("brands"), items: [{ id: "lead", name: "Fixture Lead", owner: "Fixture Admin" }] },
     { ...emptyContainer("notes"), items: [{ id: "note", leadId: "lead", body: "Fixture" }] }];
 }
 describe("staged datasets and import policy", () => {
+  it("accepts a result-less terminal Cosmos page without losing the preceding documents", async () => {
+    const agent = { id: "fixture-agent", name: "Fixture Agent" };
+    const fetchNext = vi.fn().mockResolvedValueOnce({ resources: [agent] }).mockResolvedValueOnce({ resources: undefined });
+    const emptyScripts = { readAll: () => ({ fetchAll: async () => ({ resources: [] }) }) };
+    const database = {
+      containers: { readAll: () => ({ fetchAll: async () => ({ resources: [emptyContainer("agents").definition] }) }) },
+      container: () => ({
+        items: { readAll: () => ({ hasMoreResults: vi.fn().mockReturnValueOnce(true).mockReturnValueOnce(true).mockReturnValue(false), fetchNext }) },
+        scripts: { storedProcedures: emptyScripts, triggers: emptyScripts, userDefinedFunctions: emptyScripts },
+      }),
+    };
+    vi.spyOn(backend, "rawDatabase").mockReturnValue(database as unknown as NonNullable<ReturnType<typeof backend.rawDatabase>>);
+    const result = await readDataset("restore-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa");
+    expect(result[0].items).toEqual([agent]);
+    expect(fetchNext).toHaveBeenCalledTimes(2);
+  });
+
+  it.each([
+    ["documents", "Reading documents from agents"],
+    ["storedProcedures", "Reading stored procedures from agents"],
+    ["triggers", "Reading triggers from agents"],
+    ["userDefinedFunctions", "Reading user-defined functions from agents"],
+  ])("identifies a Cosmos failure while reading %s without swallowing it", async (stage, label) => {
+    const failure = Object.assign(new Error("fixture read failure"), { code: 403 });
+    const fetchStage = (name: string) => name === stage ? vi.fn().mockRejectedValue(failure) : vi.fn().mockResolvedValue({ resources: [] });
+    const readAll = (name: string) => ({ readAll: () => ({ fetchAll: fetchStage(name) }) });
+    const database = {
+      containers: { readAll: () => ({ fetchAll: async () => ({ resources: [emptyContainer("agents").definition] }) }) },
+      container: () => ({
+        items: { readAll: () => ({ hasMoreResults: vi.fn().mockReturnValueOnce(true).mockReturnValue(false), fetchNext: fetchStage("documents") }) },
+        scripts: { storedProcedures: readAll("storedProcedures"), triggers: readAll("triggers"), userDefinedFunctions: readAll("userDefinedFunctions") },
+      }),
+    };
+    vi.spyOn(backend, "rawDatabase").mockReturnValue(database as unknown as NonNullable<ReturnType<typeof backend.rawDatabase>>);
+    const progress = vi.fn(async (_label: string) => undefined);
+    await expect(readDataset("restore-aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", progress)).rejects.toBe(failure);
+    expect(progress).toHaveBeenLastCalledWith(label);
+  });
+
   it("writes and verifies a staged dataset without touching the original", async () => {
     const source = await fixture();
     const prepared = prepareImport(source, "full", []);
