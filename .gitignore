@@ -33,6 +33,9 @@ yarn-error.log*
 !/.data/backups/
 /.data/backups/*
 !/.data/backups/cosmos-2026-09-23T06-18-46.128Z.tar.gz
+!/.data/backups/cosmos-2026-09-25T12-51-21.652Z-Tc8VJS/
+/.data/backups/cosmos-2026-09-25T12-51-21.652Z-Tc8VJS/*
+!/.data/backups/cosmos-2026-09-25T12-51-21.652Z-Tc8VJS/before-73754950-03a1-4ca3-b5dc-7c67725b9283.tar.gz.enc
 
 # playwright
 /test-results/
