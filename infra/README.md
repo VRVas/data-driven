@@ -204,9 +204,18 @@ identified below; an arbitrary `azd env set` does not inject a runtime variable.
 ## Data recovery
 
 Data & Recovery uses a separate `bd-recovery` control database and a dedicated
-managed identity for creating staged databases/containers. Existing data-plane
+managed identity for creating staged databases/containers and listing stored
+procedures, triggers and UDFs through Azure Resource Manager. Its account-scoped
+custom role includes only read access for those script inventories, not script
+writes or execution. This avoids Cosmos 403/substatus 5300 from unsupported
+Entra-authenticated script-management calls on the data plane. Existing document
 access remains keyless and private. The app selects the active dataset through
 the independent control record; imported data is verified before activation.
+
+Existing deployments need both provisioning and app deployment for this update;
+use `npm run deploy -- --environment YOUR_EXISTING_ENVIRONMENT` with the original
+environment settings and secrets. App-only `azd deploy` leaves the old role in place.
+Role actions: <https://learn.microsoft.com/en-us/azure/role-based-access-control/permissions/databases#microsoftdocumentdb>.
 
 The preprovision hook generates `DATA_RECOVERY_KEY` once alongside `AUTH_SECRET`.
 Both values must remain stable across CI deployments. Empty recovery-enabled

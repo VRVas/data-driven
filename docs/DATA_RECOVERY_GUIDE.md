@@ -121,12 +121,12 @@ Stored package artifacts expire after seven days. Operation metadata and retaine
 | `DATA_RECOVERY_ENABLED` | Runtime flag emitted by Bicep |
 | `COSMOS_CONTROL_DATABASE` | Independent control database name |
 | `COSMOS_RESOURCE_ID` | Allowlisted destination account resource ID, derived by Bicep |
-| `RECOVERY_MANAGED_IDENTITY_CLIENT_ID` | Dedicated identity used for management-plane staging database/container operations |
+| `RECOVERY_MANAGED_IDENTITY_CLIENT_ID` | Dedicated identity used for staging database/container operations and ARM script-inventory reads |
 | `COSMOS_ENDPOINT`, `COSMOS_DATABASE` | Existing account and baseline database |
 | `AUTH_SECRET` | Existing application session secret, also used to derive stored-artifact encryption |
 | `APP_DATA_DIR` | Development-only alternate directory for isolated test data; not needed in Azure |
 
-The existing app identity continues to handle Cosmos data-plane reads and writes. A separate attached user-assigned identity receives a custom management role scoped to this Cosmos account. That role permits account/database/container reads and database/container creation or updates. It does not permit account-key access, database deletion, role assignment, or network reconfiguration.
+The existing app identity continues to handle Cosmos document reads/writes and container metadata through the data plane. A separate attached user-assigned identity receives a custom management role scoped to this Cosmos account. That role permits account/database/container reads, database/container creation or updates, and read-only inventories of stored procedures, triggers and user-defined functions through Azure Resource Manager. It does not permit account-key access, script creation/execution/deletion, database deletion, role assignment, or network reconfiguration.
 
 Cosmos remains private and local account-key authentication stays disabled. The server performs import inside its existing private network. The browser only talks to the application's authenticated HTTPS endpoints.
 
@@ -249,6 +249,45 @@ comparison report and the post-restore export remain Git-ignored.
 
 ## Troubleshooting
 
+### 403/5300 During Script Read-Back
+
+A failure at `Reading stored procedures from profiles` (or another container)
+with Cosmos HTTP 403/substatus 5300 identifies a script-inventory request sent
+through the data plane that cannot be authorized with an Entra token. The same
+limitation applies to trigger and user-defined-function inventories. Successful
+database/container writes in Activity Log do not cover this later request.
+
+The reader now uses the ARM `listSqlStoredProcedures`, `listSqlTriggers`, and
+`listSqlUserDefinedFunctions` APIs with the recovery management identity. Document
+reads remain on the private Cosmos data plane. All inventory pages are read;
+script bodies and available system metadata are preserved in backups. Failed or
+incomplete inventory reads still stop the operation rather than being treated as
+an empty inventory.
+
+The existing account-scoped recovery role adds only these actions:
+
+- `Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/storedProcedures/read`
+- `Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/triggers/read`
+- `Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/userDefinedFunctions/read`
+
+This fix needs both the updated role and application image. An app-only
+`azd deploy` does not update the role. From the affected environment's checkout,
+after confirming its original settings and secrets are preserved:
+
+```bash
+git pull --ff-only
+npm ci
+npm run deploy -- --environment YOUR_EXISTING_ENVIRONMENT
+```
+
+Use that destination environment's Azure login and retain its `AUTH_SECRET`,
+`DATA_RECOVERY_KEY`, regions and database settings. Do not run `azd down`, enable
+account-key authentication, grant subscription-wide roles, or manually activate
+the staged database. After provisioning and deployment finish, reload `/recovery`,
+unlock it, upload the same archive again and review the new operation. A new ARM
+authorization error means the role update or identity selection still needs
+checking; it must not be bypassed by skipping verification.
+
 ### Failed Background Operations
 
 An initial `GET /api/admin/recovery` returning 401 is expected before recovery is
@@ -303,7 +342,7 @@ Use the last progress step to choose the next check:
 | Importing NAME | App identity's Cosmos data-plane role, item constraints, private networking and throttling |
 | Reading container definitions | Cosmos container inventory access and private connectivity |
 | Reading documents from NAME | Source/read-back document access, Cosmos data-plane permissions and private connectivity |
-| Reading stored procedures, triggers or user-defined functions from NAME | The particular Cosmos script-metadata read, its data-plane authorization and SDK response |
+| Reading stored procedures, triggers or user-defined functions from NAME | ARM script-list access for the recovery identity; on an older image, Cosmos 403/5300 indicates an unsupported data-plane request |
 | Verifying documents and policies for NAME | The read-back contents, partition key and policy comparison |
 | Reading NAME on an older build | A combined document/script-metadata step; the label cannot identify which underlying call failed |
 | Import plan saved on an older build | Staging database creation follows this step; check management-plane errors first |
@@ -314,7 +353,7 @@ after verification and activation. The 503 message "The environment is being
 initialized or restored" is the expected gate on normal app data access while
 maintenance is active; by itself it is not the restore worker's underlying error.
 
-The recovery identity creates databases/containers through Azure Resource Manager.
+The recovery identity creates databases/containers and lists script definitions through Azure Resource Manager.
 The normal app identity reads and writes documents through Cosmos. Successful
 authentication or status polling does not prove both identities have all required
 permissions. A 403 alone does not distinguish RBAC, networking and policy failures.
@@ -351,6 +390,9 @@ as a troubleshooting shortcut.
 
 ## Official References
 
+- Cosmos non-data operation rejection (403/5300): <https://learn.microsoft.com/en-us/azure/cosmos-db/troubleshoot-forbidden#nondata-operations-arent-allowed>
+- ARM SQL resource list methods: <https://learn.microsoft.com/en-us/javascript/api/@azure/arm-cosmosdb/sqlresourcesoperations?view=azure-node-latest>
+- Cosmos management-plane permission actions: <https://learn.microsoft.com/en-us/azure/role-based-access-control/permissions/databases#microsoftdocumentdb>
 - Container Apps console/system logs: <https://learn.microsoft.com/en-us/azure/container-apps/log-streaming>
 - Azure Activity Log CLI: <https://learn.microsoft.com/en-us/cli/azure/monitor/activity-log#az-monitor-activity-log-list>
 - Cosmos control-plane versus data-plane permissions: <https://learn.microsoft.com/en-us/azure/cosmos-db/how-to-connect-role-based-access-control>
