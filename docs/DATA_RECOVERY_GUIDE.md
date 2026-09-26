@@ -215,6 +215,38 @@ Empty-environment initialization, member denial, stale-session invalidation and 
 
 The original broad regression was interrupted by a Codespace/browser crash. Its remaining functional tests and affected audit views were resumed in bounded batches with recovery enabled. Save verification output in an ignored workspace directory, not only `/tmp`, so a Codespace restart does not lose the checkpoint.
 
+### Encrypted Restore Follow-up
+
+The diagnostics build at commit `b1c7694` was deployed to the segregated
+`datadriven` Azure test environment. The encrypted September 25 archive was
+uploaded through `/recovery`, decrypted with its separate backup password,
+reviewed and confirmed using the environment recovery key. Operation
+`30494ea8-4067-4d7c-af64-68904c0d8127` completed on September 25 at 15:15:31 UTC.
+The September 26 continuation checked that completed operation instead of
+repeating the import.
+
+- Source archive SHA-256: `5c1993777be0e9f0bf89bec73fe22f77007168a368c7a3fbb754cf0b53296efc`.
+- Activated dataset: `restore-78e8e685-4d7c-4ce4-aa8b-8a507995dfc1`, epoch 3.
+- Previous dataset retained: `restore-a2c123e2-aaec-4b17-86ff-c07d3a0d3dba`.
+- A fresh post-restore export contained 17 containers and 296 documents. Every
+	container's portable document hash, partition paths and retained policies
+	matched the uploaded archive. Only Cosmos-generated document fields were
+	excluded from the content comparison.
+- The pre-operation backup remained available. A restored account signed in with
+	its existing password and received a session at epoch 3. Pipeline and agents
+	pages displayed 69 leads and 13 agents without browser exceptions.
+- The recovery page passed desktop/mobile overflow checks, and both deployed
+	health and recovery endpoints passed verification. Mode remained `ready` and
+	outbound delivery remained paused.
+
+No restore-worker failure occurred in this run, including the agents document
+and script-metadata reads. This establishes that this archive restores on the
+updated test deployment; it does not identify the discarded exception from the
+earlier reported failure or prove another deployment has the same configuration.
+The pre-operation backup was checked for availability, but rollback and forced
+multi-replica failover were not repeated in this run. Private screenshots, the
+comparison report and the post-restore export remain Git-ignored.
+
 ## Troubleshooting
 
 ### Failed Background Operations
