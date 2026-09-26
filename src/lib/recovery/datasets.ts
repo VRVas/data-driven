@@ -33,8 +33,22 @@ function localItems(name: string, input: unknown): Document[] {
   return input;
 }
 
+async function readScriptInventory(entries: AsyncIterable<{ resource?: { id: string; body?: string; rid?: string; etag?: string; ts?: number } }>): Promise<Record<string, unknown>[]> {
+  const scripts: Record<string, unknown>[] = [];
+  for await (const entry of entries) {
+    const resource = entry.resource;
+    if (!resource || typeof resource.id !== "string" || !resource.id || typeof resource.body !== "string") {
+      throw new RecoveryError("invalid_script_inventory", "Azure returned an incomplete script inventory.", 502);
+    }
+    const { rid, etag, ts, ...definition } = resource;
+    scripts.push({ ...definition, ...(rid !== undefined ? { _rid: rid } : {}), ...(etag !== undefined ? { _etag: etag } : {}), ...(ts !== undefined ? { _ts: ts } : {}) });
+  }
+  return scripts;
+}
+
 export async function readDataset(target: string, progress: (label: string) => Promise<void> = async () => undefined): Promise<BackupContainer[]> {
   const database = rawDatabase(target);
+  let provisioner: ReturnType<typeof management> | undefined;
   await progress("Reading container definitions");
   const definitions = database ? (await database.containers.readAll().fetchAll()).resources :
     await localJson(path.join(localTargetDirectory(target), "definitions.json"), Object.keys(CONTAINERS).map((name) => emptyContainer(name).definition)) as BackupContainer["definition"][];
@@ -56,13 +70,13 @@ export async function readDataset(target: string, progress: (label: string) => P
         items.push(...resources);
       }
       await progress(`Reading stored procedures from ${definition.id}`);
-      const storedProcedures = (await container.scripts.storedProcedures.readAll().fetchAll()).resources;
+      const { client, group, account } = provisioner ??= management();
+      const storedProcedures = await readScriptInventory(client.sqlResources.listSqlStoredProcedures(group, account, target, definition.id));
       await progress(`Reading triggers from ${definition.id}`);
-      const triggers = (await container.scripts.triggers.readAll().fetchAll()).resources;
+      const triggers = await readScriptInventory(client.sqlResources.listSqlTriggers(group, account, target, definition.id));
       await progress(`Reading user-defined functions from ${definition.id}`);
-      const userDefinedFunctions = (await container.scripts.userDefinedFunctions.readAll().fetchAll()).resources;
-      scripts = { storedProcedures: storedProcedures.map((script) => ({ ...script })), triggers: triggers.map((script) => ({ ...script })),
-        userDefinedFunctions: userDefinedFunctions.map((script) => ({ ...script })) };
+      const userDefinedFunctions = await readScriptInventory(client.sqlResources.listSqlUserDefinedFunctions(group, account, target, definition.id));
+      scripts = { storedProcedures, triggers, userDefinedFunctions };
     } else {
       items = localItems(definition.id, await localJson(path.join(localTargetDirectory(target), CONTAINERS[definition.id]?.file ?? `${definition.id}.json`), []));
       scripts = await localJson(path.join(localTargetDirectory(target), `${definition.id}.scripts.json`), emptyContainer(definition.id).scripts) as BackupContainer["scripts"];

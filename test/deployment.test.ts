@@ -36,6 +36,27 @@ describe("deployment readiness", () => {
 });
 
 describe("infrastructure coverage", () => {
+  it("grants recovery only the required management actions and scopes them to the Cosmos account", () => {
+    const source = readFileSync("infra/resources.bicep", "utf8");
+    const role = source.match(/resource recoveryManagementRole\b[\s\S]*?(?=\nresource )/)?.[0];
+    expect(role).toBeDefined();
+    const actions = [...role!.matchAll(/'(Microsoft\.DocumentDB\/[^']+)'/g)].map((match) => match[1]);
+    expect(actions).toEqual([
+      "Microsoft.DocumentDB/databaseAccounts/read",
+      "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/read",
+      "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/write",
+      "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/read",
+      "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/write",
+      "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/storedProcedures/read",
+      "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/triggers/read",
+      "Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/userDefinedFunctions/read",
+    ]);
+    const assignment = source.match(/resource recoveryManagementAssignment\b[\s\S]*?(?=\nresource )/)?.[0];
+    expect(assignment).toContain("scope: cosmos");
+    expect(assignment).toContain("principalId: recoveryIdentity.?properties.principalId");
+    expect(assignment).toContain("roleDefinitionId: recoveryManagementRole.id");
+  });
+
   it("wires every operator-controlled infrastructure input through the deployment workflow", () => {
     const workflow = parse(readFileSync(".github/workflows/azure-dev.yml", "utf8"));
     const parameters = JSON.parse(readFileSync("infra/main.parameters.json", "utf8")).parameters as Record<string, { value: string }>;

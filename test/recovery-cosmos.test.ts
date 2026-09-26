@@ -9,6 +9,15 @@ vi.mock("@azure/arm-cosmosdb", () => ({ CosmosDBManagementClient: class {
     beginCreateUpdateSqlDatabaseAndWait: async (_group: string, _account: string, name: string) => emulator.client!.databases.createIfNotExists({ id: name }),
     beginCreateUpdateSqlContainerAndWait: async (_group: string, _account: string, database: string, _name: string, body: { resource: Record<string, unknown> }) =>
       emulator.client!.database(database).containers.createIfNotExists(body.resource as { id: string }),
+    listSqlStoredProcedures: async function* (_group: string, _account: string, database: string, container: string) {
+      for (const resource of (await emulator.client!.database(database).container(container).scripts.storedProcedures.readAll().fetchAll()).resources) yield { resource };
+    },
+    listSqlTriggers: async function* (_group: string, _account: string, database: string, container: string) {
+      for (const resource of (await emulator.client!.database(database).container(container).scripts.triggers.readAll().fetchAll()).resources) yield { resource };
+    },
+    listSqlUserDefinedFunctions: async function* (_group: string, _account: string, database: string, container: string) {
+      for (const resource of (await emulator.client!.database(database).container(container).scripts.userDefinedFunctions.readAll().fetchAll()).resources) yield { resource };
+    },
   };
 } }));
 

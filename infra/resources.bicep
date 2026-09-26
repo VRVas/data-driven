@@ -484,7 +484,7 @@ resource recoveryManagementRole 'Microsoft.Authorization/roleDefinitions@2022-04
   name: guid(resourceGroup().id, 'recovery-database-provisioner')
   properties: {
     roleName: '${prefix}-recovery-${resourceToken}'
-    description: 'Create and inspect staged Cosmos databases and containers. No account keys, deletes, networking or role assignments.'
+    description: 'Create and inspect staged Cosmos databases and containers; read script inventories. No account keys, script writes, deletes, networking or role assignments.'
     type: 'CustomRole'
     assignableScopes: [ resourceGroup().id ]
     permissions: [{
@@ -494,6 +494,9 @@ resource recoveryManagementRole 'Microsoft.Authorization/roleDefinitions@2022-04
         'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/write'
         'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/read'
         'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/write'
+        'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/storedProcedures/read'
+        'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/triggers/read'
+        'Microsoft.DocumentDB/databaseAccounts/sqlDatabases/containers/userDefinedFunctions/read'
       ]
       notActions: []
     }]
