@@ -9,7 +9,7 @@ import { z } from "zod";
 import { getChallengeStore } from "@/lib/store/challenges";
 import { generateOtp, generateResetToken, issueBlockedReason, otpLoginEnabled } from "@/lib/auth/challenge";
 import { sendLoginCode, sendResetLink } from "@/lib/auth/notify";
-import { recoveryState } from "@/lib/recovery/control";
+import { recoveryState, withDataset } from "@/lib/recovery/control";
 
 export type AuthState = { error?: string; notice?: string } | undefined;
 
@@ -105,19 +105,21 @@ export async function requestPasswordReset(_prev: AuthState, formData: FormData)
   if (!parsed.success) return { error: parsed.error.issues[0]?.message };
   const { email } = parsed.data;
 
-  const store = getChallengeStore();
-  const blocked = issueBlockedReason(await store.recent(email, "reset"));
-  if (blocked) return { error: blocked };
+  return withDataset(async () => {
+    const store = getChallengeStore();
+    const blocked = issueBlockedReason(await store.recent(email, "reset"));
+    if (blocked) return { error: blocked };
 
-  const user = await getUserStore().findByEmail(email);
-  if (user && user.active !== false) {
-    const token = generateResetToken();
-    await store.issue(email, "reset", token);
-    const base = process.env.APP_URL?.replace(/\/$/, "") ?? "";
-    const url = `${base}/reset?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
-    await sendResetLink(email, user.name, url);
-  }
-  return { notice: SENT };
+    const user = await getUserStore().findByEmail(email);
+    if (user && user.active !== false) {
+      const token = generateResetToken();
+      await store.issue(email, "reset", token);
+      const base = process.env.APP_URL?.replace(/\/$/, "") ?? "";
+      const url = `${base}/reset?email=${encodeURIComponent(email)}&token=${encodeURIComponent(token)}`;
+      await sendResetLink(email, user.name, url);
+    }
+    return { notice: SENT };
+  }, true);
 }
 
 /** Consume a reset link and set a new password. */
