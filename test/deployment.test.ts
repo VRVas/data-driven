@@ -36,6 +36,19 @@ describe("deployment readiness", () => {
 });
 
 describe("infrastructure coverage", () => {
+  it("defaults chat deployments to DataZoneStandard at capacity 200 and forwards SKU overrides", () => {
+    const parameters = JSON.parse(readFileSync("infra/main.parameters.json", "utf8")).parameters;
+    expect(parameters.chatModelSku.value).toBe("${CHAT_MODEL_SKU=DataZoneStandard}");
+    expect(parameters.chatModelCapacity.value).toBe("${CHAT_MODEL_CAPACITY=200}");
+    for (const file of ["infra/main.bicep", "infra/resources.bicep"]) {
+      const source = readFileSync(file, "utf8");
+      expect(source).toContain("param chatModelSku string = 'DataZoneStandard'");
+      expect(source).toContain("param chatModelCapacity int = 200");
+    }
+    expect(readFileSync("infra/main.bicep", "utf8")).toContain("chatModelSku: chatModelSku");
+    expect(readFileSync("infra/resources.bicep", "utf8")).toContain("sku: { name: chatModelSku, capacity: chatModelCapacity }");
+  });
+
   it("grants recovery only the required management actions and scopes them to the Cosmos account", () => {
     const source = readFileSync("infra/resources.bicep", "utf8");
     const role = source.match(/resource recoveryManagementRole\b[\s\S]*?(?=\nresource )/)?.[0];

@@ -78,9 +78,16 @@ param chatModelName string = 'gpt-5.4-mini'
 @description('Chat model version available in the selected AI region.')
 param chatModelVersion string = '2026-03-17'
 
+@description('Chat deployment SKU. Availability and quota depend on the model and AI region.')
+@allowed([
+  'DataZoneStandard'
+  'GlobalStandard'
+])
+param chatModelSku string = 'DataZoneStandard'
+
 @description('Chat deployment capacity. Confirm model quota before deploying a new subscription.')
 @minValue(1)
-param chatModelCapacity int = 324
+param chatModelCapacity int = 200
 
 @description('Embedding deployment capacity.')
 @minValue(1)
@@ -145,6 +152,7 @@ module resources 'resources.bicep' = {
     telegramBotUsername: telegramBotUsername
     chatModelName: chatModelName
     chatModelVersion: chatModelVersion
+    chatModelSku: chatModelSku
     chatModelCapacity: chatModelCapacity
     embeddingModelCapacity: embeddingModelCapacity
     webImage: webImage

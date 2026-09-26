@@ -65,8 +65,11 @@
     "chatModelVersion": {
       "value": "${CHAT_MODEL_VERSION=2026-03-17}"
     },
+    "chatModelSku": {
+      "value": "${CHAT_MODEL_SKU=DataZoneStandard}"
+    },
     "chatModelCapacity": {
-      "value": "${CHAT_MODEL_CAPACITY=324}"
+      "value": "${CHAT_MODEL_CAPACITY=200}"
     },
     "embeddingModelCapacity": {
       "value": "${EMBEDDING_MODEL_CAPACITY=50}"

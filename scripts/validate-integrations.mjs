@@ -10,6 +10,7 @@ export function validateIntegrationEnvironment(environment) {
   for (const name of ["CHAT_MODEL_CAPACITY", "EMBEDDING_MODEL_CAPACITY", "BUDGET_AMOUNT", "LOG_ANALYTICS_DAILY_QUOTA_GB"]) {
     if (environment[name] && (!/^[1-9][0-9]*$/.test(environment[name]) || !Number.isSafeInteger(Number(environment[name])))) errors.push(`${name} must be a positive integer.`);
   }
+  if (environment.CHAT_MODEL_SKU && !["DataZoneStandard", "GlobalStandard"].includes(environment.CHAT_MODEL_SKU)) errors.push("CHAT_MODEL_SKU must be DataZoneStandard or GlobalStandard.");
   if (environment.REASONING_EFFORT && !["low", "medium", "high", "xhigh", "max"].includes(environment.REASONING_EFFORT)) errors.push("REASONING_EFFORT must be low, medium, high, xhigh, or max.");
   if (environment.ENABLE_OTP_LOGIN === "true" && environment.DEPLOY_EMAIL !== "true") errors.push("ENABLE_OTP_LOGIN requires DEPLOY_EMAIL=true.");
   if (telegram && !enabled) errors.push("ENABLE_TELEGRAM requires ENABLE_COPILOT_INTEGRATIONS=true.");

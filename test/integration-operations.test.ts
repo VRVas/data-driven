@@ -146,7 +146,12 @@ if (args[1] === "get-value") {
     expect(validateIntegrationEnvironment({ ENABLE_TELEGRAM: "yes" })).toHaveLength(1);
     expect(validateIntegrationEnvironment({ ENABLE_OTP_LOGIN: "true" })).toHaveLength(1);
     expect(validateIntegrationEnvironment({ CHAT_MODEL_CAPACITY: "0", EMBEDDING_MODEL_CAPACITY: "1.5", REASONING_EFFORT: "turbo" })).toHaveLength(3);
-    expect(validateIntegrationEnvironment({ CHAT_MODEL_CAPACITY: "324", DEPLOY_EMAIL: "true", ENABLE_OTP_LOGIN: "true" })).toEqual([]);
+    expect(validateIntegrationEnvironment({ CHAT_MODEL_CAPACITY: "200", DEPLOY_EMAIL: "true", ENABLE_OTP_LOGIN: "true" })).toEqual([]);
+  });
+
+  it("accepts supported chat SKUs and rejects ambiguous or misspelled deployment types", () => {
+    for (const sku of ["DataZoneStandard", "GlobalStandard"]) expect(validateIntegrationEnvironment({ CHAT_MODEL_SKU: sku, CHAT_MODEL_CAPACITY: "200" })).toEqual([]);
+    expect(validateIntegrationEnvironment({ CHAT_MODEL_SKU: "Datazone" })).toEqual(["CHAT_MODEL_SKU must be DataZoneStandard or GlobalStandard."]);
   });
 });
 

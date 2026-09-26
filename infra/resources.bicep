@@ -35,8 +35,16 @@ param reasoningEffort string = 'high'
 @description('Chat model version.')
 param chatModelVersion string = '2026-03-17'
 
+@description('Chat deployment SKU. Availability and quota depend on the model and AI region.')
+@allowed([
+  'DataZoneStandard'
+  'GlobalStandard'
+])
+param chatModelSku string = 'DataZoneStandard'
+
 @description('Deployment SKU capacity (thousands of tokens/min) for the chat model. One copilot turn is several model calls - the whole tool surface is sent on each - so a turn costs roughly 25-30k tokens. At the original 30 this allowed about one exchange per minute and the second question in a conversation returned 429.')
-param chatModelCapacity int = 324
+@minValue(1)
+param chatModelCapacity int = 200
 
 @minValue(1)
 param embeddingModelCapacity int = 50
@@ -611,7 +619,7 @@ resource aiProject 'Microsoft.CognitiveServices/accounts/projects@2025-06-01' = 
 resource chatDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-06-01' = {
   parent: ai
   name: chatModelName
-  sku: { name: 'GlobalStandard', capacity: chatModelCapacity }
+  sku: { name: chatModelSku, capacity: chatModelCapacity }
   properties: {
     model: { format: 'OpenAI', name: chatModelName, version: chatModelVersion }
   }
