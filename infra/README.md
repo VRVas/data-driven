@@ -49,16 +49,36 @@ environment, use `--location REGION` for the app tier. Optional settings can be
 set with `azd env set` before redeployment or supplied as environment variables:
 
 ```bash
-azd env set CHAT_MODEL_CAPACITY 324
+azd env set CHAT_MODEL_SKU DataZoneStandard
+azd env set CHAT_MODEL_CAPACITY 200
 azd env set EMBEDDING_MODEL_CAPACITY 50
 azd env set DEPLOY_EMAIL true
 azd env set BUDGET_CONTACT_EMAIL you@example.com
 ```
 
 All bindings and defaults are in [main.parameters.json](main.parameters.json).
-They include model name/version/capacity, reasoning effort, agent name, email and
+They include model name/version/SKU/capacity, reasoning effort, agent name, email and
 OTP flags, recovery, external integrations, budget amount and log-ingestion cap.
 The tests check that each operator-controlled binding also exists in CI.
+
+Chat defaults to `DataZoneStandard` with capacity 200. `GlobalStandard` remains an
+explicit `CHAT_MODEL_SKU` override. Data Zone Standard processes inference within
+the Microsoft-defined data zone; for an AI resource in Sweden Central this is the
+EU zone, not necessarily Sweden alone. Model/SKU availability and quota still
+depend on the subscription and AI region.
+
+Store deployment-specific values in the azd environment instead of editing Bicep
+locally. An existing environment or GitHub variable overrides the template default,
+so explicitly replace any old SKU/capacity setting before reprovisioning:
+
+```bash
+azd env set CHAT_MODEL_SKU DataZoneStandard --environment YOUR_EXISTING_ENVIRONMENT
+azd env set CHAT_MODEL_CAPACITY 200 --environment YOUR_EXISTING_ENVIRONMENT
+```
+
+CI uses the corresponding `CHAT_MODEL_SKU` and `CHAT_MODEL_CAPACITY` repository
+variables. App-only deployment does not update the model resource; apply these
+settings through provisioning or the full deployment runner.
 
 External credentials, Entra app registrations/consent, Telegram bot creation and
 webhook registration require operator setup. Key Vault references must already
@@ -71,6 +91,7 @@ mail DNS, a custom application hostname or certificates for that hostname.
 - azd hooks: <https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-extensibility>
 - Shared CLI authentication: <https://learn.microsoft.com/azure/developer/azure-developer-cli/use-terraform-for-azd#authenticate-to-azure>
 - Container image deployment behavior: <https://learn.microsoft.com/azure/developer/azure-developer-cli/container-apps-workflows>
+- Model deployment SKU and data-zone behavior: <https://learn.microsoft.com/azure/ai-foundry/openai/how-to/deployment-types#data-zone-standard>
 
 ## What gets deployed
 
@@ -78,7 +99,7 @@ mail DNS, a custom application hostname or certificates for that hostname.
 | --- | --- | --- |
 | AI Foundry account | `Microsoft.CognitiveServices/accounts@2025-06-01` (`kind: AIServices`, `allowProjectManagement: true`) | **New Foundry (V2)** account |
 | AI Foundry project | `Microsoft.CognitiveServices/accounts/projects@2025-06-01` | Foundry project (agents / data isolation) |
-| Model deployment | `Microsoft.CognitiveServices/accounts/deployments@2025-06-01` (`gpt-5.4-mini` 2026-03-17, GlobalStandard) | Chat model for the copilot |
+| Model deployment | `Microsoft.CognitiveServices/accounts/deployments@2025-06-01` (`gpt-5.4-mini` 2026-03-17, DataZoneStandard, capacity 200) | Chat model for the copilot |
 | Prompt agent | Projects API via **azd postprovision hook** (keyless) | Foundry **prompt agent** (data-plane), visible in the portal |
 | App data store | `Microsoft.DocumentDB/databaseAccounts@2024-11-15` (NoSQL, **serverless**, `disableLocalAuth: true`, **`publicNetworkAccess: Disabled`**) | 17 baseline containers, including conversations, documents, reminders, notifications, notes, auth challenges and integration tasks |
 | Recovery control | Separate Cosmos database/container, management identity and restricted custom role | Durable jobs, routing and staged database creation; active restored datasets stay independent of template updates |
@@ -269,7 +290,7 @@ public access to Cosmos DB**.
 - Cosmos DB `disableLocalAuth: true` - Entra-only; data-plane RBAC via managed identity.
 - `AUTH_SECRET` is stored as a Container Apps **secret** (`auth-secret`) and surfaced to the
   app via `secretRef`; `AUTH_TRUST_HOST=true` is set for the HTTPS ingress proxy.
-- Chat capacity defaults to 324; embeddings default to 50. Both are configurable
+- Chat capacity defaults to 200; embeddings default to 50. Both are configurable
   and subject to model-specific regional quota. Low chat capacity can throttle a
   multi-call tool loop even when a single request fits.
 - Explicit TCP startup, liveness and readiness probes check port 3000. TCP keeps
